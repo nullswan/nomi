@@ -2,7 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 
+	"gopkg.in/yaml.v2"
+
+	"github.com/nullswan/ai/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -18,8 +22,17 @@ var configShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show current configuration",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Showing configuration...")
-		// TODO: Implement showing configuration
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			log.Fatalf("Error loading config: %v", err)
+		}
+
+		data, err := yaml.Marshal(cfg)
+		if err != nil {
+			log.Fatalf("Error marshalling config: %v", err)
+		}
+
+		fmt.Println(string(data))
 	},
 }
 
@@ -30,7 +43,33 @@ var configSetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		key := args[0]
 		value := args[1]
-		fmt.Printf("Setting configuration '%s' to '%s'\n", key, value)
-		// TODO: Implement setting configuration
+
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			log.Fatalf("Error loading config: %v", err)
+		}
+
+		err = config.SetConfigValue(cfg, key, value)
+		if err != nil {
+			log.Fatalf("Error setting configuration: %v", err)
+		}
+
+		err = config.SaveConfig(cfg)
+		if err != nil {
+			log.Fatalf("Error saving configuration: %v", err)
+		}
+
+		fmt.Printf("Configuration '%s' set to '%s'\n", key, value)
+	},
+}
+
+var configSetupCmd = &cobra.Command{
+	Use:   "setup",
+	Short: "Set up initial configuration",
+	Run: func(cmd *cobra.Command, args []string) {
+		err := config.Setup()
+		if err != nil {
+			log.Fatalf("Error during setup: %v", err)
+		}
 	},
 }

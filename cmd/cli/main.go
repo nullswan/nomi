@@ -4,40 +4,51 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nullswan/ai/internal/config"
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "yourapp [flags] [arguments]",
+	Use:   "ai [flags] [arguments]",
 	Short: "YourApp is an AI assistant CLI",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Starting application...")
 
-		if preset != "" {
-			fmt.Printf("Using preset: %s\n", preset)
-			// TODO: Load and apply the specified preset
-		} else {
-			fmt.Println("No preset specified.")
-			// TODO: Use the default preset
-		}
+		// If config is not set, create config.
 
-		if conversationID != "" {
-			fmt.Printf("Resuming conversation ID: %s\n", conversationID)
-			// TODO: Load and resume the specified conversation
-		} else {
-			fmt.Println("No conversation ID specified.")
-			// TODO: Load the default conversation
-		}
+		// if preset != "" {
+		// 	fmt.Printf("Using preset: %s\n", preset)
+		// 	// TODO: Load and apply the specified preset
+		// } else {
+		// 	fmt.Println("No preset specified.")
+		// 	// TODO: Use the default preset
+		// }
 
-		// TODO: Start the main application logic
+		// if conversationID != "" {
+		// 	fmt.Printf("Resuming conversation ID: %s\n", conversationID)
+		// 	// TODO: Load and resume the specified conversation
+		// } else {
+		// 	fmt.Println("No conversation ID specified.")
+		// 	// TODO: Load the default conversation
+		// }
+
+		// // TODO: Start the main application logic
 	},
 }
 
 func main() {
+	if !config.ConfigExists() {
+		if err := config.Setup(); err != nil {
+			fmt.Printf("Error during configuration setup: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
 	// #region Config commands
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configShowCmd)
 	configCmd.AddCommand(configSetCmd)
+	configCmd.AddCommand(configSetupCmd)
 	// #endregion
 
 	// #region Conversation commands
@@ -62,6 +73,8 @@ func main() {
 	rootCmd.AddCommand(presetCmd)
 	presetCmd.AddCommand(presetListCmd)
 	// #endregion
+
+	var preset, conversationID string
 
 	rootCmd.PersistentFlags().
 		StringVarP(&preset, "preset", "p", "", "Specify a preset")

@@ -8,7 +8,7 @@ import (
 
 var outputCmd = &cobra.Command{
 	Use:   "output",
-	Short: "Manage output configurations",
+	Short: "Manage outputs",
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
@@ -32,8 +32,4 @@ var outputAddCmd = &cobra.Command{
 		fmt.Printf("Adding output configuration '%s'...\n", outputName)
 		// TODO: Implement adding output configuration
 	},
-}
-
-func init() {
-
 }
