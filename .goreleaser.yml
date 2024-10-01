@@ -1,0 +1,25 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: ai-cli
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - arm
+      - arm64
+      - amd64
+      - "386"
+      - ppc64le
+    goarm:
+      - "7"
+    binary: ai-cli
+    main: ./cmd/cli/main.go
+
+checksum:
+  algorithm: sha256
