@@ -22,11 +22,6 @@ var configShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show current configuration",
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := config.LoadConfig()
-		if err != nil {
-			log.Fatalf("Error loading config: %v", err)
-		}
-
 		data, err := yaml.Marshal(cfg)
 		if err != nil {
 			log.Fatalf("Error marshalling config: %v", err)
@@ -44,11 +39,7 @@ var configSetCmd = &cobra.Command{
 		key := args[0]
 		value := args[1]
 
-		cfg, err := config.LoadConfig()
-		if err != nil {
-			log.Fatalf("Error loading config: %v", err)
-		}
-
+		var err error
 		err = config.SetConfigValue(cfg, key, value)
 		if err != nil {
 			log.Fatalf("Error setting configuration: %v", err)
