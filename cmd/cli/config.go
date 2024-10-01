@@ -34,9 +34,3 @@ var configSetCmd = &cobra.Command{
 		// TODO: Implement setting configuration
 	},
 }
-
-func init() {
-	rootCmd.AddCommand(configCmd)
-	configCmd.AddCommand(configShowCmd)
-	configCmd.AddCommand(configSetCmd)
-}

@@ -34,14 +34,15 @@ var rootCmd = &cobra.Command{
 }
 
 func main() {
+	// #region Config commands
+	rootCmd.AddCommand(configCmd)
+	configCmd.AddCommand(configShowCmd)
+	configCmd.AddCommand(configSetCmd)
+	// #endregion
+
 	// #region Conversation commands
 	rootCmd.AddCommand(conversationCmd)
 	conversationCmd.AddCommand(conversationListCmd)
-	// #endregion
-
-	// #region Preset commands
-	rootCmd.AddCommand(presetCmd)
-	presetCmd.AddCommand(presetListCmd)
 	// #endregion
 
 	// #region Output commands
@@ -55,6 +56,11 @@ func main() {
 	pluginCmd.AddCommand(pluginListCmd)
 	pluginCmd.AddCommand(pluginEnableCmd)
 	pluginCmd.AddCommand(pluginDisableCmd)
+	// #endregion
+
+	// #region Preset commands
+	rootCmd.AddCommand(presetCmd)
+	presetCmd.AddCommand(presetListCmd)
 	// #endregion
 
 	rootCmd.PersistentFlags().
