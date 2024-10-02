@@ -10,22 +10,26 @@ import (
 
 var (
 	cfg            *config.Config
-	preset         string
+	prompt         string
 	conversationID string
 )
 
+const (
+	binName = "golem"
+)
+
 var rootCmd = &cobra.Command{
-	Use:   "ai [flags] [arguments]",
-	Short: "AI is an assistant CLI",
+	Use:   binName + " [flags] [arguments]",
+	Short: binName + " is an AI runtime",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Starting application...")
 
-		if preset != "" {
-			fmt.Printf("Using preset: %s\n", preset)
-			// TODO: Load and apply the specified preset
+		if prompt != "" {
+			fmt.Printf("Using prompt: %s\n", prompt)
+			// TODO: Load and apply the specified prompt
 		} else {
-			fmt.Println("Using default preset")
-			// TODO: Use the default preset
+			fmt.Println("Using default prompt")
+			// TODO: Use the default prompt
 		}
 
 		if conversationID != "" {
@@ -36,7 +40,10 @@ var rootCmd = &cobra.Command{
 			// TODO: Create and load the default conversation
 		}
 
-		// // TODO: Start the main application logic
+		// TODO: Start the main application logic
+	},
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd: true,
 	},
 }
 
@@ -66,19 +73,18 @@ func main() {
 	pluginCmd.AddCommand(pluginDisableCmd)
 	// #endregion
 
-	// #region Preset commands
-	rootCmd.AddCommand(presetCmd)
-	presetCmd.AddCommand(presetListCmd)
+	// #region Prompt commands
+	rootCmd.AddCommand(promptCmd)
+	promptCmd.AddCommand(promptListCmd)
 	// #endregion
 
 	// Attach flags to rootCmd only, so they are not inherited by subcommands
-	rootCmd.Flags().StringVarP(&preset, "preset", "p", "", "Specify a preset")
+	rootCmd.Flags().StringVarP(&prompt, "prompt", "p", "", "Specify a prompt")
 	rootCmd.Flags().
 		StringVarP(&conversationID, "conversation", "c", "", "Specify a conversation ID")
 
 	// Initialize cfg in PersistentPreRun, making it available to all commands
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		// Ensure configuration exists
 		if !config.ConfigExists() {
 			if err := config.Setup(); err != nil {
 				fmt.Printf("Error during configuration setup: %v\n", err)
@@ -86,7 +92,6 @@ func main() {
 			}
 		}
 
-		// Load the configuration
 		var err error
 		cfg, err = config.LoadConfig()
 		if err != nil {

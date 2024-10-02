@@ -5,7 +5,7 @@ before:
     - go mod tidy
 
 builds:
-  - id: ai-cli
+  - id: golem-cli
     goos:
       - linux
       - darwin
@@ -18,7 +18,7 @@ builds:
       - ppc64le
     goarm:
       - "7"
-    binary: ai-cli
+    binary: golem-cli
     main: ./cmd/cli/main.go
 
 checksum:
