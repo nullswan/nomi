@@ -34,8 +34,6 @@ func setInputConfigValue(
 	switch keys[0] {
 	case "text":
 		enabled = &input.Text.Enabled
-	case "image":
-		enabled = &input.Image.Enabled
 	case "voice":
 		enabled = &input.Voice.Enabled
 	default:
@@ -99,8 +97,7 @@ func setMemoryConfigValue(
 		return fmt.Errorf("invalid key for memory: %v", keys)
 	}
 	switch MemoryMode(value) {
-	case MemoryModeKnowledgeGraph,
-		MemoryModeEntity,
+	case
 		MemoryModeConversation,
 		MemoryModeNone:
 		memory.Mode = MemoryMode(value)

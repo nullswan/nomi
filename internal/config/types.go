@@ -8,7 +8,6 @@ type Config struct {
 
 type InputConfig struct {
 	Text  EnabledConfig `yaml:"text"  json:"text"`
-	Image EnabledConfig `yaml:"image" json:"image"`
 	Voice EnabledConfig `yaml:"voice" json:"voice"`
 }
 
@@ -33,10 +32,8 @@ type OutputDetailConfig struct {
 type MemoryMode string
 
 const (
-	MemoryModeKnowledgeGraph MemoryMode = "knowledge_graph"
-	MemoryModeEntity         MemoryMode = "entity"
-	MemoryModeConversation   MemoryMode = "conversation"
-	MemoryModeNone           MemoryMode = "none"
+	MemoryModeConversation MemoryMode = "conversation"
+	MemoryModeNone         MemoryMode = "none"
 )
 
 func (m MemoryMode) String() string {

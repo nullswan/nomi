@@ -15,10 +15,6 @@ func Setup() error {
 		"Enable text input",
 		cfg.Input.Text.Enabled,
 	)
-	cfg.Input.Image.Enabled = promptForBool(
-		"Enable image input",
-		cfg.Input.Image.Enabled,
-	)
 	cfg.Input.Voice.Enabled = promptForBool(
 		"Enable voice input",
 		cfg.Input.Voice.Enabled,
@@ -47,8 +43,6 @@ func Setup() error {
 	}
 
 	memoryModes := []MemoryMode{
-		MemoryModeKnowledgeGraph,
-		MemoryModeEntity,
 		MemoryModeConversation,
 		MemoryModeNone,
 	}
@@ -125,10 +119,6 @@ func promptForSelect(label string, items []string, defaultIndex int) int {
 
 func getDefaultMemoryModeIndex(mode MemoryMode) int {
 	switch mode {
-	case MemoryModeKnowledgeGraph:
-		return 0
-	case MemoryModeEntity:
-		return 1
 	case MemoryModeConversation:
 		return 2
 	case MemoryModeNone:

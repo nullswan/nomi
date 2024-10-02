@@ -8,7 +8,7 @@ import (
 
 const (
 	// configDir is the directory where the configuration file is stored.
-	configDir = ".ai"
+	configDir = ".golem"
 )
 
 // GetHomeDir returns the user's home directory.

@@ -77,7 +77,6 @@ func defaultConfig() Config {
 	return Config{
 		Input: InputConfig{
 			Text:  EnabledConfig{Enabled: true},
-			Image: EnabledConfig{Enabled: true},
 			Voice: EnabledConfig{Enabled: true},
 		},
 		Output: OutputConfig{
