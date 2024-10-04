@@ -1,10 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nullswan/ai/internal/config"
+	"github.com/nullswan/ai/internal/ui"
+
+	prompts "github.com/nullswan/ai/internal/prompt"
 	"github.com/spf13/cobra"
 )
 
@@ -22,25 +28,93 @@ var rootCmd = &cobra.Command{
 	Use:   binName + " [flags] [arguments]",
 	Short: binName + " is an AI runtime",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Starting application...")
-
-		if prompt != "" {
-			fmt.Printf("Using prompt: %s\n", prompt)
-			// TODO: Load and apply the specified prompt
+		var selectedPrompt *prompts.Prompt
+		if prompt == "" {
+			selectedPrompt = &prompts.DefaultPrompts[0]
 		} else {
-			fmt.Println("Using default prompt")
-			// TODO: Use the default prompt
+			var err error
+			selectedPrompt, err = prompts.LoadPrompt(prompt)
+			if err != nil {
+				fmt.Printf("Error loading prompt: %v\n", err)
+				os.Exit(1)
+			}
 		}
 
-		if conversationID != "" {
-			fmt.Printf("Resuming conversation ID: %s\n", conversationID)
-			// TODO: Load and resume the specified conversation
-		} else {
-			fmt.Println("Creating new conversation")
-			// TODO: Create and load the default conversation
+		fmt.Printf("Using prompt: %s\n", selectedPrompt.Name)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		// var promptCh chan string
+		// if cfg.Input.Text.Enabled {
+		// 	fmt.Println("Text input enabled")
+		// 	go textinput.Run(
+		// 		ctx,
+		// 		promptCh,
+		// 	)
+
+		// }
+
+		// if cfg.Input.Voice.Enabled {
+		// 	fmt.Println("Voice input enabled")
+		// 	go voiceinput.Run(
+		// 		ctx,
+		// 		promptCh,
+		// 	)
+		// }
+
+		commandCh := make(chan string)
+
+		// Initialize model with channels
+		model := ui.NewModel(commandCh)
+
+		program := tea.NewProgram(
+			model,
+			tea.WithAltScreen(),       // Use the terminal's alternate screen
+			tea.WithMouseCellMotion(), // Enable mouse events
+		)
+
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case text := <-commandCh:
+					program.Send(ui.NewPagerMsg(text, ui.Human))
+
+					outFile := "output.txt"
+					f, err := os.OpenFile(
+						outFile,
+						os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+						0644,
+					)
+					if err != nil {
+						fmt.Printf("Error opening file: %v\n", err)
+						return
+					}
+
+					defer f.Close()
+
+					if _, err := f.WriteString(text + "\n"); err != nil {
+						fmt.Printf("Error writing to file: %v\n", err)
+						return
+					}
+
+					go func() {
+						time.Sleep(1 * time.Second)
+
+						program.Send(ui.NewPagerMsg("ping", ui.AI))
+					}()
+				}
+			}
+		}()
+
+		_, err := program.Run()
+		if err != nil {
+			os.Exit(1)
 		}
 
-		// TODO: Start the main application logic
+		cancel()
 	},
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
