@@ -13,7 +13,7 @@ type PagerMsg struct {
 }
 
 func (m PagerMsg) String() string {
-	return string(m.Msg)
+	return m.Msg
 }
 
 func NewPagerMsg(msg string, from Sender) PagerMsg {
