@@ -86,7 +86,7 @@ var rootCmd = &cobra.Command{
 					f, err := os.OpenFile(
 						outFile,
 						os.O_APPEND|os.O_CREATE|os.O_WRONLY,
-						0644,
+						0o644,
 					)
 					if err != nil {
 						fmt.Printf("Error opening file: %v\n", err)
