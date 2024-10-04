@@ -24,7 +24,7 @@ func GetDataDir() string {
 	homeDir := GetHomeDir()
 	dataDir := filepath.Join(homeDir, configDir)
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		os.MkdirAll(dataDir, 0755)
+		os.MkdirAll(dataDir, 0o755)
 	}
 	return dataDir
 }
@@ -34,7 +34,7 @@ func GetDataSubdir(subdir string) string {
 	dataDir := GetDataDir()
 	dir := filepath.Join(dataDir, subdir)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		os.MkdirAll(dir, 0755)
+		os.MkdirAll(dir, 0o755)
 	}
 	return dir
 }

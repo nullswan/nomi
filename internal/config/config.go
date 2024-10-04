@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -40,12 +41,15 @@ func LoadConfig() (*Config, error) {
 
 	data, err := os.ReadFile(configFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading configuration file: %w", err)
 	}
 
 	err = yaml.Unmarshal(data, &cfg)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"error unmarshalling configuration file: %w",
+			err,
+		)
 	}
 
 	return &cfg, nil
@@ -58,9 +62,9 @@ func SaveConfig(cfg *Config) error {
 		return err
 	}
 
-	err = os.WriteFile(configFilePath, data, 0644)
+	err = os.WriteFile(configFilePath, data, 0o644)
 	if err != nil {
-		return err
+		return fmt.Errorf("error writing configuration file: %w", err)
 	}
 
 	return nil
