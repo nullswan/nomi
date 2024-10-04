@@ -44,7 +44,11 @@ func setInputConfigValue(
 	}
 	v, err := strconv.ParseBool(value)
 	if err != nil {
-		return err
+		return fmt.Errorf(
+			"invalid value for input property '%s': %w",
+			keys[1],
+			err,
+		)
 	}
 	*enabled = v
 	return nil
@@ -77,7 +81,11 @@ func setOutputDetailConfigValue(
 	case "enabled":
 		v, err := strconv.ParseBool(value)
 		if err != nil {
-			return err
+			return fmt.Errorf(
+				"invalid value for output property '%s': %w",
+				key,
+				err,
+			)
 		}
 		odc.Enabled = v
 	case "path":
