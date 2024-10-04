@@ -10,9 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	ErrPromptNotFound = errors.New("prompt not found")
-)
+var ErrPromptNotFound = errors.New("prompt not found")
 
 func LoadPrompt(filename string) (*Prompt, error) {
 	dataDir := config.GetDataDir()
@@ -35,7 +33,7 @@ func LoadPrompt(filename string) (*Prompt, error) {
 	var prompt Prompt
 	err = yaml.Unmarshal(data, &prompt)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error unmarshalling prompt file: %w", err)
 	}
 
 	return &prompt, nil
@@ -45,7 +43,7 @@ func ListPrompts() ([]Prompt, error) {
 	dataDir := config.GetDataDir()
 	files, err := os.ReadDir(dataDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading data directory: %w", err)
 	}
 
 	prompts := DefaultPrompts
@@ -60,7 +58,7 @@ func ListPrompts() ([]Prompt, error) {
 
 		prompt, err := LoadPrompt(file.Name())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error loading prompt: %w", err)
 		}
 		prompts = append(prompts, *prompt)
 	}
