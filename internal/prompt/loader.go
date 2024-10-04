@@ -1,6 +1,8 @@
 package prompts
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -8,11 +10,26 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var (
+	ErrPromptNotFound = errors.New("prompt not found")
+)
+
 func LoadPrompt(filename string) (*Prompt, error) {
 	dataDir := config.GetDataDir()
+	fp := filepath.Join(dataDir, filename)
+	if !IsPromptFile(fp) {
+		for _, prompt := range DefaultPrompts {
+			if prompt.Name == filename {
+				return &prompt, nil
+			}
+		}
+
+		return nil, ErrPromptNotFound
+	}
+
 	data, err := os.ReadFile(filepath.Join(dataDir, filename))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading prompt file: %w", err)
 	}
 
 	var prompt Prompt
@@ -20,6 +37,7 @@ func LoadPrompt(filename string) (*Prompt, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &prompt, nil
 }
 
@@ -51,5 +69,9 @@ func ListPrompts() ([]Prompt, error) {
 }
 
 func IsPromptFile(filename string) bool {
-	return false
+	if filepath.Ext(filename) != ".yml" {
+		return false
+	}
+
+	return false // Always return false until we implement this function
 }

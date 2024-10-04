@@ -4,12 +4,12 @@ import "time"
 
 var DefaultPrompts = []Prompt{
 	{
-		ID:          "commit_message",
-		Name:        "Native Commit Message Prompt",
-		Description: "Generates clear and concise commit messages.",
+		ID:          "ask",
+		Name:        "Native Ask Prompt",
+		Description: "Facilitates asking questions to the assistant.",
 		Settings: Settings{
-			SystemPrompt: "You are a helpful assistant for writing Git commit messages.",
-			PrePrompt:    "Generate a commit message based on the following changes.",
+			SystemPrompt: "You are an informative assistant ready to answer questions.",
+			PrePrompt:    "Awaiting the user's question.",
 		},
 		Metadata: Metadata{
 			CreatedAt: time.Date(2024, 10, 2, 0, 0, 0, 0, time.UTC),
@@ -18,12 +18,12 @@ var DefaultPrompts = []Prompt{
 		},
 	},
 	{
-		ID:          "ask",
-		Name:        "Native Ask Prompt",
-		Description: "Facilitates asking questions to the assistant.",
+		ID:          "commit_message",
+		Name:        "Native Commit Message Prompt",
+		Description: "Generates clear and concise commit messages.",
 		Settings: Settings{
-			SystemPrompt: "You are an informative assistant ready to answer questions.",
-			PrePrompt:    "Awaiting the user's question.",
+			SystemPrompt: "You are a helpful assistant for writing Git commit messages.",
+			PrePrompt:    "Generate a commit message based on the following changes.",
 		},
 		Metadata: Metadata{
 			CreatedAt: time.Date(2024, 10, 2, 0, 0, 0, 0, time.UTC),
