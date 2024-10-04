@@ -3,6 +3,7 @@ package ui
 import (
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,9 +17,10 @@ type model struct {
 
 	// Pager is the pager component.
 	// The pager is used to display the text received.
-	pagerContent string
-	pager        viewport.Model
-	ready        bool
+	pagerContent  string
+	pager         viewport.Model
+	pagerRenderer *glamour.TermRenderer
+	ready         bool
 
 	// commandChannel is the channel where the user input is sent.
 	commandChannel chan string
@@ -30,10 +32,18 @@ type model struct {
 
 // NewModel initializes a new model with the provided channels.
 func NewModel(inputChan chan string) model {
+	renderer, err := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return model{
 		textArea:       NewTextArea(),
 		pagerContent:   "",
 		pager:          viewport.Model{},
+		pagerRenderer:  renderer,
 		ready:          false,
 		commandChannel: inputChan,
 		humanStyle: lipgloss.NewStyle().

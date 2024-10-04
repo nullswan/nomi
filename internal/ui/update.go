@@ -55,14 +55,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case PagerMsg:
-		if msg.From == Human {
-			m.pagerContent += m.humanStyle.Render("You:") + "\n" + msg.String() + "\n"
-		} else {
-			m.pagerContent += m.aiStyle.Render("AI:") + "\n" + msg.String() + "\n"
+		str, err := m.pagerRenderer.Render(msg.String())
+		if err != nil {
+			return m, nil
 		}
 
-		m.pager.SetContent(m.pagerContent)
+		// Add the message to the pager content
+		if msg.From == Human {
+			m.pagerContent += m.humanStyle.Render("You:") + "\n" + str + "\n"
+		} else {
+			m.pagerContent += m.aiStyle.Render("AI:") + "\n" + str + "\n"
+		}
 
+		// Update the pager content
+		m.pager.SetContent(m.pagerContent)
 		return m, nil
 	}
 
