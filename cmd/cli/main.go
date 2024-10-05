@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/completion"
 	"github.com/nullswan/golem/internal/config"
 	provider "github.com/nullswan/golem/internal/providers/base"
+	"github.com/nullswan/golem/internal/providers/openaiprovider"
 	"github.com/nullswan/golem/internal/ui"
 
 	prompts "github.com/nullswan/golem/internal/prompt"
@@ -59,7 +61,17 @@ var rootCmd = &cobra.Command{
 		)
 
 		var textToTextBackend provider.TextToTextProvider
-		conversation := chat.NewStackedConversation()
+
+		oaiConfig := openaiprovider.NewOAIProviderConfig(
+			os.Getenv("OPENAI_API_KEY"),
+			"",
+		)
+		textToTextBackend = openaiprovider.NewTextToTextProvider(
+			oaiConfig,
+		)
+
+		var conversation chat.Conversation
+		conversation = chat.NewStackedConversation()
 
 		go func() {
 			for {
@@ -74,25 +86,44 @@ var rootCmd = &cobra.Command{
 						chat.NewMessage(chat.RoleUser, text),
 					)
 
-					var outCh chan completion.Completion
-					err := textToTextBackend.GenerateCompletion(
-						ctx,
-						conversation.GetMessages(),
-						outCh,
-					)
-					if err != nil {
-						fmt.Printf("Error generating completion: %v\n", err)
-						os.Exit(1)
-					}
+					go func() {
+						outCh := make(chan completion.Completion)
+						go func() {
+							defer close(outCh)
+							err := textToTextBackend.GenerateCompletion(
+								ctx,
+								conversation.GetMessages(),
+								outCh,
+							)
+							if err != nil {
+								fmt.Printf(
+									"Error generating completion: %v\n",
+									err,
+								)
+								os.Exit(1)
+							}
+						}()
 
-					select {
-					case completion := <-outCh:
-						program.Send(
-							ui.NewPagerMsg(completion.Content(), ui.AI),
-						)
-					case <-ctx.Done():
-						return
-					}
+						for {
+							select {
+							case cmpl, ok := <-outCh:
+								if !ok || reflect.TypeOf(
+									cmpl,
+								) == reflect.TypeOf(
+									completion.CompletionTombStone{},
+								) {
+									ui.NewPagerMsg("", ui.AI)
+									break
+								}
+
+								program.Send(
+									ui.NewPagerMsg(cmpl.Content(), ui.AI),
+								)
+							case <-ctx.Done():
+								return
+							}
+						}
+					}()
 				}
 			}
 		}()
