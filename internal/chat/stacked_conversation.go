@@ -24,7 +24,7 @@ func (c *stackedConversation) AddMessage(message Message) {
 	c.messages = append(c.messages, message)
 }
 
-func (c stackedConversation) WithPrompt(prompt prompts.Prompt) {
+func (c *stackedConversation) WithPrompt(prompt prompts.Prompt) {
 	if prompt.Settings.SystemPrompt != "" {
 		c.messages = append(c.messages, NewMessage(
 			RoleSystem,
