@@ -3,6 +3,7 @@ package ui
 import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -53,6 +54,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pager = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
 			m.pager.YPosition = headerHeight
 			m.pager.SetContent(m.pagerContent)
+
+			var err error
+			m.pagerRenderer, err = glamour.NewTermRenderer(
+				glamour.WithAutoStyle(),
+				glamour.WithWordWrap(int(msg.Width)),
+			)
+			if err != nil {
+				return m, nil
+			}
+
+			m.textArea.SetWidth(msg.Width)
+
 			m.ready = true
 		} else {
 			m.pager.Width = msg.Width

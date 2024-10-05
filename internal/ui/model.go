@@ -53,12 +53,10 @@ func NewModel(inputChan chan string) model {
 	}
 
 	return model{
-		textArea:     NewTextArea(),
-		pagerContent: "",
-		pager: viewport.Model{
-			Width: 0, // TODO(nullswan): Use max width
-		},
-		pagerRenderer:  renderer,
+		textArea:       NewTextArea(),
+		pagerContent:   "",
+		pager:          viewport.Model{}, // This is a dummy pager, it will be initialized in the Update function
+		pagerRenderer:  renderer,         // We initialize the renderer here, but re-initialize it in the Update function
 		ready:          false,
 		pagerStopwatch: stopwatch.NewWithInterval(stopwatchIntval),
 		commandChannel: inputChan,
