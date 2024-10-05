@@ -52,8 +52,7 @@ var rootCmd = &cobra.Command{
 
 		program := tea.NewProgram(
 			model,
-			tea.WithAltScreen(),       // Use the terminal's alternate screen
-			tea.WithMouseCellMotion(), // Enable mouse events
+			tea.WithAltScreen(), // Use the terminal's alternate screen
 		)
 
 		textToTextBackend := initializeTextToTextProvider()
