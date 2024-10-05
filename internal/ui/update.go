@@ -1,6 +1,9 @@
 package ui
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -55,24 +58,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pager.YPosition = headerHeight
 			m.pager.SetContent(m.pagerContent)
 
+			m.textArea.SetWidth(msg.Width)
+
 			var err error
 			m.pagerRenderer, err = glamour.NewTermRenderer(
-				glamour.WithAutoStyle(),
+				glamour.WithStandardStyle("dark"),
 				glamour.WithWordWrap(int(msg.Width)),
 			)
 			if err != nil {
-				return m, nil
+				fmt.Printf("Error initializing renderer: %v\n", err)
 			}
 
-			m.textArea.SetWidth(msg.Width)
-
 			m.ready = true
-		} else {
-			m.pager.Width = msg.Width
-			m.pager.Height = msg.Height - verticalMarginHeight
 		}
+
+		m.pager.Width = msg.Width
+		m.pager.Height = msg.Height - verticalMarginHeight
+		m.textArea.SetWidth(msg.Width)
 	case PagerMsg:
-		// Add the message to the pager content
+		isAtBottom := m.pager.AtBottom()
+
 		if msg.From == Human {
 			str, err := m.pagerRenderer.Render(msg.String())
 			if err != nil {
@@ -81,7 +86,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.pagerContent += m.humanStyle.Render(humanPrefix) + "\n" + str + "\n"
 		} else if msg.From == AI {
-			if msg.String() == "" {
+			if msg.Stop() {
 				// The AI stopped talking, so stop the stopwatch
 				cmds = append(cmds, m.pagerStopwatch.Stop())
 				m.pagerAIRenderedBuffer = ""
@@ -90,9 +95,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// The AI is talking
 				m.pagerAIBuffer += msg.String()
 
+				// If the AI is starting to talk, render the AI style
 				if m.pagerAIRenderedBuffer == "" {
 					m.pagerContent += m.aiStyle.Render(aiPrefix) + "\n"
 				} else {
+					// if human prefix is contained in the content that is going to be removed
+					// it means that the context has been canceled
+					bufferToRemove := m.pagerContent[len(m.pagerContent)-len(m.pagerAIRenderedBuffer):]
+					if strings.Contains(bufferToRemove, humanPrefix) {
+						cmds = append(cmds, m.pagerStopwatch.Stop())
+						m.pagerAIRenderedBuffer = ""
+						m.pagerAIBuffer = ""
+						return m, nil
+					}
+
+					// Remove the old AI content, to replace it with the new one
 					m.pagerContent = m.pagerContent[:len(m.pagerContent)-len(m.pagerAIRenderedBuffer)]
 				}
 
@@ -108,8 +125,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Update the pager content
 		m.pager.SetContent(m.pagerContent)
-		m.pager.GotoBottom() // TODO(nullswan): Don't go to the bottom if the user has scrolled up
-
+		if isAtBottom || msg.From == Human {
+			m.pager.GotoBottom()
+		}
 		return m, tea.Batch(cmds...)
 	}
 
