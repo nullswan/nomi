@@ -95,7 +95,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Update the pager content
 		m.pager.SetContent(m.pagerContent)
-		m.pager.GotoBottom()
+		m.pager.GotoBottom() // TODO(nullswan): Don't go to the bottom if the user has scrolled up
 
 		return m, tea.Batch(cmds...)
 	}
