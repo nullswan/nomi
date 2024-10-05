@@ -14,8 +14,6 @@ func SetConfigValue(cfg *Config, key string, value string) error {
 		err = setInputConfigValue(&cfg.Input, keys[1:], value)
 	case "output":
 		err = setOutputConfigValue(&cfg.Output, keys[1:], value)
-	case "memory":
-		err = setMemoryConfigValue(&cfg.Memory, keys[1:], value)
 	default:
 		err = fmt.Errorf("unknown configuration key '%s'", key)
 	}
@@ -32,8 +30,6 @@ func setInputConfigValue(
 	}
 	var enabled *bool
 	switch keys[0] {
-	case "text":
-		enabled = &input.Text.Enabled
 	case "voice":
 		enabled = &input.Voice.Enabled
 	default:
@@ -92,25 +88,6 @@ func setOutputDetailConfigValue(
 		odc.Path = value
 	default:
 		return fmt.Errorf("unknown output property '%s'", key)
-	}
-	return nil
-}
-
-func setMemoryConfigValue(
-	memory *MemoryConfig,
-	keys []string,
-	value string,
-) error {
-	if len(keys) != 1 || keys[0] != "mode" {
-		return fmt.Errorf("invalid key for memory: %v", keys)
-	}
-	switch MemoryMode(value) {
-	case
-		MemoryModeConversation,
-		MemoryModeNone:
-		memory.Mode = MemoryMode(value)
-	default:
-		return fmt.Errorf("invalid value for memory.mode")
 	}
 	return nil
 }

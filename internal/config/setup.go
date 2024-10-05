@@ -11,10 +11,6 @@ func Setup() error {
 	cfg := defaultConfig()
 	fmt.Println("Starting configuration setup...")
 
-	cfg.Input.Text.Enabled = promptForBool(
-		"Enable text input",
-		cfg.Input.Text.Enabled,
-	)
 	cfg.Input.Voice.Enabled = promptForBool(
 		"Enable voice input",
 		cfg.Input.Voice.Enabled,
@@ -41,23 +37,6 @@ func Setup() error {
 			cfg.Output.Sqlite.Path,
 		)
 	}
-
-	memoryModes := []MemoryMode{
-		MemoryModeConversation,
-		MemoryModeNone,
-	}
-	memoryModeLabels := []string{
-		"Knowledge Graph",
-		"Entity",
-		"Conversation",
-		"None",
-	}
-	modeIndex := promptForSelect(
-		"Choose memory mode",
-		memoryModeLabels,
-		getDefaultMemoryModeIndex(cfg.Memory.Mode),
-	)
-	cfg.Memory.Mode = memoryModes[modeIndex]
 
 	if err := SaveConfig(&cfg); err != nil {
 		return err
@@ -115,15 +94,4 @@ func promptForSelect(label string, items []string, defaultIndex int) int {
 		os.Exit(1)
 	}
 	return index
-}
-
-func getDefaultMemoryModeIndex(mode MemoryMode) int {
-	switch mode {
-	case MemoryModeConversation:
-		return 2
-	case MemoryModeNone:
-		return 3
-	default:
-		return 3 // Default to 'None' if unrecognized
-	}
 }

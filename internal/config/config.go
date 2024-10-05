@@ -8,14 +8,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var configFilePath string
-
-func init() {
-	configFilePath = getConfigFilePath()
-}
-
 func getConfigFilePath() string {
-	return filepath.Join(GetDataDir(), "config.yml")
+	return filepath.Join(GetDataDir(), configFileName)
 }
 
 // ConfigExists checks if the configuration file exists.
@@ -70,17 +64,12 @@ func SaveConfig(cfg *Config) error {
 	return nil
 }
 
-const (
-	defaultConversationDir = "conversations"
-)
-
 // defaultConfig returns the default configuration.
 func defaultConfig() Config {
 	convDir := GetDataSubdir(defaultConversationDir)
 
 	return Config{
 		Input: InputConfig{
-			Text:  EnabledConfig{Enabled: true},
 			Voice: EnabledConfig{Enabled: true},
 		},
 		Output: OutputConfig{
@@ -92,9 +81,6 @@ func defaultConfig() Config {
 				Enabled: true,
 				Path:    filepath.Join(convDir, "output.sqlite.db"),
 			},
-		},
-		Memory: MemoryConfig{
-			Mode: MemoryModeNone,
 		},
 	}
 }

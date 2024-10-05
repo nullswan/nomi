@@ -6,11 +6,6 @@ import (
 	"runtime"
 )
 
-const (
-	// configDir is the directory where the configuration file is stored.
-	configDir = ".golem"
-)
-
 // GetHomeDir returns the user's home directory.
 func GetHomeDir() string {
 	if runtime.GOOS == "windows" {
