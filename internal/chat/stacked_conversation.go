@@ -3,6 +3,8 @@ package chat
 import (
 	"fmt"
 	"time"
+
+	prompts "github.com/nullswan/golem/internal/prompt"
 )
 
 type stackedConversation struct {
@@ -20,6 +22,22 @@ func (c *stackedConversation) GetMessages() []Message {
 
 func (c *stackedConversation) AddMessage(message Message) {
 	c.messages = append(c.messages, message)
+}
+
+func (c stackedConversation) WithPrompt(prompt prompts.Prompt) {
+	if prompt.Settings.SystemPrompt != "" {
+		c.messages = append(c.messages, NewMessage(
+			RoleSystem,
+			prompt.Settings.SystemPrompt,
+		))
+	}
+
+	if prompt.Settings.PrePrompt != nil && *prompt.Settings.PrePrompt != "" {
+		c.messages = append(c.messages, NewMessage(
+			RoleSystem,
+			*prompt.Settings.PrePrompt,
+		))
+	}
 }
 
 func NewStackedConversation() Conversation {
