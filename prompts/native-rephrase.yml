@@ -1,0 +1,14 @@
+id: "rephrase"
+name: "Native Rephrase Prompt"
+description: "Rephrases user-provided text for clarity."
+preferences:
+  fast: false
+  reasoning: true
+settings:
+  system_prompt: "You are a skilled assistant for rephrasing text."
+  pre_prompt: "Rephrase the following text:"
+metadata:
+  created_at: "2024-10-02T00:00:00Z"
+  updated_at: "2024-10-02T00:00:00Z"
+  version: "0.1.0"
+  author: nullswan

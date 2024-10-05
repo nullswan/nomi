@@ -1,0 +1,14 @@
+id: "ask"
+name: "Native Ask Prompt"
+description: "Facilitates asking questions to the assistant."
+preferences:
+  fast: false
+  reasoning: false
+settings:
+  system_prompt: "You are an informative assistant ready to answer questions."
+  pre_prompt: "Awaiting the user's question."
+metadata:
+  created_at: "2024-10-02T00:00:00Z"
+  updated_at: "2024-10-02T00:00:00Z"
+  version: "0.1.0"
+  author: nullswan

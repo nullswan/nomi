@@ -1,0 +1,14 @@
+id: "commit_message"
+name: "Native Commit Message Prompt"
+description: "Generates clear and concise commit messages."
+preferences:
+  fast: true
+  reasoning: false
+settings:
+  system_prompt: "You are a helpful assistant for writing Git commit messages."
+  pre_prompt: "Generate a commit message based on the following changes."
+metadata:
+  created_at: "2024-10-02T00:00:00Z"
+  updated_at: "2024-10-02T00:00:00Z"
+  version: "0.1.0"
+  author: nullswan
