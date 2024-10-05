@@ -31,12 +31,10 @@ const (
 
 var rootCmd = &cobra.Command{
 	Use:   binName + " [flags] [arguments]",
-	Short: binName + " is an AI runtime",
+	Short: "An enhanced AI runtime, focusing on ease of use and extensibility.",
 	Run: func(cmd *cobra.Command, args []string) {
-		var selectedPrompt *prompts.Prompt
-		if prompt == "" {
-			selectedPrompt = &prompts.DefaultPrompts[0]
-		} else {
+		selectedPrompt := &prompts.DefaultPrompt
+		if prompt != "" {
 			var err error
 			selectedPrompt, err = prompts.LoadPrompt(prompt)
 			if err != nil {
@@ -44,8 +42,6 @@ var rootCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
-
-		fmt.Printf("Using prompt: %s\n", selectedPrompt.Name)
 
 		commandCh := make(chan string)
 		ctx, cancel := context.WithCancel(context.Background())
@@ -62,6 +58,7 @@ var rootCmd = &cobra.Command{
 
 		textToTextBackend := initializeTextToTextProvider()
 		conversation := chat.NewStackedConversation()
+		conversation.WithPrompt(*selectedPrompt)
 
 		go handleCommands(
 			ctx,
@@ -107,6 +104,10 @@ func main() {
 	// pluginCmd.AddCommand(pluginListCmd)
 	// pluginCmd.AddCommand(pluginEnableCmd)
 	// pluginCmd.AddCommand(pluginDisableCmd)
+	// #endregion
+
+	// #region Update commands
+	// rootCmd.AddCommand(updateCmd)
 	// #endregion
 
 	// #region Prompt commands
