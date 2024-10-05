@@ -113,6 +113,7 @@ func main() {
 	// #region Prompt commands
 	rootCmd.AddCommand(promptCmd)
 	promptCmd.AddCommand(promptListCmd)
+	promptCmd.AddCommand(promptAddCmd)
 	// #endregion
 
 	// Attach flags to rootCmd only, so they are not inherited by subcommands
@@ -123,6 +124,7 @@ func main() {
 	// Initialize cfg in PersistentPreRun, making it available to all commands
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if !config.ConfigExists() {
+			fmt.Println("Looks like this is your first time running Golem! 🗿")
 			if err := config.Setup(); err != nil {
 				fmt.Printf("Error during configuration setup: %v\n", err)
 				os.Exit(1)
