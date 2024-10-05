@@ -53,9 +53,11 @@ func NewModel(inputChan chan string) model {
 	}
 
 	return model{
-		textArea:       NewTextArea(),
-		pagerContent:   "",
-		pager:          viewport.Model{},
+		textArea:     NewTextArea(),
+		pagerContent: "",
+		pager: viewport.Model{
+			Width: 0, // TODO(nullswan): Use max width
+		},
 		pagerRenderer:  renderer,
 		ready:          false,
 		pagerStopwatch: stopwatch.NewWithInterval(stopwatchIntval),
