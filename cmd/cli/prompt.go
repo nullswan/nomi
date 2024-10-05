@@ -7,7 +7,7 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 
-	prompts "github.com/nullswan/ai/internal/prompt"
+	prompts "github.com/nullswan/golem/internal/prompt"
 	"github.com/spf13/cobra"
 )
 

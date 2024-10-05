@@ -1,4 +1,4 @@
-module github.com/nullswan/ai
+module github.com/nullswan/golem
 
 go 1.23.1
 
@@ -38,6 +38,7 @@ require (
 	github.com/muesli/termenv v0.15.3-0.20240618155329-98d742f6907a // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/sashabaranov/go-openai v1.31.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/yuin/goldmark v1.7.4 // indirect
 	github.com/yuin/goldmark-emoji v1.0.3 // indirect

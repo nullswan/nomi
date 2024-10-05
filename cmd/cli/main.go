@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/nullswan/ai/internal/config"
-	"github.com/nullswan/ai/internal/ui"
+	"github.com/nullswan/golem/internal/chat"
+	"github.com/nullswan/golem/internal/completion"
+	"github.com/nullswan/golem/internal/config"
+	provider "github.com/nullswan/golem/internal/providers/base"
+	"github.com/nullswan/golem/internal/ui"
 
-	prompts "github.com/nullswan/ai/internal/prompt"
+	prompts "github.com/nullswan/golem/internal/prompt"
 	"github.com/spf13/cobra"
 )
 
@@ -45,24 +47,6 @@ var rootCmd = &cobra.Command{
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		// var promptCh chan string
-		// if cfg.Input.Text.Enabled {
-		// 	fmt.Println("Text input enabled")
-		// 	go textinput.Run(
-		// 		ctx,
-		// 		promptCh,
-		// 	)
-
-		// }
-
-		// if cfg.Input.Voice.Enabled {
-		// 	fmt.Println("Voice input enabled")
-		// 	go voiceinput.Run(
-		// 		ctx,
-		// 		promptCh,
-		// 	)
-		// }
-
 		commandCh := make(chan string)
 
 		// Initialize model with channels
@@ -74,37 +58,41 @@ var rootCmd = &cobra.Command{
 			tea.WithMouseCellMotion(), // Enable mouse events
 		)
 
+		var textToTextBackend provider.TextToTextProvider
+		conversation := chat.NewStackedConversation()
+
 		go func() {
 			for {
 				select {
 				case <-ctx.Done():
 					return
 				case text := <-commandCh:
-					program.Send(ui.NewPagerMsg(text, ui.Human))
+					program.Send(
+						ui.NewPagerMsg(text, ui.Human),
+					)
+					conversation.AddMessage(
+						chat.NewMessage(chat.RoleUser, text),
+					)
 
-					outFile := "output.txt"
-					f, err := os.OpenFile(
-						outFile,
-						os.O_APPEND|os.O_CREATE|os.O_WRONLY,
-						0o644,
+					var outCh chan completion.Completion
+					err := textToTextBackend.GenerateCompletion(
+						ctx,
+						conversation.GetMessages(),
+						outCh,
 					)
 					if err != nil {
-						fmt.Printf("Error opening file: %v\n", err)
-						return
+						fmt.Printf("Error generating completion: %v\n", err)
+						os.Exit(1)
 					}
 
-					defer f.Close()
-
-					if _, err := f.WriteString(text + "\n"); err != nil {
-						fmt.Printf("Error writing to file: %v\n", err)
+					select {
+					case completion := <-outCh:
+						program.Send(
+							ui.NewPagerMsg(completion.Content(), ui.AI),
+						)
+					case <-ctx.Done():
 						return
 					}
-
-					go func() {
-						time.Sleep(1 * time.Second)
-
-						program.Send(ui.NewPagerMsg("ping", ui.AI))
-					}()
 				}
 			}
 		}()
@@ -135,16 +123,16 @@ func main() {
 	// #endregion
 
 	// #region Output commands
-	rootCmd.AddCommand(outputCmd)
-	outputCmd.AddCommand(outputListCmd)
-	outputCmd.AddCommand(outputAddCmd)
+	// rootCmd.AddCommand(outputCmd)
+	// outputCmd.AddCommand(outputListCmd)
+	// outputCmd.AddCommand(outputAddCmd)
 	// #endregion
 
 	// #region Plugin commands
-	rootCmd.AddCommand(pluginCmd)
-	pluginCmd.AddCommand(pluginListCmd)
-	pluginCmd.AddCommand(pluginEnableCmd)
-	pluginCmd.AddCommand(pluginDisableCmd)
+	// rootCmd.AddCommand(pluginCmd)
+	// pluginCmd.AddCommand(pluginListCmd)
+	// pluginCmd.AddCommand(pluginEnableCmd)
+	// pluginCmd.AddCommand(pluginDisableCmd)
 	// #endregion
 
 	// #region Prompt commands

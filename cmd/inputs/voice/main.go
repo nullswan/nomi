@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/nullswan/ai/internal/input/voiceinput"
+	"github.com/nullswan/golem/internal/input/voiceinput"
 )
 
 func main() {

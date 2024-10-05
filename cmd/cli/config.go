@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/nullswan/ai/internal/config"
+	"github.com/nullswan/golem/internal/config"
 	"github.com/spf13/cobra"
 )
 

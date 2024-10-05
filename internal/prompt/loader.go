@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nullswan/ai/internal/config"
+	"github.com/nullswan/golem/internal/config"
 	"gopkg.in/yaml.v2"
 )
 
