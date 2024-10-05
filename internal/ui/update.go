@@ -24,12 +24,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textArea.Blur()
 			}
 
+			// If the text area is empty, do nothing
 			if m.textArea.Value() == "" {
 				return m, nil
 			}
 
+			// Send the command
 			m.commandChannel <- m.textArea.Value()
 			m.textArea.Reset()
+
+			cmds = append(cmds, m.pagerStopwatch.Reset())
+			cmds = append(cmds, m.pagerStopwatch.Start())
 		case tea.KeyCtrlC:
 			return m, tea.Quit
 		default:
@@ -53,24 +58,50 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pager.Width = msg.Width
 			m.pager.Height = msg.Height - verticalMarginHeight
 		}
-
 	case PagerMsg:
-		str, err := m.pagerRenderer.Render(msg.String())
-		if err != nil {
-			return m, nil
-		}
-
 		// Add the message to the pager content
 		if msg.From == Human {
-			m.pagerContent += m.humanStyle.Render("You:") + "\n" + str + "\n"
-		} else {
-			m.pagerContent += m.aiStyle.Render("AI:") + "\n" + str + "\n"
+			str, err := m.pagerRenderer.Render(msg.String())
+			if err != nil {
+				return m, nil
+			}
+
+			m.pagerContent += m.humanStyle.Render(humanPrefix) + "\n" + str + "\n"
+		} else if msg.From == AI {
+			if msg.String() == "" {
+				// The AI stopped talking, so stop the stopwatch
+				cmds = append(cmds, m.pagerStopwatch.Stop())
+				m.pagerAIRenderedBuffer = ""
+				m.pagerAIBuffer = ""
+			} else {
+				// The AI is talking
+				m.pagerAIBuffer += msg.String()
+
+				if m.pagerAIRenderedBuffer == "" {
+					m.pagerContent += m.aiStyle.Render(aiPrefix) + "\n"
+				} else {
+					m.pagerContent = m.pagerContent[:len(m.pagerContent)-len(m.pagerAIRenderedBuffer)]
+				}
+
+				newContent, err := m.pagerRenderer.Render(m.pagerAIBuffer)
+				if err != nil {
+					return m, nil
+				}
+
+				m.pagerAIRenderedBuffer = newContent
+				m.pagerContent += newContent
+			}
 		}
 
 		// Update the pager content
 		m.pager.SetContent(m.pagerContent)
-		return m, nil
+		m.pager.GotoBottom()
+
+		return m, tea.Batch(cmds...)
 	}
+
+	m.pagerStopwatch, cmd = m.pagerStopwatch.Update(msg)
+	cmds = append(cmds, cmd)
 
 	// Update the text area
 	m.textArea, cmd = m.textArea.Update(msg)

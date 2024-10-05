@@ -1,12 +1,22 @@
 package ui
 
 import (
+	"time"
+
+	"github.com/charmbracelet/bubbles/stopwatch"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 
 	tea "github.com/charmbracelet/bubbletea"
+)
+
+const (
+	stopwatchIntval = time.Millisecond * 100
+	loadingMessage  = "Loading..."
+	aiPrefix        = "AI: "
+	humanPrefix     = "You: "
 )
 
 // Define the model struct
@@ -17,10 +27,13 @@ type model struct {
 
 	// Pager is the pager component.
 	// The pager is used to display the text received.
-	pagerContent  string
-	pager         viewport.Model
-	pagerRenderer *glamour.TermRenderer
-	ready         bool
+	pagerContent          string
+	pager                 viewport.Model
+	pagerRenderer         *glamour.TermRenderer
+	ready                 bool
+	pagerStopwatch        stopwatch.Model
+	pagerAIBuffer         string
+	pagerAIRenderedBuffer string
 
 	// commandChannel is the channel where the user input is sent.
 	commandChannel chan string
@@ -45,6 +58,7 @@ func NewModel(inputChan chan string) model {
 		pager:          viewport.Model{},
 		pagerRenderer:  renderer,
 		ready:          false,
+		pagerStopwatch: stopwatch.NewWithInterval(stopwatchIntval),
 		commandChannel: inputChan,
 		humanStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF00FF")),
