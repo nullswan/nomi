@@ -13,8 +13,8 @@ import (
 var ErrPromptNotFound = errors.New("prompt not found")
 
 func LoadPrompt(filename string) (*Prompt, error) {
-	fp := filepath.Join(config.GetPromptDirectory(), filename)
-	if !isValidFilename(fp) {
+	fp := filepath.Join(config.GetPromptDirectory(), filename+".yml")
+	if _, err := os.Stat(fp); os.IsNotExist(err) {
 		return nil, ErrPromptNotFound
 	}
 
