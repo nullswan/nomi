@@ -1,23 +1,23 @@
 package olamalocalprovider
 
 type olamaProviderConfig struct {
-	baseUrl string
+	baseURL string
 	model   string
 }
 
 func NewOlamaProviderConfig(baseUrl, model string) olamaProviderConfig {
 	return olamaProviderConfig{
-		baseUrl: baseUrl,
+		baseURL: baseUrl,
 		model:   model,
 	}
 }
 
 func (o olamaProviderConfig) BaseUrl() string {
-	return o.baseUrl
+	return o.baseURL
 }
 
 func (o olamaProviderConfig) WithBaseUrl(baseUrl string) olamaProviderConfig {
-	o.baseUrl = baseUrl
+	o.baseURL = baseUrl
 	return o
 }
 

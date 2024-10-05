@@ -2,6 +2,7 @@ package olamalocalprovider
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -74,7 +75,7 @@ func (p *TextToTextProvider) GenerateCompletion(
 
 	err := p.client.Chat(ctx, &req, resp)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating completion stream: %w", err)
 	}
 
 	return nil
@@ -84,7 +85,6 @@ func completionRequestTextToText(
 	model string,
 	messages []chat.Message,
 ) api.ChatRequest {
-
 	stream := true
 
 	req := api.ChatRequest{
