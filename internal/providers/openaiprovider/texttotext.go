@@ -2,6 +2,7 @@ package openaiprovider
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/nullswan/golem/internal/chat"
@@ -41,7 +42,7 @@ func (p *TextToTextProvider) GenerateCompletion(
 	req := completionRequestTextToText(p.config.model, messages)
 	stream, err := p.client.CreateChatCompletionStream(ctx, req)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating completion stream: %w", err)
 	}
 
 	aggCompletion := ""
@@ -51,7 +52,7 @@ func (p *TextToTextProvider) GenerateCompletion(
 			if err == io.EOF {
 				break
 			}
-			return err
+			return fmt.Errorf("error receiving completion: %w", err)
 		}
 
 		completionCh <- completion.NewCompletionData(

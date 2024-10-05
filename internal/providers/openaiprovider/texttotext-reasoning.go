@@ -2,6 +2,7 @@ package openaiprovider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/completion"
@@ -42,7 +43,7 @@ func (p *TextToTextReasoningProvider) GenerateCompletion(
 	// Streaming is not supported YET (cf: https://platform.openai.com/docs/guides/reasoning/beta-limitations)
 	resp, err := p.client.CreateChatCompletion(ctx, req)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating completion stream: %w", err)
 	}
 
 	completionCh <- completion.NewCompletionData(

@@ -12,11 +12,11 @@ func NewOAIProviderConfig(apiKey, model string) oaiProviderConfig {
 	}
 }
 
-func (o oaiProviderConfig) ApiKey() string {
+func (o oaiProviderConfig) APIKey() string {
 	return o.apiKey
 }
 
-func (o oaiProviderConfig) WithApiKey(apiKey string) oaiProviderConfig {
+func (o oaiProviderConfig) WithAPIKey(apiKey string) oaiProviderConfig {
 	o.apiKey = apiKey
 	return o
 }
