@@ -1,7 +1,8 @@
 package config
 
 const (
-	defaultConversationDir = "conversations"
+	conversationDir = "conversations"
+	promptDir       = "prompts"
 
 	// configDir is the directory where the configuration file is stored.
 	configDir = ".golem"
@@ -14,4 +15,12 @@ var configFilePath string
 
 func init() {
 	configFilePath = getConfigFilePath()
+}
+
+func GetPromptDirectory() string {
+	return GetModuleDirectory(promptDir)
+}
+
+func GetConversationDirectory() string {
+	return GetModuleDirectory(conversationDir)
 }

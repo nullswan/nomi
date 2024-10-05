@@ -9,7 +9,7 @@ import (
 )
 
 func getConfigFilePath() string {
-	return filepath.Join(GetDataDir(), configFileName)
+	return filepath.Join(GetProgramDirectory(), configFileName)
 }
 
 // ConfigExists checks if the configuration file exists.
@@ -53,7 +53,7 @@ func LoadConfig() (*Config, error) {
 func SaveConfig(cfg *Config) error {
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
-		return err
+		return fmt.Errorf("error marshalling configuration: %w", err)
 	}
 
 	err = os.WriteFile(configFilePath, data, 0o644)
@@ -66,7 +66,10 @@ func SaveConfig(cfg *Config) error {
 
 // defaultConfig returns the default configuration.
 func defaultConfig() Config {
-	convDir := GetDataSubdir(defaultConversationDir)
+	convDir := GetConversationDirectory()
+
+	// Do nothing, just create the directory if it doesn't exist
+	_ = GetPromptDirectory()
 
 	return Config{
 		Input: InputConfig{

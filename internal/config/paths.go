@@ -14,8 +14,8 @@ func GetHomeDir() string {
 	return os.Getenv("HOME")
 }
 
-// GetDataDir returns the application's data directory, e.g., ~/.ai
-func GetDataDir() string {
+// GetProgramDirectory returns the application's data directory, e.g., ~/.ai
+func GetProgramDirectory() string {
 	homeDir := GetHomeDir()
 	dataDir := filepath.Join(homeDir, configDir)
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
@@ -24,9 +24,9 @@ func GetDataDir() string {
 	return dataDir
 }
 
-// GetDataSubdir returns the specified subdirectory under the data directory.
-func GetDataSubdir(subdir string) string {
-	dataDir := GetDataDir()
+// GetModuleDirectory returns the specified subdirectory under the data directory.
+func GetModuleDirectory(subdir string) string {
+	dataDir := GetProgramDirectory()
 	dir := filepath.Join(dataDir, subdir)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		os.MkdirAll(dir, 0o755)

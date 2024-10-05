@@ -1,5 +1,6 @@
 package config
 
+// TODO(nullswan): Use bubbletea for the setup process instead of promptui.
 import (
 	"fmt"
 	"os"
@@ -78,20 +79,4 @@ func promptForString(label string, defaultVal string) string {
 		os.Exit(1)
 	}
 	return result
-}
-
-func promptForSelect(label string, items []string, defaultIndex int) int {
-	prompt := promptui.Select{
-		Label:        label,
-		Items:        items,
-		CursorPos:    defaultIndex,
-		HideHelp:     true,
-		HideSelected: true,
-	}
-	index, _, err := prompt.Run()
-	if err != nil {
-		fmt.Printf("Prompt failed: %v\n", err)
-		os.Exit(1)
-	}
-	return index
 }
