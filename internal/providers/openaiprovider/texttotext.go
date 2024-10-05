@@ -24,7 +24,7 @@ func NewTextToTextProvider(
 	config oaiProviderConfig,
 ) provider.TextToTextProvider {
 	if config.model == "" {
-		config.model = OpenAITextToTextDefaultModel
+		config.model = OpenAITextToTextDefaultModelFast
 	}
 
 	return &TextToTextProvider{

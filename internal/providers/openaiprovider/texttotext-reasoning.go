@@ -23,7 +23,7 @@ func NewTextToTextReasoningProvider(
 	config oaiProviderConfig,
 ) provider.TextToTextReasoningProvider {
 	if config.model == "" {
-		config.model = OpenAITextToTextReasoningDefaultModel
+		config.model = OpenAITextToTextReasoningDefaultModelFast
 	}
 
 	return &TextToTextReasoningProvider{
