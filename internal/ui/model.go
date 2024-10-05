@@ -45,18 +45,11 @@ type model struct {
 
 // NewModel initializes a new model with the provided channels.
 func NewModel(inputChan chan string) model {
-	renderer, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
-	)
-	if err != nil {
-		panic(err)
-	}
-
 	return model{
 		textArea:       NewTextArea(),
 		pagerContent:   "",
 		pager:          viewport.Model{}, // This is a dummy pager, it will be initialized in the Update function
-		pagerRenderer:  renderer,         // We initialize the renderer here, but re-initialize it in the Update function
+		pagerRenderer:  nil,              // We initialize this in the Init function
 		ready:          false,
 		pagerStopwatch: stopwatch.NewWithInterval(stopwatchIntval),
 		commandChannel: inputChan,
