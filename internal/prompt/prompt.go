@@ -11,8 +11,8 @@ type Prompt struct {
 }
 
 type Settings struct {
-	SystemPrompt string `yaml:"system_prompt"`
-	PrePrompt    string `yaml:"pre_prompt"`
+	SystemPrompt string  `yaml:"system_prompt"`
+	PrePrompt    *string `yaml:"pre_prompt"`
 }
 
 type Metadata struct {
