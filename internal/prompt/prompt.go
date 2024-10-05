@@ -19,4 +19,5 @@ type Metadata struct {
 	CreatedAt time.Time `yaml:"created_at"`
 	UpdatedAt time.Time `yaml:"updated_at"`
 	Version   string    `yaml:"version"`
+	Author    string    `yaml:"author"`
 }

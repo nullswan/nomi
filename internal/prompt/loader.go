@@ -10,18 +10,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	ErrPromptNotFound = errors.New("prompt not found")
-)
+var ErrPromptNotFound = errors.New("prompt not found")
 
 func LoadPrompt(filename string) (*Prompt, error) {
-	dataDir := config.GetDataDir()
-	fp := filepath.Join(dataDir, filename)
-	if !IsPromptFile(fp) {
+	fp := filepath.Join(config.GetPromptDirectory(), filename)
+	if !isValidFilename(fp) {
 		return nil, ErrPromptNotFound
 	}
 
-	data, err := os.ReadFile(filepath.Join(dataDir, filename))
+	data, err := os.ReadFile(fp)
 	if err != nil {
 		return nil, fmt.Errorf("error reading prompt file: %w", err)
 	}
@@ -36,8 +33,7 @@ func LoadPrompt(filename string) (*Prompt, error) {
 }
 
 func ListPrompts() ([]Prompt, error) {
-	dataDir := config.GetDataDir()
-	files, err := os.ReadDir(dataDir)
+	files, err := os.ReadDir(config.GetPromptDirectory())
 	if err != nil {
 		return nil, fmt.Errorf("error reading data directory: %w", err)
 	}
@@ -48,7 +44,8 @@ func ListPrompts() ([]Prompt, error) {
 			continue
 		}
 
-		if !IsPromptFile(file.Name()) {
+		// Prompt files are YAML files
+		if !isValidFilename(file.Name()) {
 			continue
 		}
 
@@ -56,16 +53,17 @@ func ListPrompts() ([]Prompt, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error loading prompt: %w", err)
 		}
+
+		if err := prompt.Validate(); err != nil {
+			return nil, fmt.Errorf("error validating prompt: %w", err)
+		}
+
 		prompts = append(prompts, *prompt)
 	}
 
 	return prompts, nil
 }
 
-func IsPromptFile(filename string) bool {
-	if filepath.Ext(filename) != ".yml" {
-		return false
-	}
-
-	return false // Always return false until we implement this function
+func isValidFilename(filename string) bool {
+	return filepath.Ext(filename) == ".yml"
 }
