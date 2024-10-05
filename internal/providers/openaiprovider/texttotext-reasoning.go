@@ -67,15 +67,15 @@ func completionRequestTextToTextReasoning(
 		Messages: []openai.ChatCompletionMessage{},
 	}
 
-	// System prompt are not supported YET (cf: https://platform.openai.com/docs/guides/reasoning/beta-limitations)
 	for _, message := range messages {
-		if message.Role != chat.RoleUser {
-			// TODO(nullswan): Add logger
-			continue
+		role := message.Role.String()
+		// System prompt are not supported YET (cf: https://platform.openai.com/docs/guides/reasoning/beta-limitations)
+		if message.Role == chat.RoleSystem {
+			role = chat.RoleUser.String()
 		}
 
 		req.Messages = append(req.Messages, openai.ChatCompletionMessage{
-			Role:    message.Role.String(),
+			Role:    role,
 			Content: message.Content,
 		})
 	}
