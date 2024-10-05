@@ -11,6 +11,7 @@ import (
 	"github.com/nullswan/golem/internal/completion"
 	"github.com/nullswan/golem/internal/config"
 	provider "github.com/nullswan/golem/internal/providers/base"
+	olamalocalprovider "github.com/nullswan/golem/internal/providers/ollamalocalprovider"
 	"github.com/nullswan/golem/internal/providers/openaiprovider"
 	"github.com/nullswan/golem/internal/ui"
 
@@ -62,13 +63,23 @@ var rootCmd = &cobra.Command{
 
 		var textToTextBackend provider.TextToTextProvider
 
-		oaiConfig := openaiprovider.NewOAIProviderConfig(
-			os.Getenv("OPENAI_API_KEY"),
-			"",
-		)
-		textToTextBackend = openaiprovider.NewTextToTextProvider(
-			oaiConfig,
-		)
+		if os.Getenv("OPENAI_API_KEY") == "" {
+			ollamaConfig := olamalocalprovider.NewOlamaProviderConfig(
+				"http://localhost:11434",
+				"",
+			)
+			textToTextBackend = olamalocalprovider.NewTextToTextProvider(
+				ollamaConfig,
+			)
+		} else {
+			oaiConfig := openaiprovider.NewOAIProviderConfig(
+				os.Getenv("OPENAI_API_KEY"),
+				"",
+			)
+			textToTextBackend = openaiprovider.NewTextToTextProvider(
+				oaiConfig,
+			)
+		}
 
 		var conversation chat.Conversation
 		conversation = chat.NewStackedConversation()

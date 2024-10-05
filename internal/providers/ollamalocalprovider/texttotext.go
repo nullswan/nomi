@@ -35,7 +35,7 @@ func NewTextToTextProvider(
 	}
 
 	if config.model == "" {
-		config.model = OLamaTextToTextDefaultModel
+		config.model = OLamaTextToTextDefaultModelFast
 	}
 
 	return &TextToTextProvider{
@@ -56,7 +56,6 @@ func (p *TextToTextProvider) GenerateCompletion(
 
 	aggCompletion := ""
 	resp := func(resp api.ChatResponse) error {
-
 		if resp.Done {
 			completionCh <- completion.NewCompletionTombStone(
 				aggCompletion,

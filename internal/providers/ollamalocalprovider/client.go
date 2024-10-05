@@ -1,24 +1,15 @@
 package olamalocalprovider
 
 type olamaProviderConfig struct {
-	model   string
 	baseUrl string
+	model   string
 }
 
-func NewOlamaProviderConfig(model, baseUrl string) olamaProviderConfig {
+func NewOlamaProviderConfig(baseUrl, model string) olamaProviderConfig {
 	return olamaProviderConfig{
-		model:   model,
 		baseUrl: baseUrl,
+		model:   model,
 	}
-}
-
-func (o olamaProviderConfig) Model() string {
-	return o.model
-}
-
-func (o olamaProviderConfig) WithModel(model string) olamaProviderConfig {
-	o.model = model
-	return o
 }
 
 func (o olamaProviderConfig) BaseUrl() string {
@@ -27,5 +18,14 @@ func (o olamaProviderConfig) BaseUrl() string {
 
 func (o olamaProviderConfig) WithBaseUrl(baseUrl string) olamaProviderConfig {
 	o.baseUrl = baseUrl
+	return o
+}
+
+func (o olamaProviderConfig) Model() string {
+	return o.model
+}
+
+func (o olamaProviderConfig) WithModel(model string) olamaProviderConfig {
+	o.model = model
 	return o
 }
