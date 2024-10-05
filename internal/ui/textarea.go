@@ -10,6 +10,7 @@ func NewTextArea() textarea.Model {
 	ta.Placeholder = "Type here..."
 	ta.ShowLineNumbers = false
 	ta.CharLimit = 0
+	ta.MaxHeight = 0
 	ta.MaxWidth = 0
 
 	ta.Focus()
