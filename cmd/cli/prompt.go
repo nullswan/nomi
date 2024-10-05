@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"gopkg.in/yaml.v2"
@@ -120,5 +121,101 @@ var promptListCmd = &cobra.Command{
 		}
 
 		t.Render()
+	},
+}
+
+var promptEditCmd = &cobra.Command{
+	Use:   "edit [id]",
+	Short: "Edit an existing prompt",
+	Long:  `Edit an existing prompt by its ID.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			fmt.Println("Please provide the ID of the prompt to edit.")
+			return
+		}
+		id := args[0]
+
+		// Fetch the current prompt by ID
+		existingPrompt, err := prompts.LoadPrompt(id)
+		if err != nil {
+			fmt.Printf("Error fetching prompt: %v\n", err)
+			return
+		}
+
+		// Write the current prompt to a temporary YAML file
+		tempFile, err := os.CreateTemp("/tmp", "*.yaml")
+		if err != nil {
+			fmt.Printf("Error creating temporary file: %v\n", err)
+			return
+		}
+		defer os.Remove(tempFile.Name()) // Clean up the file afterwards
+
+		promptYaml, err := yaml.Marshal(existingPrompt)
+		if err != nil {
+			fmt.Printf("Error marshalling prompt to YAML: %v\n", err)
+			return
+		}
+
+		// Write the YAML to the temp file
+		_, err = tempFile.Write(promptYaml)
+		if err != nil {
+			fmt.Printf("Error writing to temp file: %v\n", err)
+			return
+		}
+
+		// Close the file to ensure all data is flushed
+		tempFile.Close()
+
+		editor := os.Getenv("EDITOR")
+		if editor == "" {
+			editor = "vim"
+		}
+
+		cmd_ := exec.Command(editor, tempFile.Name())
+		cmd_.Stdin = os.Stdin
+		cmd_.Stdout = os.Stdout
+		cmd_.Stderr = os.Stderr
+
+		// Open the temp file in Vim
+		if err := cmd_.Run(); err != nil {
+			fmt.Printf("Error opening Vim: %v\n", err)
+			return
+		}
+
+		// Read the updated content
+		updatedData, err := os.ReadFile(tempFile.Name())
+		if err != nil {
+			fmt.Printf("Error reading updated file: %v\n", err)
+			return
+		}
+
+		// Unmarshal the updated YAML back to the prompt struct
+		var updatedPrompt prompts.Prompt
+		if err := yaml.Unmarshal(updatedData, &updatedPrompt); err != nil {
+			fmt.Printf("Error unmarshalling updated YAML: %v\n", err)
+			return
+		}
+
+		// Validate the updated prompt
+		if err := updatedPrompt.Validate(); err != nil {
+			fmt.Printf("Validation error: %v\n", err)
+			return
+		}
+
+		// Save the updated prompt
+		if err := updatedPrompt.Save(); err != nil {
+			fmt.Printf("Error saving updated prompt: %v\n", err)
+			return
+		}
+
+		fmt.Println("Prompt edited successfully.")
+
+		promptYaml, err = yaml.Marshal(updatedPrompt)
+		if err != nil {
+			fmt.Printf("Error marshalling prompt to YAML: %v\n", err)
+			return
+		}
+
+		fmt.Println("---\n" + string(promptYaml))
 	},
 }

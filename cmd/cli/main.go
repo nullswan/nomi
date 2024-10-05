@@ -113,6 +113,7 @@ func main() {
 	rootCmd.AddCommand(promptCmd)
 	promptCmd.AddCommand(promptListCmd)
 	promptCmd.AddCommand(promptAddCmd)
+	promptCmd.AddCommand(promptEditCmd)
 	// #endregion
 
 	// Attach flags to rootCmd only, so they are not inherited by subcommands
