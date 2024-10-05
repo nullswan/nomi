@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/nullswan/golem/internal/config"
 	"gopkg.in/yaml.v2"
@@ -13,7 +14,11 @@ import (
 var ErrPromptNotFound = errors.New("prompt not found")
 
 func LoadPrompt(filename string) (*Prompt, error) {
-	fp := filepath.Join(config.GetPromptDirectory(), filename+".yml")
+	if !strings.HasSuffix(filename, ".yml") {
+		filename += ".yml"
+	}
+
+	fp := filepath.Join(config.GetPromptDirectory(), filename)
 	if _, err := os.Stat(fp); os.IsNotExist(err) {
 		return nil, ErrPromptNotFound
 	}
