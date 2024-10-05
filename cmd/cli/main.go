@@ -47,10 +47,9 @@ var rootCmd = &cobra.Command{
 
 		fmt.Printf("Using prompt: %s\n", selectedPrompt.Name)
 
+		commandCh := make(chan string)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-
-		commandCh := make(chan string)
 
 		// Initialize model with channels
 		model := ui.NewModel(commandCh)
@@ -61,83 +60,16 @@ var rootCmd = &cobra.Command{
 			tea.WithMouseCellMotion(), // Enable mouse events
 		)
 
-		var textToTextBackend provider.TextToTextProvider
+		textToTextBackend := initializeTextToTextProvider()
+		conversation := chat.NewStackedConversation()
 
-		if os.Getenv("OPENAI_API_KEY") == "" {
-			ollamaConfig := olamalocalprovider.NewOlamaProviderConfig(
-				"http://localhost:11434",
-				"",
-			)
-			textToTextBackend = olamalocalprovider.NewTextToTextProvider(
-				ollamaConfig,
-			)
-		} else {
-			oaiConfig := openaiprovider.NewOAIProviderConfig(
-				os.Getenv("OPENAI_API_KEY"),
-				"",
-			)
-			textToTextBackend = openaiprovider.NewTextToTextProvider(
-				oaiConfig,
-			)
-		}
-
-		var conversation chat.Conversation
-		conversation = chat.NewStackedConversation()
-
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case text := <-commandCh:
-					program.Send(
-						ui.NewPagerMsg(text, ui.Human),
-					)
-					conversation.AddMessage(
-						chat.NewMessage(chat.RoleUser, text),
-					)
-
-					go func() {
-						outCh := make(chan completion.Completion)
-						go func() {
-							defer close(outCh)
-							err := textToTextBackend.GenerateCompletion(
-								ctx,
-								conversation.GetMessages(),
-								outCh,
-							)
-							if err != nil {
-								fmt.Printf(
-									"Error generating completion: %v\n",
-									err,
-								)
-								os.Exit(1)
-							}
-						}()
-
-						for {
-							select {
-							case cmpl, ok := <-outCh:
-								if !ok || reflect.TypeOf(
-									cmpl,
-								) == reflect.TypeOf(
-									completion.CompletionTombStone{},
-								) {
-									ui.NewPagerMsg("", ui.AI)
-									break
-								}
-
-								program.Send(
-									ui.NewPagerMsg(cmpl.Content(), ui.AI),
-								)
-							case <-ctx.Done():
-								return
-							}
-						}
-					}()
-				}
-			}
-		}()
+		go handleCommands(
+			ctx,
+			commandCh,
+			conversation,
+			textToTextBackend,
+			program,
+		)
 
 		_, err := program.Run()
 		if err != nil {
@@ -208,5 +140,107 @@ func main() {
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
+	}
+}
+
+func initializeTextToTextProvider() provider.TextToTextProvider {
+	// Check for OpenAI API key
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		oaiConfig := openaiprovider.NewOAIProviderConfig(
+			os.Getenv("OPENAI_API_KEY"),
+			"",
+		)
+		return openaiprovider.NewTextToTextProvider(
+			oaiConfig,
+		)
+	}
+
+	// Default to OLama local provider
+	ollamaConfig := olamalocalprovider.NewOlamaProviderConfig(
+		"http://localhost:11434",
+		"",
+	)
+	return olamalocalprovider.NewTextToTextProvider(
+		ollamaConfig,
+	)
+}
+
+func handleCommands(
+	ctx context.Context,
+	commandCh chan string,
+	conversation chat.Conversation,
+	textToTextBackend provider.TextToTextProvider,
+	program *tea.Program,
+) {
+	currentCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case text := <-commandCh:
+			cancel()
+
+			currentCtx, cancel = context.WithCancel(ctx)
+			defer cancel()
+
+			program.Send(ui.NewPagerMsg(text, ui.Human))
+			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
+
+			go generateCompletion(
+				currentCtx,
+				conversation,
+				textToTextBackend,
+				program,
+			)
+		}
+	}
+}
+
+func generateCompletion(
+	ctx context.Context,
+	conversation chat.Conversation,
+	textToTextBackend provider.TextToTextProvider,
+	program *tea.Program,
+) {
+	outCh := make(chan completion.Completion)
+
+	go func() {
+		defer close(outCh)
+		err := textToTextBackend.GenerateCompletion(
+			ctx,
+			conversation.GetMessages(),
+			outCh,
+		)
+		if err != nil {
+			fmt.Printf("Error generating completion: %v\n", err)
+		}
+	}()
+
+	for {
+		select {
+		case cmpl, ok := <-outCh:
+			if reflect.TypeOf(
+				cmpl,
+			) == reflect.TypeOf(
+				completion.CompletionTombStone{},
+			) {
+				program.Send(ui.NewPagerMsg("", ui.AI).WithStop())
+				conversation.AddMessage(
+					chat.NewMessage(chat.RoleAssistant, cmpl.Content()),
+				)
+
+				return
+			}
+
+			if !ok {
+				return
+			}
+
+			program.Send(ui.NewPagerMsg(cmpl.Content(), ui.AI))
+		case <-ctx.Done():
+			return
+		}
 	}
 }
