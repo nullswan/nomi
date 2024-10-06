@@ -23,29 +23,56 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textArea.Blur()
 			}
 
-		case tea.KeyEnter:
-			// TODO(nullswan): Handle KeyEnter+Shift, KeyEnter+Ctrl, etc.
-			if m.textArea.Focused() {
-				m.textArea.Blur()
-			}
-
-			// If the text area is empty, do nothing
-			if m.textArea.Value() == "" {
-				return m, nil
-			}
-
-			// Send the command
-			m.commandCh <- m.textArea.Value()
-			m.textArea.Reset()
-
-			cmds = append(cmds, m.pagerStopwatch.Reset())
-			cmds = append(cmds, m.pagerStopwatch.Start())
 		case tea.KeyCtrlC:
 			return m, tea.Quit
 		default:
+			if m.textArea.Focused() {
+				if m.lastKey == "enter" && msg.String() == "enter" {
+					if m.textArea.Focused() {
+						m.textArea.Blur()
+					}
+
+					// If the text area is empty, do nothing
+					if strings.TrimSpace(m.textArea.Value()) == "" {
+						return m, nil
+					}
+
+					// Send the command
+					m.commandCh <- m.textArea.Value()
+					m.textArea.Reset()
+
+					cmds = append(cmds, m.pagerStopwatch.Reset())
+					cmds = append(cmds, m.pagerStopwatch.Start())
+
+					return m, tea.Batch(cmds...)
+				}
+
+				m.lastKey = msg.String()
+			}
 			if !m.textArea.Focused() {
-				cmd = m.textArea.Focus()
-				cmds = append(cmds, cmd)
+				switch msg.String() {
+				case "y":
+					// Copy the last AI response to the clipboard
+					if m.lastAiResponse != "" {
+						err := setClipboard(m.lastAiResponse + "\n")
+						if err != nil {
+							return m, nil
+						}
+					}
+
+					return m, nil
+				case "p":
+					// Paste the clipboard content to the text area
+					text, err := getClipboard()
+					if err != nil {
+						return m, nil
+					}
+					m.textArea.InsertString(text)
+					return m, nil
+				default:
+					cmd = m.textArea.Focus()
+					cmds = append(cmds, cmd)
+				}
 			}
 		}
 
@@ -109,7 +136,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// If the AI is starting to talk, render the AI style
 				if m.pagerAIRenderedBuffer == "" {
 					m.pagerContent += m.aiStyle.Render(aiPrefix) + "\n"
+					m.lastAiResponse = msg.String()
 				} else {
+					m.lastAiResponse += msg.String()
+
 					// if human prefix is contained in the content that is going to be removed
 					// it means that the context has been canceled
 					bufferToRemove := m.pagerContent[len(m.pagerContent)-len(m.pagerAIRenderedBuffer):]
