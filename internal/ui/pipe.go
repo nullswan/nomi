@@ -17,7 +17,6 @@ func handlePipedInput(
 	}
 
 	if stat.Mode()&os.ModeNamedPipe == 0 && stat.Size() == 0 {
-		fmt.Println("No input detected from stdin.")
 		return nil
 	}
 
