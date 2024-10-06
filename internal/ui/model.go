@@ -66,5 +66,6 @@ func NewModel(inputChan chan string) model {
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
 		textarea.Blink,
+		tea.SetWindowTitle("Golem 🗿"),
 	)
 }

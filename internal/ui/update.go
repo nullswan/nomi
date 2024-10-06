@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/glamour/styles"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -60,10 +61,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.textArea.SetWidth(msg.Width)
 
+			// Override the default glamour style with a dark one
+			// TODO(nullswan): Handle light theme
+			var styleOpt glamour.TermRendererOption
+			darkStyle := styles.DarkStyleConfig
+			darkStyle.Document.Margin = uintPtr(0)
+			styleOpt = glamour.WithStyles(darkStyle)
+
+			// Initialize the glamour renderer
 			var err error
 			m.pagerRenderer, err = glamour.NewTermRenderer(
-				glamour.WithStandardStyle("dark"),
-				glamour.WithWordWrap(int(msg.Width)),
+				styleOpt,
+				glamour.WithWordWrap(0),
+				glamour.WithEmoji(),
 			)
 			if err != nil {
 				fmt.Printf("Error initializing renderer: %v\n", err)
@@ -145,3 +155,5 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Return the updated model and any commands to run
 	return m, tea.Batch(cmds...)
 }
+
+func uintPtr(u uint) *uint { return &u }
