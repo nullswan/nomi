@@ -7,7 +7,7 @@ import (
 // NewTextArea initializes a new text area component.
 func NewTextArea() textarea.Model {
 	ta := textarea.New()
-	ta.Placeholder = "Type here...\n\tEnter Twice: Submit\n\tCtrl+C: Quit\n\tY: Copy last response\n\tP: Paste"
+	ta.Placeholder = "Type here...\n\tEnter Twice: Submit\n\tCtrl+C: Quit\n\tCtrl+S: Cancel\n\tY: Copy last response\n\tP: Paste"
 	ta.ShowLineNumbers = false
 	ta.CharLimit = 0
 	ta.MaxHeight = 0

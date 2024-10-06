@@ -22,7 +22,7 @@ func (m model) View() string {
 		elapsedTime := formatDuration(m.pagerStopwatch.Elapsed())
 		renderedTime := m.aiStyle.Render(elapsedTime)
 		textAreaHeader = fmt.Sprintf(
-			"\n\nInput (type or use voice): -- Generating for [%s], submit to cancel\n",
+			"\n\nInput (type or use voice): -- Generating for [%s]\n",
 			renderedTime,
 		)
 	} else {

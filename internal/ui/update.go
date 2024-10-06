@@ -25,6 +25,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyCtrlC:
 			return m, tea.Quit
+		case tea.KeyCtrlS:
+			// Cancel the current conversation
+			m.commandCh <- ""
+			return m, tea.Batch(cmds...)
 		default:
 			if m.textArea.Focused() {
 				if m.lastKey == "enter" && msg.String() == "enter" {
