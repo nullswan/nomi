@@ -47,8 +47,13 @@ var rootCmd = &cobra.Command{
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
+		provider := "ollama"
+		if os.Getenv("OPENAI_API_KEY") != "" {
+			provider = "openai"
+		}
+
 		// Initialize model with channels
-		model := ui.NewModel(commandCh)
+		model := ui.NewModel(commandCh, provider)
 
 		program := tea.NewProgram(
 			model,
@@ -158,6 +163,7 @@ func initializeTextToTextProvider() provider.TextToTextProvider {
 		)
 	}
 
+	// TODO(nullswan): Check if OLama local provider is running
 	// Default to OLama local provider
 	ollamaConfig := olamalocalprovider.NewOlamaProviderConfig(
 		"http://localhost:11434",
