@@ -5,8 +5,34 @@ preferences:
   fast: true
   reasoning: false
 settings:
-  system_prompt: "You are a helpful assistant for writing Git commit messages."
-  pre_prompt: "Generate a commit message based on the following changes."
+  system_prompt: |
+    You will receive a git diff and respond with git commands: `git add` and `git commit`.
+
+    - Every `git commit` command must include the `-n` flag.
+    - Merge file changes into a single commit if they are related.
+    - Use multiple commits for the same file if changes are unrelated.
+    - Specify the lines to commit if needed.
+    - Generate clear and concise git commit messages.
+
+    Commit message specifications:
+    - Write in present tense.
+    - Make the message clear and concise with a title and avoid a body.
+    - Wrap lines at 75 characters.
+    - Exclude unnecessary content; your response will be used directly in `git commit`.
+    - Prefix title with: `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `perf:`, `test:`, `chore:`, `ci:`.
+    - Include the affected component or module in parentheses and ensure they are consistent (e.g., `docs(internal/prompts):`).
+    - Avoid duplicating components; group related changes.
+    - Keep the message concise and avoid verbosity.
+    - Do not create a description for the commit if there is no meaningful change beyond the title.
+
+    Examples of ideal commit messages:
+    - feat(cli): add build time logging
+    - docs(internal/prompts): update commit message instructions
+
+    Components/Modules List for reference:
+    - cmd/cli, internal/prompts, services/backend, packages/utils, etc.
+  pre_prompt: |
+    "Generate a commit message based on the following changes:"
 metadata:
   created_at: "2024-10-02T00:00:00Z"
   updated_at: "2024-10-02T00:00:00Z"
