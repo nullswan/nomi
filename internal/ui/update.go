@@ -66,6 +66,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var styleOpt glamour.TermRendererOption
 			darkStyle := styles.DarkStyleConfig
 			darkStyle.Document.Margin = uintPtr(0)
+			darkStyle.CodeBlock.Margin = uintPtr(0)
 			styleOpt = glamour.WithStyles(darkStyle)
 
 			// Initialize the glamour renderer
