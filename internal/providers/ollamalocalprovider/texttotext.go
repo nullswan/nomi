@@ -48,7 +48,7 @@ func NewTextToTextProvider(
 	}
 }
 
-func (p *TextToTextProvider) GenerateCompletion(
+func (p TextToTextProvider) GenerateCompletion(
 	ctx context.Context,
 	messages []chat.Message,
 	completionCh chan<- completion.Completion,
@@ -69,6 +69,7 @@ func (p *TextToTextProvider) GenerateCompletion(
 		completionCh <- completion.NewCompletionData(
 			resp.Message.Content,
 		)
+		aggCompletion += resp.Message.Content
 
 		return nil
 	}
