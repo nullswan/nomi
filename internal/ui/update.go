@@ -35,7 +35,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			// Send the command
-			m.commandChannel <- m.textArea.Value()
+			m.commandCh <- m.textArea.Value()
 			m.textArea.Reset()
 
 			cmds = append(cmds, m.pagerStopwatch.Reset())

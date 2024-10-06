@@ -35,8 +35,8 @@ type model struct {
 	pagerAIBuffer         string
 	pagerAIRenderedBuffer string
 
-	// commandChannel is the channel where the user input is sent.
-	commandChannel chan string
+	// commandCh is the channel where the user input is sent.
+	commandCh chan string
 
 	humanStyle lipgloss.Style
 	humanText  lipgloss.Style
@@ -52,7 +52,7 @@ func NewModel(inputChan chan string) model {
 		pagerRenderer:  nil,              // We initialize this in the Init function
 		ready:          false,
 		pagerStopwatch: stopwatch.NewWithInterval(stopwatchIntval),
-		commandChannel: inputChan,
+		commandCh:      inputChan,
 		humanStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF00FF")),
 		humanText: lipgloss.NewStyle().
@@ -67,5 +67,9 @@ func (m model) Init() tea.Cmd {
 	return tea.Batch(
 		textarea.Blink,
 		tea.SetWindowTitle("Golem 🗿"),
+		func() tea.Msg {
+			handlePipedInput(m.commandCh)
+			return nil
+		},
 	)
 }
