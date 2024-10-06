@@ -194,6 +194,11 @@ func handleCommands(
 			currentCtx, cancel = context.WithCancel(ctx)
 			defer cancel()
 
+			if text == "" {
+				program.Send(ui.NewPagerMsg("", ui.AI).WithStop())
+				continue
+			}
+
 			program.Send(ui.NewPagerMsg(text, ui.Human))
 			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
 
@@ -223,7 +228,8 @@ func generateCompletion(
 			outCh,
 		)
 		if err != nil {
-			fmt.Printf("Error generating completion: %v\n", err)
+			// TODO(nullswan): Use logger
+			// fmt.Printf("Error generating completion: %v\n", err)
 		}
 	}()
 
