@@ -19,7 +19,7 @@ builds:
     goarm:
       - "7"
     binary: golem-cli
-    main: ./cmd/cli/main.go
+    main: ./cmd/cli
 
 checksum:
   algorithm: sha256

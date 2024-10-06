@@ -1,7 +1,7 @@
 .PHONY: build
 build:
 	@echo "Building..."
-	@goreleaser build --snapshot
+	@goreleaser build --snapshot --clean
 
 .PHONY: build-dev
 build-dev:
