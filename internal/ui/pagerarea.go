@@ -22,7 +22,7 @@ var (
 )
 
 func (m model) headerView() string {
-	title := titleStyle.Render("Golem 🗿")
+	title := titleStyle.Render(fmt.Sprintf("Golem (%s) 🗿", m.providerName))
 	line := strings.Repeat("─", max(0, m.pager.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }

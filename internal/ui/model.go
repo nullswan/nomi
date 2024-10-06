@@ -35,6 +35,10 @@ type model struct {
 	pagerAIBuffer         string
 	pagerAIRenderedBuffer string
 
+	providerName   string
+	lastAiResponse string
+	lastKey        string
+
 	// commandCh is the channel where the user input is sent.
 	commandCh chan string
 
@@ -44,15 +48,20 @@ type model struct {
 }
 
 // NewModel initializes a new model with the provided channels.
-func NewModel(inputChan chan string) model {
+func NewModel(inputChan chan string, providerName string) model {
 	return model{
-		textArea:       NewTextArea(),
-		pagerContent:   "",
-		pager:          viewport.Model{}, // This is a dummy pager, it will be initialized in the Update function
-		pagerRenderer:  nil,              // We initialize this in the Init function
-		ready:          false,
-		pagerStopwatch: stopwatch.NewWithInterval(stopwatchIntval),
-		commandCh:      inputChan,
+		textArea:              NewTextArea(),
+		pagerContent:          "",
+		pager:                 viewport.Model{}, // This is a dummy pager, it will be initialized in the Update function
+		pagerRenderer:         nil,              // We initialize this in the Init function
+		ready:                 false,
+		pagerStopwatch:        stopwatch.NewWithInterval(stopwatchIntval),
+		pagerAIBuffer:         "",
+		pagerAIRenderedBuffer: "",
+		providerName:          providerName,
+		lastAiResponse:        "",
+		lastKey:               "",
+		commandCh:             inputChan,
 		humanStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF00FF")),
 		humanText: lipgloss.NewStyle().
