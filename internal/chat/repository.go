@@ -85,7 +85,7 @@ func (r *sqliteRepository) SaveConversation(
 	}
 
 	// Insert messages
-	insertMessage := `INSERT OR IGNORE INTO messages (id, conversation_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)`
+	insertMessage := `INSERT OR IGNORE INTO messages (id, conversation_id, role, content, created_at, is_file) VALUES (?, ?, ?, ?, ?)`
 	for _, msg := range conversation.GetMessages() {
 		_, err = tx.Exec(
 			insertMessage,
@@ -94,6 +94,7 @@ func (r *sqliteRepository) SaveConversation(
 			msg.Role,
 			msg.Content,
 			msg.CreatedAt,
+			msg.IsFile,
 		)
 		if err != nil {
 			return err
@@ -116,7 +117,7 @@ func (r *sqliteRepository) LoadConversation(
 		return nil, err
 	}
 
-	queryMessages := `SELECT id, role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY id ASC`
+	queryMessages := `SELECT id, role, content, created_at, is_file FROM messages WHERE conversation_id = ? ORDER BY id ASC`
 	rows, err := r.db.Query(queryMessages, id)
 	if err != nil {
 		return nil, err
@@ -126,7 +127,13 @@ func (r *sqliteRepository) LoadConversation(
 	var messages []Message
 	for rows.Next() {
 		var msg Message
-		err := rows.Scan(&msg.Id, &msg.Role, &msg.Content, &msg.CreatedAt)
+		err := rows.Scan(
+			&msg.Id,
+			&msg.Role,
+			&msg.Content,
+			&msg.CreatedAt,
+			&msg.IsFile,
+		)
 		if err != nil {
 			return nil, err
 		}

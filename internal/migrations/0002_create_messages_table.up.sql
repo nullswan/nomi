@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS messages (
   role VARCHAR(50),
   content TEXT,
   created_at TIMESTAMP,
+  is_file BOOLEAN,
   FOREIGN KEY(conversation_id) REFERENCES conversations(id)
 );

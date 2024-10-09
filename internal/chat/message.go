@@ -11,7 +11,7 @@ type Message struct {
 	Role      Role      `json:"role"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
-	// TODO(nullswan): Add files
+	IsFile    bool      `json:"is_file"`
 }
 
 func NewMessage(role Role, content string) Message {
@@ -20,5 +20,15 @@ func NewMessage(role Role, content string) Message {
 		Role:      role,
 		Content:   content,
 		CreatedAt: time.Now().UTC(),
+	}
+}
+
+func NewFileMessage(role Role, content string) Message {
+	return Message{
+		Id:        uuid.New(),
+		Role:      role,
+		Content:   content,
+		CreatedAt: time.Now().UTC(),
+		IsFile:    true,
 	}
 }

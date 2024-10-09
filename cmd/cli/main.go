@@ -4,7 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"path/filepath"
 	"reflect"
+	"strings"
+	"syscall"
 
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/completion"
@@ -91,9 +95,6 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("-----\n\n")
 		}
 
-		fmt.Printf("EXIT")
-		os.Exit(1)
-
 		pipedInput, err := term.GetPipedInput()
 		if err != nil {
 			fmt.Printf("Error reading piped input: %v\n", err)
@@ -114,8 +115,22 @@ var rootCmd = &cobra.Command{
 				return
 			}
 
-			fmt.Printf("You:\n%s", text)
+			if isLocalResource(text) {
+				processLocalResource(conversation, text)
+				return
+			}
+
+			fmt.Printf("You:\n%s\n", text)
 			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
+
+			sigCh := make(chan os.Signal, 1)
+			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+			go func() {
+				<-sigCh
+				cancelRequest()
+			}()
+			defer signal.Stop(sigCh)
+			defer close(sigCh)
 
 			completion, err := generateCompletion(
 				requestContext,
@@ -124,6 +139,10 @@ var rootCmd = &cobra.Command{
 				interactiveMode,
 			)
 			if err != nil {
+				if strings.Contains(err.Error(), "context canceled") {
+					fmt.Println("Request canceled.")
+					return
+				}
 				fmt.Printf("Error generating completion: %v\n", err)
 				return
 			}
@@ -223,6 +242,9 @@ func generateCompletion(
 	go func() {
 		defer close(outCh)
 		if err := textToTextBackend.GenerateCompletion(ctx, conversation.GetMessages(), outCh); err != nil {
+			if strings.Contains(err.Error(), "context canceled") {
+				return
+			}
 			fmt.Printf("Error generating completion: %v\n", err)
 		}
 	}()
@@ -261,4 +283,96 @@ func isTombStone(cmpl completion.Completion) bool {
 	) == reflect.TypeOf(
 		completion.CompletionTombStone{},
 	)
+}
+
+func isLocalResource(text string) bool {
+	var path string
+	if strings.HasPrefix(text, "~") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return false
+		}
+		path = filepath.Join(home, text[1:])
+	} else {
+		path = text
+	}
+
+	if strings.HasPrefix(path, "./") || strings.HasPrefix(path, "/") {
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+func processLocalResource(conversation chat.Conversation, text string) {
+	if isDirectory(text) {
+		addAllFiles(conversation, text)
+	} else {
+		addSingleFile(conversation, text)
+	}
+}
+
+func isDirectory(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
+}
+
+func addAllFiles(conversation chat.Conversation, directory string) {
+	files, err := os.ReadDir(directory)
+	if err != nil {
+		fmt.Println("Error reading directory:", err)
+		return
+	}
+	for _, file := range files {
+		if !file.IsDir() {
+			addFileToConversation(
+				conversation,
+				filepath.Join(directory, file.Name()),
+				file.Name(),
+			)
+		}
+	}
+}
+
+func addSingleFile(conversation chat.Conversation, filePath string) {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+	fileName := filepath.Base(filePath)
+	conversation.AddMessage(
+		chat.NewFileMessage(
+			chat.RoleUser,
+			formatFileMessage(fileName, string(content)),
+		),
+	)
+}
+
+func addFileToConversation(
+	conversation chat.Conversation,
+	filePath, fileName string,
+) {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+	conversation.AddMessage(
+		chat.NewFileMessage(
+			chat.RoleUser,
+			formatFileMessage(fileName, string(content)),
+		),
+	)
+
+	fmt.Printf("Added file: %s\n", filePath)
+}
+
+func formatFileMessage(fileName, content string) string {
+	return fileName + "-----\n" + string(content) + "-----\n"
 }
