@@ -4,11 +4,27 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 )
 
 func NewInputArea() string {
+	var ttyPath string
+	if runtime.GOOS == "windows" {
+		ttyPath = "CON"
+	} else {
+		ttyPath = "/dev/tty"
+	}
+
+	tty, err := os.Open(ttyPath)
+	if err != nil {
+		fmt.Println("Error opening terminal:", err)
+		return ""
+	}
+	defer tty.Close()
+
+	scanner := bufio.NewScanner(tty)
 	var lines []string
-	scanner := bufio.NewScanner(os.Stdin)
 	emptyLines := 0
 
 	for {
@@ -36,24 +52,10 @@ func NewInputArea() string {
 		fmt.Fprint(os.Stdout, "\033[1A\033[2K") // Move up and clear line
 	}
 
-	// Remove the last empty line
-	if len(lines) > 0 && lines[len(lines)-1] == "" {
+	// Remove the last empty lines
+	for len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
 	}
 
-	// Return the input as a single string
-	result := ""
-	for _, line := range lines {
-		result += line + "\n"
-	}
-
-	// Remove the last two newline character
-	if len(result) >= 1 {
-		result = result[:len(result)-1]
-	}
-	if len(result) >= 1 {
-		result = result[:len(result)-1]
-	}
-
-	return result
+	return strings.Join(lines, "\n")
 }

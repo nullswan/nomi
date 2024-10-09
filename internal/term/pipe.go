@@ -26,6 +26,7 @@ func GetPipedInput() (string, error) {
 		if err != nil && err == io.EOF {
 			break
 		}
+
 		_, err = b.WriteRune(r)
 		if err != nil {
 			return "", fmt.Errorf("error writing rune to buffer: %v", err)

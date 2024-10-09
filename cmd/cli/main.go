@@ -120,7 +120,7 @@ var rootCmd = &cobra.Command{
 				return
 			}
 
-			fmt.Printf("You:\n%s\n", text)
+			fmt.Printf("You:\n%s\n\n", text)
 			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
 
 			sigCh := make(chan os.Signal, 1)
@@ -154,7 +154,7 @@ var rootCmd = &cobra.Command{
 
 		if pipedInput != "" {
 			processInput(pipedInput)
-			return
+			// return
 		}
 
 		for {
@@ -257,10 +257,12 @@ func generateCompletion(
 		case cmpl, ok := <-outCh:
 			if isTombStone(cmpl) {
 				fmt.Println()
+				fmt.Println()
 				return fullContent, nil
 			}
 
 			if !ok {
+				fmt.Println()
 				fmt.Println()
 				return fullContent, fmt.Errorf("error reading completion")
 			}
@@ -329,12 +331,11 @@ func addAllFiles(conversation chat.Conversation, directory string) {
 		return
 	}
 	for _, file := range files {
-		if !file.IsDir() {
-			addFileToConversation(
-				conversation,
-				filepath.Join(directory, file.Name()),
-				file.Name(),
-			)
+		path := filepath.Join(directory, file.Name())
+		if file.IsDir() {
+			addAllFiles(conversation, path)
+		} else {
+			addFileToConversation(conversation, path, file.Name())
 		}
 	}
 }
