@@ -42,6 +42,8 @@ var rootCmd = &cobra.Command{
 				fmt.Printf("Error loading prompt: %v\n", err)
 				os.Exit(1)
 			}
+		} else {
+			startPrompt = "default"
 		}
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -55,15 +57,21 @@ var rootCmd = &cobra.Command{
 		conversation.WithPrompt(*selectedPrompt)
 
 		// Welcome message
-		fmt.Printf("----\n")
-		fmt.Printf("Welcome to Golem! 🗿\n")
-		fmt.Println()
-		fmt.Println("Configuration")
-		fmt.Printf("  Start prompt: %s\n", startPrompt)
-		fmt.Printf("  Conversation: %s\n", conversation.GetId())
-		fmt.Printf("  Provider: %s\n", provider)
-		fmt.Printf("  Build version: %s %s\n", buildVersion, buildDate)
-		fmt.Printf("-----\n")
+		if !interactiveMode {
+			fmt.Printf("----\n")
+			fmt.Printf("Welcome to Golem! (v%s) 🗿\n", buildVersion)
+			fmt.Println()
+			fmt.Println("Configuration")
+			fmt.Printf("  Start prompt: %s\n", startPrompt)
+			fmt.Printf("  Conversation: %s\n", conversation.GetId())
+			fmt.Printf("  Provider: %s\n", provider)
+			fmt.Printf("  Build Date: %s\n", buildDate)
+			fmt.Printf("-----\n")
+			fmt.Printf("Press Enter twice to send a message.\n")
+			fmt.Printf("Press Ctrl+C to exit.\n")
+			fmt.Printf("Press Ctrl+K to cancel the current request.\n")
+			fmt.Printf("-----\n\n")
+		}
 
 		pipedInput, err := term.GetPipedInput()
 		if err != nil {
@@ -97,6 +105,7 @@ var rootCmd = &cobra.Command{
 
 		if pipedInput != "" {
 			processInput(pipedInput)
+			return
 		}
 
 		for {
@@ -104,7 +113,6 @@ var rootCmd = &cobra.Command{
 			case <-ctx.Done():
 				return
 			default:
-				fmt.Fprint(os.Stderr, "\n")
 				text := term.NewInputArea()
 				processInput(text)
 			}
