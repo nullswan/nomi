@@ -52,9 +52,24 @@ var rootCmd = &cobra.Command{
 		provider := providers.FindFirstProvider()
 		textToTextBackend := initializeTextToTextProvider()
 
-		// TODO(nullswan): Handle restarting conversation
-		conversation := chat.NewStackedConversation()
-		conversation.WithPrompt(*selectedPrompt)
+		repo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
+		if err != nil {
+			fmt.Printf("Error creating repository: %v\n", err)
+			os.Exit(1)
+		}
+		defer repo.Close()
+
+		var conversation chat.Conversation
+		if startConversationId != "" {
+			conversation, err = repo.LoadConversation(startConversationId)
+			if err != nil {
+				fmt.Printf("Error loading conversation: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			conversation = chat.NewStackedConversation(repo)
+			conversation.WithPrompt(*selectedPrompt)
+		}
 
 		// Welcome message
 		if !interactiveMode {

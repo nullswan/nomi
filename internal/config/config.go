@@ -82,7 +82,7 @@ func defaultConfig() Config {
 			},
 			Sqlite: OutputDetailConfig{
 				Enabled: true,
-				Path:    filepath.Join(convDir, "output.sqlite.db"),
+				Path:    filepath.Join(convDir, "sqlite.db"),
 			},
 		},
 	}

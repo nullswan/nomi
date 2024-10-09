@@ -8,20 +8,31 @@ import (
 )
 
 type stackedConversation struct {
-	messages []Message
-	id       string
+	repo Repository
+
+	id        string
+	messages  []Message
+	createdAt time.Time
 }
 
+// #region Getters
 func (c *stackedConversation) GetId() string {
 	return c.id
+}
+
+func (c *stackedConversation) GetCreatedAt() time.Time {
+	return c.createdAt
 }
 
 func (c *stackedConversation) GetMessages() []Message {
 	return c.messages
 }
 
+// #endregion
+
 func (c *stackedConversation) AddMessage(message Message) {
 	c.messages = append(c.messages, message)
+	c.repo.SaveConversation(c)
 }
 
 func (c *stackedConversation) WithPrompt(prompt prompts.Prompt) {
@@ -40,14 +51,18 @@ func (c *stackedConversation) WithPrompt(prompt prompts.Prompt) {
 	}
 }
 
-func NewStackedConversation() Conversation {
+func NewStackedConversation(
+	repo Repository,
+) Conversation {
 	id := fmt.Sprintf( // TODO(nullswan): Use configurable ID format
 		"sc_%d",
 		time.Now().Unix(),
 	)
 
 	return &stackedConversation{
-		id:       id,
-		messages: make([]Message, 0),
+		repo:      repo,
+		id:        id,
+		messages:  make([]Message, 0),
+		createdAt: time.Now(),
 	}
 }
