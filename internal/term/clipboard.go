@@ -1,4 +1,4 @@
-package ui
+package term
 
 import "github.com/atotto/clipboard"
 

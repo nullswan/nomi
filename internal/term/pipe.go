@@ -1,4 +1,4 @@
-package ui
+package term
 
 import (
 	"bufio"
@@ -8,16 +8,14 @@ import (
 	"strings"
 )
 
-func handlePipedInput(
-	commandCh chan string,
-) error {
+func GetPipedInput() (string, error) {
 	stat, err := os.Stdin.Stat()
 	if err != nil {
-		return fmt.Errorf("error checking stdin stat: %v", err)
+		return "", fmt.Errorf("error checking stdin stat: %v", err)
 	}
 
 	if stat.Mode()&os.ModeNamedPipe == 0 && stat.Size() == 0 {
-		return nil
+		return "", nil
 	}
 
 	reader := bufio.NewReader(os.Stdin)
@@ -30,10 +28,9 @@ func handlePipedInput(
 		}
 		_, err = b.WriteRune(r)
 		if err != nil {
-			return fmt.Errorf("error writing rune to buffer: %v", err)
+			return "", fmt.Errorf("error writing rune to buffer: %v", err)
 		}
 	}
 
-	commandCh <- strings.TrimSpace(b.String())
-	return nil
+	return strings.TrimSpace(b.String()), nil
 }
