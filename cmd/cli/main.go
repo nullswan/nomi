@@ -10,6 +10,9 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/glamour/styles"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/completion"
 	"github.com/nullswan/golem/internal/config"
@@ -106,6 +109,25 @@ var rootCmd = &cobra.Command{
 
 		var cancelRequest context.CancelFunc
 
+		var renderer *glamour.TermRenderer
+		if !interactiveMode {
+			var styleOpt glamour.TermRendererOption
+			darkStyle := styles.DarkStyleConfig
+			darkStyle.Document.Margin = uintPtr(0)
+			darkStyle.CodeBlock.Margin = uintPtr(0)
+			styleOpt = glamour.WithStyles(darkStyle)
+
+			renderer, err = glamour.NewTermRenderer(
+				styleOpt,
+				glamour.WithWordWrap(0),
+				glamour.WithEmoji(),
+			)
+			if err != nil {
+				fmt.Printf("Error creating renderer: %v\n", err)
+				return
+			}
+		}
+
 		processInput := func(text string) {
 			if cancelRequest != nil {
 				cancelRequest()
@@ -124,7 +146,21 @@ var rootCmd = &cobra.Command{
 				return
 			}
 
-			fmt.Printf("You:\n%s\n\n", text)
+			if interactiveMode {
+				fmt.Printf("You:\n%s\n\n", text)
+			} else {
+				style := lipgloss.NewStyle().
+					Foreground(lipgloss.Color("#FF00FF"))
+				fmt.Printf("%s\n", style.Render("You:"))
+				renderedContent, err := renderer.Render(text)
+				if err != nil {
+					fmt.Printf("Error rendering input: %v\n", err)
+					return
+				}
+
+				fmt.Printf("%s\n", renderedContent)
+			}
+
 			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
 
 			sigCh := make(chan os.Signal, 1)
@@ -140,7 +176,7 @@ var rootCmd = &cobra.Command{
 				requestContext,
 				conversation,
 				textToTextBackend,
-				interactiveMode,
+				renderer,
 			)
 			if err != nil {
 				if strings.Contains(err.Error(), "context canceled") {
@@ -240,7 +276,7 @@ func generateCompletion(
 	ctx context.Context,
 	conversation chat.Conversation,
 	textToTextBackend provider.TextToTextProvider,
-	useRender bool,
+	renderer *glamour.TermRenderer,
 ) (string, error) {
 	outCh := make(chan completion.Completion)
 
@@ -261,13 +297,28 @@ func generateCompletion(
 		select {
 		case cmpl, ok := <-outCh:
 			if isTombStone(cmpl) {
-				fmt.Println()
-				fmt.Println()
+				if renderer != nil {
+					renderedContent, err := renderer.Render(fullContent)
+					if err != nil {
+						fmt.Printf("Error rendering completion: %v\n", err)
+						return fullContent, err
+					}
+
+					lines := strings.Split(fullContent, "\n")
+					fmt.Print("\033[2K")
+					for i := 0; i < len(lines)+1; i++ { // Need to clear AI prefix too
+						fmt.Print("\033[1F\033[2K")
+					}
+
+					style := lipgloss.NewStyle().
+						Foreground(lipgloss.Color("#00C0FF"))
+					fmt.Printf("%s\n%s", style.Render("AI:"), renderedContent)
+				}
+
 				return fullContent, nil
 			}
 
 			if !ok {
-				fmt.Println()
 				fmt.Println()
 				return fullContent, fmt.Errorf("error reading completion")
 			}
@@ -382,3 +433,5 @@ func addFileToConversation(
 func formatFileMessage(fileName, content string) string {
 	return fileName + "-----\n" + string(content) + "-----\n"
 }
+
+func uintPtr(u uint) *uint { return &u }
