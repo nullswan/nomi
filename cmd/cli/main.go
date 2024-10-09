@@ -6,14 +6,14 @@ import (
 	"os"
 	"reflect"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/completion"
 	"github.com/nullswan/golem/internal/config"
+	"github.com/nullswan/golem/internal/providers"
 	provider "github.com/nullswan/golem/internal/providers/base"
 	olamalocalprovider "github.com/nullswan/golem/internal/providers/ollamalocalprovider"
 	"github.com/nullswan/golem/internal/providers/openaiprovider"
-	"github.com/nullswan/golem/internal/ui"
+	"github.com/nullswan/golem/internal/term"
 
 	prompts "github.com/nullswan/golem/internal/prompt"
 	"github.com/spf13/cobra"
@@ -44,41 +44,71 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		commandCh := make(chan string)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		provider := "ollama"
-		if os.Getenv("OPENAI_API_KEY") != "" {
-			provider = "openai"
-		}
-
-		// Initialize model with channels
-		model := ui.NewModel(commandCh, provider)
-
-		program := tea.NewProgram(
-			model,
-			tea.WithAltScreen(), // Use the terminal's alternate screen
-		)
-
+		provider := providers.FindFirstProvider()
 		textToTextBackend := initializeTextToTextProvider()
+
+		// TODO(nullswan): Handle restarting conversation
 		conversation := chat.NewStackedConversation()
 		conversation.WithPrompt(*selectedPrompt)
 
-		go handleCommands(
-			ctx,
-			commandCh,
-			conversation,
-			textToTextBackend,
-			program,
-		)
+		// Welcome message
+		fmt.Printf("----\n")
+		fmt.Printf("Welcome to Golem! 🗿\n")
+		fmt.Println()
+		fmt.Println("Configuration")
+		fmt.Printf("  Start prompt: %s\n", startPrompt)
+		fmt.Printf("  Conversation: %s\n", conversation.GetId())
+		fmt.Printf("  Provider: %s\n", provider)
+		fmt.Printf("  Build version: %s %s\n", buildVersion, buildDate)
+		fmt.Printf("-----\n")
 
-		_, err := program.Run()
+		pipedInput, err := term.GetPipedInput()
 		if err != nil {
-			os.Exit(1)
+			fmt.Printf("Error reading piped input: %v\n", err)
 		}
 
-		cancel()
+		var cancelRequest context.CancelFunc
+
+		processInput := func(text string) {
+			if cancelRequest != nil {
+				cancelRequest()
+			}
+
+			requestContext, newCancelRequest := context.WithCancel(ctx)
+			cancelRequest = newCancelRequest
+
+			if text == "" {
+				fmt.Println()
+				return
+			}
+
+			fmt.Printf("You:\n%s", text)
+			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
+
+			generateCompletion(
+				requestContext,
+				conversation,
+				textToTextBackend,
+			)
+		}
+
+		if pipedInput != "" {
+			processInput(pipedInput)
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				fmt.Fprint(os.Stderr, "\n")
+				text := term.NewInputArea()
+				processInput(text)
+			}
+		}
 	},
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
@@ -87,10 +117,10 @@ var rootCmd = &cobra.Command{
 
 func main() {
 	// #region Config commands
-	rootCmd.AddCommand(configCmd)
-	configCmd.AddCommand(configShowCmd)
-	configCmd.AddCommand(configSetCmd)
-	configCmd.AddCommand(configSetupCmd)
+	// rootCmd.AddCommand(configCmd)
+	// configCmd.AddCommand(configShowCmd)
+	// configCmd.AddCommand(configSetCmd)
+	// configCmd.AddCommand(configSetupCmd)
 	// #endregion
 
 	// #region Conversation commands
@@ -98,22 +128,11 @@ func main() {
 	conversationCmd.AddCommand(conversationListCmd)
 	// #endregion
 
-	// #region Output commands
-	// rootCmd.AddCommand(outputCmd)
-	// outputCmd.AddCommand(outputListCmd)
-	// outputCmd.AddCommand(outputAddCmd)
+	// #region Version commands
+	rootCmd.AddCommand(versionCmd)
 	// #endregion
 
-	// #region Plugin commands
-	// rootCmd.AddCommand(pluginCmd)
-	// pluginCmd.AddCommand(pluginListCmd)
-	// pluginCmd.AddCommand(pluginEnableCmd)
-	// pluginCmd.AddCommand(pluginDisableCmd)
-	// #endregion
-
-	// #region Update commands
-	// rootCmd.AddCommand(updateCmd)
-	// #endregion
+	// TODO(nullswan): Add update command
 
 	// #region Prompt commands
 	rootCmd.AddCommand(promptCmd)
@@ -155,6 +174,7 @@ func main() {
 	}
 }
 
+// TODO(nullswan): Check provider validity
 func initializeTextToTextProvider() provider.TextToTextProvider {
 	// Check for OpenAI API key
 	if os.Getenv("OPENAI_API_KEY") != "" {
@@ -178,49 +198,10 @@ func initializeTextToTextProvider() provider.TextToTextProvider {
 	)
 }
 
-func handleCommands(
-	ctx context.Context,
-	commandCh chan string,
-	conversation chat.Conversation,
-	textToTextBackend provider.TextToTextProvider,
-	program *tea.Program,
-) {
-	currentCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case text := <-commandCh:
-			cancel()
-
-			currentCtx, cancel = context.WithCancel(ctx)
-			defer cancel()
-
-			if text == "" {
-				program.Send(ui.NewPagerMsg("", ui.AI).WithStop())
-				continue
-			}
-
-			program.Send(ui.NewPagerMsg(text, ui.Human))
-			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
-
-			go generateCompletion(
-				currentCtx,
-				conversation,
-				textToTextBackend,
-				program,
-			)
-		}
-	}
-}
-
 func generateCompletion(
 	ctx context.Context,
 	conversation chat.Conversation,
 	textToTextBackend provider.TextToTextProvider,
-	program *tea.Program,
 ) {
 	outCh := make(chan completion.Completion)
 
@@ -237,6 +218,7 @@ func generateCompletion(
 		}
 	}()
 
+	fmt.Printf("AI: \n")
 	for {
 		select {
 		case cmpl, ok := <-outCh:
@@ -245,7 +227,8 @@ func generateCompletion(
 			) == reflect.TypeOf(
 				completion.CompletionTombStone{},
 			) {
-				program.Send(ui.NewPagerMsg("", ui.AI).WithStop())
+				fmt.Println()
+				// program.Send(ui.NewPagerMsg("", ui.AI).WithStop())
 				conversation.AddMessage(
 					chat.NewMessage(chat.RoleAssistant, cmpl.Content()),
 				)
@@ -257,7 +240,8 @@ func generateCompletion(
 				return
 			}
 
-			program.Send(ui.NewPagerMsg(cmpl.Content(), ui.AI))
+			fmt.Printf("%s", cmpl.Content())
+			// program.Send(ui.NewPagerMsg(cmpl.Content(), ui.AI))
 		case <-ctx.Done():
 			return
 		}
