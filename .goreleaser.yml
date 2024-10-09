@@ -20,6 +20,9 @@ builds:
       - "7"
     binary: golem-cli
     main: ./cmd/cli
+    ldflags:
+      - "-X main.buildDate={{ .Date }}"
+      - "-X main.buildVersion={{ .Tag }}"
 
 checksum:
   algorithm: sha256
