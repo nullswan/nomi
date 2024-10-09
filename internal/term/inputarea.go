@@ -47,5 +47,10 @@ func NewInputArea() string {
 		result += line + "\n"
 	}
 
+	// Remove the last newline character
+	if len(result) > 0 {
+		result = result[:len(result)-1]
+	}
+
 	return result
 }
