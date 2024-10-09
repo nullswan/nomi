@@ -96,10 +96,19 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("You:\n%s", text)
 			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
 
-			generateCompletion(
+			completion, err := generateCompletion(
 				requestContext,
 				conversation,
 				textToTextBackend,
+				interactiveMode,
+			)
+			if err != nil {
+				fmt.Printf("Error generating completion: %v\n", err)
+				return
+			}
+
+			conversation.AddMessage(
+				chat.NewMessage(chat.RoleAssistant, completion),
 			)
 		}
 
@@ -210,48 +219,49 @@ func generateCompletion(
 	ctx context.Context,
 	conversation chat.Conversation,
 	textToTextBackend provider.TextToTextProvider,
-) {
+	useRender bool,
+) (string, error) {
 	outCh := make(chan completion.Completion)
 
 	go func() {
 		defer close(outCh)
-		err := textToTextBackend.GenerateCompletion(
-			ctx,
-			conversation.GetMessages(),
-			outCh,
-		)
-		if err != nil {
-			// TODO(nullswan): Use logger
-			// fmt.Printf("Error generating completion: %v\n", err)
+		if err := textToTextBackend.GenerateCompletion(ctx, conversation.GetMessages(), outCh); err != nil {
+			fmt.Printf("Error generating completion: %v\n", err)
 		}
 	}()
 
-	fmt.Printf("AI: \n")
+	fmt.Println("AI:")
+	var fullContent string
+
 	for {
 		select {
 		case cmpl, ok := <-outCh:
-			if reflect.TypeOf(
-				cmpl,
-			) == reflect.TypeOf(
-				completion.CompletionTombStone{},
-			) {
+			if isTombStone(cmpl) {
 				fmt.Println()
-				// program.Send(ui.NewPagerMsg("", ui.AI).WithStop())
-				conversation.AddMessage(
-					chat.NewMessage(chat.RoleAssistant, cmpl.Content()),
-				)
-
-				return
+				return fullContent, nil
 			}
 
 			if !ok {
-				return
+				fmt.Println()
+				return fullContent, fmt.Errorf("error reading completion")
 			}
 
+			if cmpl.Content() == "" {
+				continue
+			}
+
+			fullContent += cmpl.Content()
 			fmt.Printf("%s", cmpl.Content())
-			// program.Send(ui.NewPagerMsg(cmpl.Content(), ui.AI))
 		case <-ctx.Done():
-			return
+			return fullContent, fmt.Errorf("context canceled")
 		}
 	}
+}
+
+func isTombStone(cmpl completion.Completion) bool {
+	return reflect.TypeOf(
+		cmpl,
+	) == reflect.TypeOf(
+		completion.CompletionTombStone{},
+	)
 }
