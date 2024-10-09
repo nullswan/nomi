@@ -11,8 +11,6 @@ import (
 	"github.com/nullswan/golem/internal/config"
 	"github.com/nullswan/golem/internal/providers"
 	provider "github.com/nullswan/golem/internal/providers/base"
-	olamalocalprovider "github.com/nullswan/golem/internal/providers/ollamalocalprovider"
-	"github.com/nullswan/golem/internal/providers/openaiprovider"
 	"github.com/nullswan/golem/internal/term"
 
 	prompts "github.com/nullswan/golem/internal/prompt"
@@ -49,8 +47,13 @@ var rootCmd = &cobra.Command{
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		provider := providers.FindFirstProvider()
-		textToTextBackend := initializeTextToTextProvider()
+		provider := providers.CheckProvider()
+		textToTextBackend, err := providers.LoadTextToTextProvider(provider, "")
+		if err != nil {
+			fmt.Printf("Error loading text-to-text provider: %v\n", err)
+			os.Exit(1)
+		}
+		defer textToTextBackend.Close()
 
 		repo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
 		if err != nil {
@@ -87,6 +90,9 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("Press Ctrl+K to cancel the current request.\n")
 			fmt.Printf("-----\n\n")
 		}
+
+		fmt.Printf("EXIT")
+		os.Exit(1)
 
 		pipedInput, err := term.GetPipedInput()
 		if err != nil {
@@ -204,30 +210,6 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-}
-
-// TODO(nullswan): Check provider validity
-func initializeTextToTextProvider() provider.TextToTextProvider {
-	// Check for OpenAI API key
-	if os.Getenv("OPENAI_API_KEY") != "" {
-		oaiConfig := openaiprovider.NewOAIProviderConfig(
-			os.Getenv("OPENAI_API_KEY"),
-			"",
-		)
-		return openaiprovider.NewTextToTextProvider(
-			oaiConfig,
-		)
-	}
-
-	// TODO(nullswan): Check if OLama local provider is running
-	// Default to OLama local provider
-	ollamaConfig := olamalocalprovider.NewOlamaProviderConfig(
-		"http://localhost:11434",
-		"",
-	)
-	return olamalocalprovider.NewTextToTextProvider(
-		ollamaConfig,
-	)
 }
 
 func generateCompletion(

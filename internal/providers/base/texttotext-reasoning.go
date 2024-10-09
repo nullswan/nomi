@@ -1,4 +1,4 @@
-package provider
+package baseprovider
 
 import (
 	"context"
@@ -13,4 +13,6 @@ type TextToTextReasoningProvider interface {
 		messages []chat.Message,
 		completionCh chan<- completion.Completion,
 	) error
+
+	Close() error
 }

@@ -14,7 +14,8 @@ func GetHomeDir() string {
 	return os.Getenv("HOME")
 }
 
-// GetProgramDirectory returns the application's data directory, e.g., ~/.ai
+// GetProgramDirectory returns the application's data directory
+// e.g., ~/.golem on Unix systems.
 func GetProgramDirectory() string {
 	homeDir := GetHomeDir()
 	dataDir := filepath.Join(homeDir, configDir)

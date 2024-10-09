@@ -78,7 +78,7 @@ func (r *sqliteRepository) SaveConversation(
 	_, err = tx.Exec(
 		insertConversation,
 		conversation.GetId(),
-		time.Now().Format(time.RFC3339),
+		time.Now().UTC().Format(time.RFC3339),
 	)
 	if err != nil {
 		return err
@@ -130,6 +130,7 @@ func (r *sqliteRepository) LoadConversation(
 		if err != nil {
 			return nil, err
 		}
+		msg.CreatedAt = msg.CreatedAt.UTC()
 		messages = append(messages, msg)
 	}
 
@@ -137,7 +138,7 @@ func (r *sqliteRepository) LoadConversation(
 		repo:      r,
 		id:        convoId,
 		messages:  messages,
-		createdAt: convoCreatedAt,
+		createdAt: convoCreatedAt.UTC(),
 	}, nil
 }
 

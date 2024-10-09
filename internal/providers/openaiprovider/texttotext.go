@@ -7,7 +7,7 @@ import (
 
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/completion"
-	provider "github.com/nullswan/golem/internal/providers/base"
+	baseprovider "github.com/nullswan/golem/internal/providers/base"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -23,7 +23,7 @@ type TextToTextProvider struct {
 
 func NewTextToTextProvider(
 	config oaiProviderConfig,
-) provider.TextToTextProvider {
+) (baseprovider.TextToTextProvider, error) {
 	if config.model == "" {
 		config.model = OpenAITextToTextDefaultModelFast
 	}
@@ -31,7 +31,11 @@ func NewTextToTextProvider(
 	return &TextToTextProvider{
 		config: config,
 		client: openai.NewClient(config.apiKey),
-	}
+	}, nil
+}
+
+func (p TextToTextProvider) Close() error {
+	return nil
 }
 
 func (p TextToTextProvider) GenerateCompletion(

@@ -23,6 +23,9 @@ builds:
     ldflags:
       - "-X main.buildDate={{ .Date }}"
       - "-X main.buildVersion={{ .Tag }}"
+    ignore:
+      - goos: windows
+        goarch: arm
 
 checksum:
   algorithm: sha256

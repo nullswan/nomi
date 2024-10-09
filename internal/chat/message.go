@@ -10,7 +10,7 @@ type Message struct {
 	Id        uuid.UUID `json:"id"`
 	Role      Role      `json:"role"`
 	Content   string    `json:"content"`
-	CreatedAt string    `json:"created_at"`
+	CreatedAt time.Time `json:"created_at"`
 	// TODO(nullswan): Add files
 }
 
@@ -19,6 +19,6 @@ func NewMessage(role Role, content string) Message {
 		Id:        uuid.New(),
 		Role:      role,
 		Content:   content,
-		CreatedAt: time.Now().Format(time.RFC3339),
+		CreatedAt: time.Now().UTC(),
 	}
 }
