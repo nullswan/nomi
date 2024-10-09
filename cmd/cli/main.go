@@ -20,9 +20,10 @@ import (
 )
 
 var (
-	cfg            *config.Config
-	prompt         string
-	conversationID string
+	cfg                 *config.Config
+	startPrompt         string
+	interactiveMode     bool
+	startConversationId string
 )
 
 const (
@@ -34,9 +35,9 @@ var rootCmd = &cobra.Command{
 	Short: "An enhanced AI runtime, focusing on ease of use and extensibility.",
 	Run: func(cmd *cobra.Command, args []string) {
 		selectedPrompt := &prompts.DefaultPrompt
-		if prompt != "" {
+		if startPrompt != "" {
 			var err error
-			selectedPrompt, err = prompts.LoadPrompt(prompt)
+			selectedPrompt, err = prompts.LoadPrompt(startPrompt)
 			if err != nil {
 				fmt.Printf("Error loading prompt: %v\n", err)
 				os.Exit(1)
@@ -122,9 +123,12 @@ func main() {
 	// #endregion
 
 	// Attach flags to rootCmd only, so they are not inherited by subcommands
-	rootCmd.Flags().StringVarP(&prompt, "prompt", "p", "", "Specify a prompt")
 	rootCmd.Flags().
-		StringVarP(&conversationID, "conversation", "c", "", "Specify a conversation ID")
+		StringVarP(&startPrompt, "prompt", "p", "", "Specify a prompt")
+	rootCmd.Flags().
+		StringVarP(&startConversationId, "conversation", "c", "", "Open a conversation by ID")
+	rootCmd.Flags().
+		BoolVarP(&interactiveMode, "interactive", "i", false, "Start in interactive mode")
 
 	// Initialize cfg in PersistentPreRun, making it available to all commands
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
