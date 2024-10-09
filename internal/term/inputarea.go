@@ -12,7 +12,7 @@ func NewInputArea() string {
 	emptyLines := 0
 
 	for {
-		fmt.Fprint(os.Stderr, ">>> ")
+		fmt.Fprint(os.Stdout, ">>> ")
 		if !scanner.Scan() {
 			break
 		}
@@ -33,7 +33,7 @@ func NewInputArea() string {
 
 	// Erase the printed lines
 	for i := 0; i < len(lines); i++ {
-		fmt.Fprint(os.Stderr, "\033[1A\033[2K") // Move up and clear line
+		fmt.Fprint(os.Stdout, "\033[1A\033[2K") // Move up and clear line
 	}
 
 	// Remove the last empty line
