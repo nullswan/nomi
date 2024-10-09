@@ -8,7 +8,7 @@ import (
 )
 
 // TODO: Multi-line input
-// TODO: Copy text from text view, only, not conversation
+// TODO: Copyable view
 
 const longText = `
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam consectetur ornare lobortis. Donec a lectus vitae enim sollicitudin fermentum. Quisque fringilla sapien vitae arcu volutpat, in lacinia augue iaculis. Aenean ac rutrum elit. In hac habitasse platea dictumst. Donec pellentesque justo porttitor tincidunt volutpat. Morbi faucibus, erat eu porta feugiat, tellus orci rutrum lectus, a maximus velit lectus interdum odio. Proin urna augue, egestas ut lectus sed, fringilla lacinia turpis. Integer porttitor quam vel felis ultricies euismod. Vivamus elementum mauris eu aliquam consequat. Nullam iaculis aliquet purus, nec mollis nisl accumsan non.
@@ -28,7 +28,7 @@ type UI struct {
 	currentConversation string
 
 	table    *tview.Table
-	textView *tview.TextView
+	textView *tview.TextArea
 	input    *tview.TextArea
 	flex     *tview.Flex
 }
@@ -73,7 +73,7 @@ func (c *UI) setupTable() {
 }
 
 func (c *UI) setupTextView() {
-	c.textView = tview.NewTextView()
+	c.textView = tview.NewTextArea()
 	c.textView.SetBackgroundColor(tcell.ColorDefault)
 	c.textView.SetBorder(false)
 	c.updateTextView()
@@ -107,7 +107,6 @@ func (c *UI) setupInputField() {
 					}
 					c.updateTextView()
 					c.input.SetText("", true)
-					// c.textArea.ScrollToEnd()
 				}
 				return nil
 			}
@@ -262,8 +261,7 @@ func (c *UI) updateTextView() {
 	}
 
 	content += longText + longText // Duplicate to make it longer
-	c.textView.SetText(content)
-	c.textView.ScrollToEnd()
+	c.textView.SetText(content, true)
 }
 
 func main() {
