@@ -28,10 +28,29 @@ func NewTextToTextProvider(
 		config.model = OpenAITextToTextDefaultModelFast
 	}
 
-	return &TextToTextProvider{
+	p := &TextToTextProvider{
 		config: config,
 		client: openai.NewClient(config.apiKey),
-	}, nil
+	}
+
+	// Avoid checking model if using default model
+	if config.model == OpenAITextToTextDefaultModelFast ||
+		config.model == OpenAITextToTextDefaultModel {
+		return p, nil
+	}
+
+	models, err := p.client.ListModels(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("error listing models")
+	}
+
+	for _, model := range models.Models {
+		if model.ID == config.model {
+			return p, nil
+		}
+	}
+
+	return nil, fmt.Errorf("model %s not found", config.model)
 }
 
 func (p TextToTextProvider) Close() error {

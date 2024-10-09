@@ -26,6 +26,7 @@ var (
 	startPrompt         string
 	interactiveMode     bool
 	startConversationId string
+	targetModel         string
 )
 
 const (
@@ -52,7 +53,10 @@ var rootCmd = &cobra.Command{
 		defer cancel()
 
 		provider := providers.CheckProvider()
-		textToTextBackend, err := providers.LoadTextToTextProvider(provider, "")
+		textToTextBackend, err := providers.LoadTextToTextProvider(
+			provider,
+			targetModel,
+		)
 		if err != nil {
 			fmt.Printf("Error loading text-to-text provider: %v\n", err)
 			os.Exit(1)
@@ -154,7 +158,6 @@ var rootCmd = &cobra.Command{
 
 		if pipedInput != "" {
 			processInput(pipedInput)
-			// return
 		}
 
 		for {
@@ -201,6 +204,8 @@ func main() {
 	// Attach flags to rootCmd only, so they are not inherited by subcommands
 	rootCmd.Flags().
 		StringVarP(&startPrompt, "prompt", "p", "", "Specify a prompt")
+	rootCmd.Flags().
+		StringVarP(&targetModel, "model", "m", "", "Specify a model")
 	rootCmd.Flags().
 		StringVarP(&startConversationId, "conversation", "c", "", "Open a conversation by ID")
 	rootCmd.Flags().
