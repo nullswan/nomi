@@ -17,7 +17,7 @@ import (
 	"github.com/nullswan/golem/internal/completion"
 	"github.com/nullswan/golem/internal/config"
 	"github.com/nullswan/golem/internal/providers"
-	provider "github.com/nullswan/golem/internal/providers/base"
+	baseprovider "github.com/nullswan/golem/internal/providers/base"
 	"github.com/nullswan/golem/internal/term"
 
 	prompts "github.com/nullswan/golem/internal/prompt"
@@ -275,7 +275,7 @@ func main() {
 func generateCompletion(
 	ctx context.Context,
 	conversation chat.Conversation,
-	textToTextBackend provider.TextToTextProvider,
+	textToTextBackend baseprovider.TextToTextProvider,
 	renderer *glamour.TermRenderer,
 ) (string, error) {
 	outCh := make(chan completion.Completion)
