@@ -30,7 +30,6 @@ func NewInputArea() (string, error) {
 	defer rl.Close()
 
 	var lines []string
-	var emptyLines int
 
 	for {
 		line, err := rl.Readline()
@@ -45,16 +44,10 @@ func NewInputArea() (string, error) {
 		}
 
 		if strings.TrimSpace(line) == "" {
-			emptyLines++
-		} else {
-			emptyLines = 0
+			break
 		}
 
 		lines = append(lines, line)
-
-		if emptyLines >= 2 {
-			break
-		}
 	}
 
 	return strings.Join(lines, "\n"), nil
