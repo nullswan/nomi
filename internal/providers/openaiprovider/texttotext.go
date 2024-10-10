@@ -2,6 +2,7 @@ package openaiprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -41,7 +42,7 @@ func NewTextToTextProvider(
 
 	models, err := p.client.ListModels(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("error listing models")
+		return nil, errors.New("error listing models")
 	}
 
 	for _, model := range models.Models {
