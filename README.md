@@ -36,7 +36,7 @@ A simple, boring, and productive LLM runtime.
 - Validate prompts before saving.
 
 ### AI Provider Integration
-- Integration with multiple AI providers (OpenAI, Ollama).
+- Integration with multiple AI providers (OpenAI, OpenRouter, Ollama).
 - Generate text completions based on user input.
 - Support for streaming responses from AI models.
 
