@@ -13,6 +13,7 @@ import (
 	baseprovider "github.com/nullswan/golem/internal/providers/base"
 	"github.com/nullswan/golem/internal/providers/ollamaprovider"
 	"github.com/nullswan/golem/internal/providers/openaiprovider"
+	openrouterprovider "github.com/nullswan/golem/internal/providers/openrouter"
 )
 
 func LoadTextToTextProvider(
@@ -71,7 +72,21 @@ func LoadTextToTextProvider(
 
 		return p, nil
 	case OpenRouterProvider:
-		return nil, errors.New("openrouter provider not implemented")
+		orConfig := openrouterprovider.NewORProviderConfig(
+			os.Getenv("OPENROUTER_API_KEY"),
+			model,
+		)
+		p, err := openrouterprovider.NewTextToTextProvider(
+			orConfig,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error creating openrouter provider: %w",
+				err,
+			)
+		}
+
+		return p, nil
 	case AnthropicProvider:
 		return nil, errors.New("anthropic provider not implemented")
 	default:
