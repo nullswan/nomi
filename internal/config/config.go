@@ -12,8 +12,8 @@ func getConfigFilePath() string {
 	return filepath.Join(GetProgramDirectory(), configFileName)
 }
 
-// ConfigExists checks if the configuration file exists.
-func ConfigExists() bool {
+// Exists checks if the configuration file exists.
+func Exists() bool {
 	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
 		return false
 	}
@@ -24,7 +24,7 @@ func ConfigExists() bool {
 func LoadConfig() (*Config, error) {
 	var cfg Config
 
-	if !ConfigExists() {
+	if !Exists() {
 		// File does not exist, create default configuration
 		cfg = defaultConfig()
 		if err := SaveConfig(&cfg); err != nil {
