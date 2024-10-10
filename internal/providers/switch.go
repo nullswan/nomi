@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -38,9 +39,14 @@ func LoadTextToTextProvider(
 			os.Getenv("OPENAI_API_KEY"),
 			model,
 		)
-		return openaiprovider.NewTextToTextProvider(
+		p, err := openaiprovider.NewTextToTextProvider(
 			oaiConfig,
 		)
+		if err != nil {
+			return nil, fmt.Errorf("error creating openai provider: %w", err)
+		}
+
+		return p, nil
 	case "ollama":
 		var cmd *exec.Cmd
 		if !ollamaServerIsRunning() {
@@ -69,10 +75,15 @@ func LoadTextToTextProvider(
 			url,
 			model,
 		)
-		return ollamaprovider.NewTextToTextProvider(
+		p, err := ollamaprovider.NewTextToTextProvider(
 			ollamaConfig,
 			cmd,
 		)
+		if err != nil {
+			return nil, fmt.Errorf("error creating ollama provider: %w", err)
+		}
+
+		return p, nil
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", provider)
 	}
@@ -80,12 +91,9 @@ func LoadTextToTextProvider(
 
 func ollamaServerIsRunning() bool {
 	defaultURL := "http://localhost:11434"
-	req := fmt.Sprintf("%s/health", defaultURL)
+	req := defaultURL + "/health"
 	_, err := http.Get(req)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func tryStartOllama() (*exec.Cmd, error) {
@@ -127,7 +135,7 @@ func tryStartOllama() (*exec.Cmd, error) {
 		return cmd, nil
 	}
 
-	return nil, fmt.Errorf("unable to find ollama binary")
+	return nil, errors.New("unable to find ollama binary")
 }
 
 // this code is part of: https://github.com/redpanda-data/connect/blob/main/internal/impl/ollama/subprocess_unix.go
@@ -154,7 +162,7 @@ func downloadOllama(
 			runtime.GOOS,
 		)
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to download ollama binary: %w", err)
 	}
@@ -163,7 +171,7 @@ func downloadOllama(
 		return fmt.Errorf("failed to download ollama binary: %w", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf(
 			"failed to download ollama binary: status_code=%d",
 			resp.StatusCode,
@@ -214,7 +222,7 @@ func downloadOllama(
 			err,
 		)
 	}
-	return err
+	return fmt.Errorf("ollama binary downloaded to %s", path)
 }
 
 func getOllamaURL() string {
