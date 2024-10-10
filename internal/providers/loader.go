@@ -93,3 +93,46 @@ func LoadTextToTextProvider(
 		return nil, fmt.Errorf("unknown provider: %s", provider)
 	}
 }
+
+func LoadTextToTextReasoningProvider(
+	provider AIProvider,
+	model string,
+) (baseprovider.TextToTextProvider, error) {
+	switch provider {
+	case OpenAIProvider:
+		oaiConfig := openaiprovider.NewOAIProviderConfig(
+			os.Getenv("OPENAI_API_KEY"),
+			model,
+		)
+		p, err := openaiprovider.NewTextToTextReasoningProvider(
+			oaiConfig,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error creating openai provider: %w", err)
+		}
+
+		return p, nil
+	case OpenRouterProvider:
+		orConfig := openrouterprovider.NewORProviderConfig(
+			os.Getenv("OPENROUTER_API_KEY"),
+			model,
+		)
+		p, err := openrouterprovider.NewTextToTextReasoningProvider(
+			orConfig,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error creating openrouter provider: %w",
+				err,
+			)
+		}
+
+		return p, nil
+	case AnthropicProvider:
+		return nil, errors.New("anthropic provider does not support reasoning")
+	case OllamaProvider:
+		return nil, errors.New("ollama provider does not support reasoning")
+	default:
+		return nil, fmt.Errorf("unknown provider: %s", provider)
+	}
+}

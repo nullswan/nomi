@@ -56,6 +56,10 @@ func (p *TextToTextReasoningProvider) Close() error {
 	return nil
 }
 
+func (p *TextToTextReasoningProvider) GetModel() string {
+	return p.config.model
+}
+
 func (p *TextToTextReasoningProvider) GenerateCompletion(
 	ctx context.Context,
 	messages []chat.Message,

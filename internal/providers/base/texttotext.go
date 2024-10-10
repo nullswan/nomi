@@ -14,5 +14,6 @@ type TextToTextProvider interface {
 		completionCh chan<- completion.Completion,
 	) error
 
+	GetModel() string
 	Close() error
 }

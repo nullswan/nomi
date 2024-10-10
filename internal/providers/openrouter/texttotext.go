@@ -63,6 +63,10 @@ func (p TextToTextProvider) Close() error {
 	return nil
 }
 
+func (p TextToTextProvider) GetModel() string {
+	return p.config.model
+}
+
 func (p TextToTextProvider) GenerateCompletion(
 	ctx context.Context,
 	messages []chat.Message,
