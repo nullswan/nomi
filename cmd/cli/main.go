@@ -28,7 +28,7 @@ var (
 	cfg                 *config.Config
 	startPrompt         string
 	interactiveMode     bool
-	startConversationId string
+	startConversationID string
 	targetModel         string
 )
 
@@ -39,7 +39,7 @@ const (
 var rootCmd = &cobra.Command{
 	Use:   binName + " [flags] [arguments]",
 	Short: "An enhanced AI runtime, focusing on ease of use and extensibility.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		selectedPrompt := &prompts.DefaultPrompt
 		if startPrompt != "" {
 			var err error
@@ -74,8 +74,8 @@ var rootCmd = &cobra.Command{
 		defer repo.Close()
 
 		var conversation chat.Conversation
-		if startConversationId != "" {
-			conversation, err = repo.LoadConversation(startConversationId)
+		if startConversationID != "" {
+			conversation, err = repo.LoadConversation(startConversationID)
 			if err != nil {
 				fmt.Printf("Error loading conversation: %v\n", err)
 				os.Exit(1)
@@ -92,7 +92,7 @@ var rootCmd = &cobra.Command{
 			fmt.Println()
 			fmt.Println("Configuration")
 			fmt.Printf("  Start prompt: %s\n", startPrompt)
-			fmt.Printf("  Conversation: %s\n", conversation.GetId())
+			fmt.Printf("  Conversation: %s\n", conversation.GetID())
 			fmt.Printf("  Provider: %s\n", provider)
 			fmt.Printf("  Build Date: %s\n", buildDate)
 			fmt.Printf("-----\n")
@@ -224,13 +224,13 @@ func main() {
 	rootCmd.Flags().
 		StringVarP(&targetModel, "model", "m", "", "Specify a model")
 	rootCmd.Flags().
-		StringVarP(&startConversationId, "conversation", "c", "", "Open a conversation by ID")
+		StringVarP(&startConversationID, "conversation", "c", "", "Open a conversation by ID")
 	rootCmd.Flags().
 		BoolVarP(&interactiveMode, "interactive", "i", false, "Start in interactive mode")
 
 	// Initialize cfg in PersistentPreRun, making it available to all commands
-	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		if !config.ConfigExists() {
+	rootCmd.PersistentPreRun = func(_ *cobra.Command, args []string) {
+		if !config.Exists() {
 			fmt.Println("Looks like this is your first time running Golem! 🗿")
 			if err := config.Setup(); err != nil {
 				fmt.Printf("Error during configuration setup: %v\n", err)
@@ -320,7 +320,7 @@ func isTombStone(cmpl completion.Completion) bool {
 	return reflect.TypeOf(
 		cmpl,
 	) == reflect.TypeOf(
-		completion.CompletionTombStone{},
+		completion.Tombstone{},
 	)
 }
 

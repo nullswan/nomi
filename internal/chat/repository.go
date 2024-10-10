@@ -75,7 +75,7 @@ func (r *sqliteRepository) SaveConversation(
 ) error {
 	tx, err := r.db.Begin()
 	if err != nil {
-		return err
+		return fmt.Errorf("error starting transaction: %w", err)
 	}
 	defer tx.Rollback()
 
@@ -83,7 +83,7 @@ func (r *sqliteRepository) SaveConversation(
 	insertConversation := `INSERT OR IGNORE INTO conversations (id, created_at) VALUES (?, ?)`
 	_, err = tx.Exec(
 		insertConversation,
-		conversation.GetId(),
+		conversation.GetID(),
 		time.Now().UTC().Format(time.RFC3339),
 	)
 	if err != nil {
@@ -96,7 +96,7 @@ func (r *sqliteRepository) SaveConversation(
 		_, err = tx.Exec(
 			insertMessage,
 			msg.ID,
-			conversation.GetId(),
+			conversation.GetID(),
 			msg.Role,
 			msg.Content,
 			msg.CreatedAt,

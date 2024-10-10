@@ -7,7 +7,7 @@ import (
 )
 
 type Conversation interface {
-	GetId() string
+	GetID() string
 	GetCreatedAt() time.Time
 	GetMessages() []Message
 

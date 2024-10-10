@@ -17,7 +17,10 @@ var conversationCmd = &cobra.Command{
 	Use:   "conversation",
 	Short: "Manage conversations",
 	Run: func(cmd *cobra.Command, _ []string) {
-		cmd.Help()
+		err := cmd.Help()
+		if err != nil {
+			fmt.Println("Error displaying help:", err)
+		}
 	},
 }
 
@@ -57,7 +60,7 @@ var conversationListCmd = &cobra.Command{
 		for _, convo := range allConversations {
 			t.AppendRow(
 				[]interface{}{
-					convo.GetId(),
+					convo.GetID(),
 					convo.GetCreatedAt().Format(time.RFC3339),
 					time.Since(convo.GetCreatedAt()).Round(time.Second),
 					len(convo.GetMessages()),

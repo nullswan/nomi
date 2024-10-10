@@ -16,7 +16,7 @@ type stackedConversation struct {
 }
 
 // #region Getters
-func (c *stackedConversation) GetId() string {
+func (c *stackedConversation) GetID() string {
 	return c.id
 }
 

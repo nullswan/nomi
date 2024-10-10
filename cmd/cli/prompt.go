@@ -18,7 +18,10 @@ var promptCmd = &cobra.Command{
 	Use:   "prompt",
 	Short: "Manage prompts",
 	Run: func(cmd *cobra.Command, _ []string) {
-		cmd.Help()
+		err := cmd.Help()
+		if err != nil {
+			fmt.Println("Error displaying help:", err)
+		}
 	},
 }
 
@@ -86,7 +89,7 @@ var promptListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all prompts",
 	Long:  `List all available prompts with their ID, Name, and Description.`,
-	Run: func(_ *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		t := table.NewWriter()
 		t.SetOutputMirror(os.Stdout)
 		t.SetStyle(table.StyleLight)
