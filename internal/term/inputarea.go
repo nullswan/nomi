@@ -1,61 +1,62 @@
 package term
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"runtime"
+	"io"
 	"strings"
+
+	"errors"
+
+	"github.com/chzyer/readline"
 )
 
-func NewInputArea() string {
-	var ttyPath string
-	if runtime.GOOS == "windows" {
-		ttyPath = "CON"
-	} else {
-		ttyPath = "/dev/tty"
-	}
+var (
+	ErrInputInterrupted = errors.New("input interrupted")
+	ErrInputKilled      = errors.New("input killed")
+	ErrReadlineInit     = errors.New("error initializing readline")
+)
 
-	tty, err := os.Open(ttyPath)
+func NewInputArea() (string, error) {
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:                 ">>> ",
+		HistoryFile:            "/dev/null",
+		InterruptPrompt:        "Interrupted. Quitting...",
+		EOFPrompt:              "Killed. Quitting...",
+		AutoComplete:           nil,
+		DisableAutoSaveHistory: true,
+	})
 	if err != nil {
-		fmt.Println("Error opening terminal:", err)
-		return ""
+		return "", fmt.Errorf("%w: %v", ErrReadlineInit, err)
 	}
-	defer tty.Close()
+	defer rl.Close()
 
-	scanner := bufio.NewScanner(tty)
 	var lines []string
-	emptyLines := 0
+	var emptyLines int
 
 	for {
-		fmt.Fprint(os.Stdout, ">>> ")
-		if !scanner.Scan() {
-			break
+		line, err := rl.Readline()
+		if err != nil {
+			if err == readline.ErrInterrupt {
+				return "", ErrInputInterrupted
+			}
+			if err == io.EOF {
+				return "", ErrInputKilled
+			}
+			return "", fmt.Errorf("error reading input: %w", err)
 		}
-		text := scanner.Text()
 
-		if text == "" {
+		if strings.TrimSpace(line) == "" {
 			emptyLines++
 		} else {
 			emptyLines = 0
 		}
 
-		lines = append(lines, text)
+		lines = append(lines, line)
 
 		if emptyLines >= 2 {
 			break
 		}
 	}
 
-	// Erase the printed lines
-	for i := 0; i < len(lines); i++ {
-		fmt.Fprint(os.Stdout, "\033[1A\033[2K") // Move up and clear line
-	}
-
-	// Remove the last empty lines
-	for len(lines) > 0 && lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
-	}
-
-	return strings.Join(lines, "\n")
+	return strings.Join(lines, "\n"), nil
 }
