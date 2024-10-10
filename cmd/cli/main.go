@@ -56,14 +56,33 @@ var rootCmd = &cobra.Command{
 		defer cancel()
 
 		provider := providers.CheckProvider()
-		textToTextBackend, err := providers.LoadTextToTextProvider(
-			provider,
-			targetModel,
-		)
-		if err != nil {
-			fmt.Printf("Error loading text-to-text provider: %v\n", err)
-			os.Exit(1)
+
+		var textToTextBackend baseprovider.TextToTextProvider
+		if selectedPrompt.Preferences.Reasoning {
+			var err error
+			textToTextBackend, err = providers.LoadTextToTextReasoningProvider(
+				provider,
+				targetModel,
+			)
+			if err != nil {
+				fmt.Printf(
+					"Error loading text-to-text reasoning provider: %v\n",
+					err,
+				)
+			}
 		}
+		if textToTextBackend == nil {
+			var err error
+			textToTextBackend, err = providers.LoadTextToTextProvider(
+				provider,
+				targetModel,
+			)
+			if err != nil {
+				fmt.Printf("Error loading text-to-text provider: %v\n", err)
+				os.Exit(1)
+			}
+		}
+
 		defer textToTextBackend.Close()
 
 		repo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
@@ -94,6 +113,7 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("  Start prompt: %s\n", startPrompt)
 			fmt.Printf("  Conversation: %s\n", conversation.GetID())
 			fmt.Printf("  Provider: %s\n", provider)
+			fmt.Printf("  Model: %s\n", textToTextBackend.GetModel())
 			fmt.Printf("  Build Date: %s\n", buildDate)
 			fmt.Printf("-----\n")
 			fmt.Printf("Press Enter twice to send a message.\n")
