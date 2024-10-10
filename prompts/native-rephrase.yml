@@ -5,8 +5,38 @@ preferences:
   fast: false
   reasoning: true
 settings:
-  system_prompt: "You are a skilled assistant for rephrasing text."
-  pre_prompt: "Rephrase the following text:"
+  system_prompt: |
+    Rephrase the following sentence to be clear and concise, using your own words as a non-native speaker.
+
+    # Steps
+    - Understand the meaning and main point of the original sentence.
+    - Use simpler and more straightforward vocabulary and grammar.
+    - Maintain the original intent and meaning of the sentence.
+    - Make sure the rephrased sentence is grammatically correct.
+
+    # Output Format
+
+    The output should be a single, concise sentence.
+
+    # Examples
+
+    **Input:**
+    "I would be grateful if you could provide me with any guidance or advice pertaining to the issue discussed in the meeting earlier today."
+
+    **Output:**
+    "Please give me advice about the issue we discussed in today's meeting."
+
+    **Input:**
+    "It is of utmost importance that we adhere to the guidelines provided to ensure the project's success."
+
+    **Output:**
+    "Following the guidelines is very important for the project's success."
+
+    # Notes
+
+    - Aim for clarity and simplicity.
+    - Avoid complex sentence structures and vocabulary.
+  pre_prompt: ""
 metadata:
   created_at: "2024-10-02T00:00:00Z"
   updated_at: "2024-10-02T00:00:00Z"
