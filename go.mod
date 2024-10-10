@@ -3,7 +3,6 @@ module github.com/nullswan/golem
 go 1.23.1
 
 require (
-	github.com/atotto/clipboard v0.1.4
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/charmbracelet/glamour v0.8.0
 	github.com/charmbracelet/lipgloss v0.13.0
