@@ -8,16 +8,12 @@ require (
 	github.com/charmbracelet/glamour v0.8.0
 	github.com/charmbracelet/lipgloss v0.13.0
 	github.com/dustin/go-humanize v1.0.1
-	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/uuid v1.6.0
-	github.com/gordonklaus/portaudio v0.0.0-20230709114228-aafa478834f5
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-sqlite3 v1.14.24
-	github.com/maxhawkins/go-webrtcvad v0.0.0-20210121163624-be60036f3083
 	github.com/ollama/ollama v0.3.12
-	github.com/rivo/tview v0.0.0-20240921122403-a64fc48d7654
 	github.com/sashabaranov/go-openai v1.31.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/sync v0.8.0
@@ -31,7 +27,6 @@ require (
 	github.com/charmbracelet/x/ansi v0.1.4 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
-	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -53,7 +48,6 @@ require (
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/term v0.25.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	lukechampine.com/uint128 v1.2.0 // indirect
 	modernc.org/cc/v3 v3.36.3 // indirect
