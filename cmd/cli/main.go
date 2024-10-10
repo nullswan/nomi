@@ -11,6 +11,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/charmbracelet/glamour"
+	"github.com/manifoldco/promptui/screenbuf"
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/completion"
 	"github.com/nullswan/golem/internal/config"
@@ -105,6 +107,12 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("Error reading piped input: %v\n", err)
 		}
 
+		renderer, err := term.InitRenderer()
+		if err != nil {
+			fmt.Printf("Error initializing renderer: %v\n", err)
+			os.Exit(1)
+		}
+
 		var cancelRequest context.CancelFunc
 		processInput := func(text string) {
 			if cancelRequest != nil {
@@ -138,6 +146,7 @@ var rootCmd = &cobra.Command{
 				requestContext,
 				conversation,
 				textToTextBackend,
+				renderer,
 			)
 			if err != nil {
 				if strings.Contains(err.Error(), "context canceled") {
@@ -248,6 +257,7 @@ func generateCompletion(
 	ctx context.Context,
 	conversation chat.Conversation,
 	textToTextBackend baseprovider.TextToTextProvider,
+	renderer *glamour.TermRenderer,
 ) (string, error) {
 	outCh := make(chan completion.Completion)
 
@@ -261,12 +271,27 @@ func generateCompletion(
 		}
 	}()
 
+	sb := screenbuf.New(os.Stdout)
 	var fullContent string
+	currentLine := ""
 
 	for {
 		select {
 		case cmpl, ok := <-outCh:
 			if isTombStone(cmpl) {
+				sb.Clear()
+				fullContent += currentLine
+				currentLine = ""
+
+				mdContent, err := renderer.Render(fullContent)
+				if err != nil {
+					fmt.Println("Error rendering markdown:", err)
+					return fullContent, fmt.Errorf(
+						"rendering markdown: %w",
+						err,
+					)
+				}
+				fmt.Println(mdContent)
 				return fullContent, nil
 			}
 
@@ -280,7 +305,11 @@ func generateCompletion(
 			}
 
 			fullContent += cmpl.Content()
-			fmt.Printf("%s", cmpl.Content())
+			currentLine += cmpl.Content()
+			if strings.Contains(currentLine, "\n") {
+				sb.WriteString(currentLine)
+				currentLine = currentLine[strings.LastIndex(currentLine, "\n")+1:]
+			}
 		case <-ctx.Done():
 			return fullContent, errors.New("context canceled")
 		}
@@ -385,5 +414,3 @@ func addFileToConversation(
 func formatFileMessage(fileName, content string) string {
 	return fileName + "-----\n" + content + "-----\n"
 }
-
-func uintPtr(u uint) *uint { return &u }

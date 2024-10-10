@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/manifoldco/promptui/screenbuf"
 	"github.com/nullswan/golem/internal/chat"
+	"github.com/nullswan/golem/internal/term"
 	"github.com/spf13/cobra"
 )
 
@@ -118,20 +121,30 @@ var conversationShowCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println("Conversation showed:", convo.GetId())
+		renderer, err := term.InitRenderer()
+		if err != nil {
+			fmt.Println("Error initializing renderer:", err)
+			return
+		}
 
 		for _, msg := range convo.GetMessages() {
-			switch msg.Role {
-			case chat.RoleUser:
-				fmt.Println("User:")
-			case chat.RoleAssistant:
-				fmt.Println("Assistant:")
-			case chat.RoleSystem:
-				fmt.Println("System:")
+			fmt.Printf("%s:\n", msg.Role.String())
+
+			sb := screenbuf.New(os.Stdout)
+
+			lines := strings.Split(msg.Content, "\n")
+			for _, line := range lines {
+				sb.WriteString(line)
 			}
 
-			fmt.Println(msg.Content)
-			fmt.Println()
+			sb.Clear()
+
+			mdContent, err := renderer.Render(msg.Content)
+			if err != nil {
+				fmt.Println("Error rendering markdown:", err)
+				return
+			}
+			fmt.Println(mdContent)
 		}
 	},
 }
