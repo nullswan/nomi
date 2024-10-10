@@ -280,8 +280,6 @@ func generateCompletion(
 		case cmpl, ok := <-outCh:
 			if isTombStone(cmpl) {
 				sb.Clear()
-				fullContent += currentLine
-				currentLine = ""
 
 				mdContent, err := renderer.Render(fullContent)
 				if err != nil {
