@@ -6,6 +6,10 @@ var DefaultPrompt = Prompt{
 	ID:          "DefaultPrompt",
 	Name:        "Native Default Prompt",
 	Description: "Facilitates asking questions to the assistant.",
+	Preferences: Preferences{
+		Fast:      false,
+		Reasoning: false,
+	},
 	Settings: Settings{
 		SystemPrompt: `Provide responses that are clear and concise. Offer brief explanations if asked for, but avoid providing too much additional context or introductions unless explicitly requested.
 
