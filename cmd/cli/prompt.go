@@ -17,8 +17,8 @@ import (
 var promptCmd = &cobra.Command{
 	Use:   "prompt",
 	Short: "Manage prompts",
-	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("Use 'golem prompt list' to list available prompts.")
+	Run: func(cmd *cobra.Command, _ []string) {
+		cmd.Help()
 	},
 }
 

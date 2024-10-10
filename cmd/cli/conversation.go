@@ -12,6 +12,9 @@ import (
 var conversationCmd = &cobra.Command{
 	Use:   "conversation",
 	Short: "Manage conversations",
+	Run: func(cmd *cobra.Command, _ []string) {
+		cmd.Help()
+	},
 }
 
 var conversationListCmd = &cobra.Command{
