@@ -2,33 +2,33 @@ package completion
 
 import "time"
 
-// CompletionData is a struct that represents the data of a completion.
-type CompletionData struct {
+// Data is a struct that represents the data of a completion.
+type Data struct {
 	timestamp time.Time
 	content   string
 }
 
-func (c CompletionData) Content() string {
+func (c Data) Content() string {
 	return c.content
 }
 
-func (c CompletionData) Timestamp() time.Time {
+func (c Data) Timestamp() time.Time {
 	return c.timestamp
 }
 
-func NewCompletionData(content string) CompletionData {
-	return CompletionData{
+func NewCompletionData(content string) Data {
+	return Data{
 		timestamp: time.Now(),
 		content:   content,
 	}
 }
 
-func (c CompletionData) WithContent(content string) CompletionData {
+func (c Data) WithContent(content string) Data {
 	c.content = content
 	return c
 }
 
-func (c CompletionData) WithTimestamp(t time.Time) CompletionData {
+func (c Data) WithTimestamp(t time.Time) Data {
 	c.timestamp = t
 	return c
 }

@@ -3,7 +3,7 @@ package completion
 import "time"
 
 // A completion tombstone is the final state of a completion.
-type CompletionTombStone struct {
+type Tombstone struct {
 	content   string
 	model     string
 	usage     Usage
@@ -13,8 +13,8 @@ type CompletionTombStone struct {
 func NewCompletionTombStone(
 	content, model string,
 	usage Usage,
-) CompletionTombStone {
-	return CompletionTombStone{
+) Tombstone {
+	return Tombstone{
 		content:   content,
 		model:     model,
 		usage:     usage,
@@ -22,38 +22,38 @@ func NewCompletionTombStone(
 	}
 }
 
-func (c CompletionTombStone) Content() string {
+func (c Tombstone) Content() string {
 	return c.content
 }
 
-func (c CompletionTombStone) WithContent(content string) CompletionTombStone {
+func (c Tombstone) WithContent(content string) Tombstone {
 	c.content = content
 	return c
 }
 
-func (c CompletionTombStone) Model() string {
+func (c Tombstone) Model() string {
 	return c.model
 }
 
-func (c CompletionTombStone) WithModel(model string) CompletionTombStone {
+func (c Tombstone) WithModel(model string) Tombstone {
 	c.model = model
 	return c
 }
 
-func (c CompletionTombStone) Usage() Usage {
+func (c Tombstone) Usage() Usage {
 	return c.usage
 }
 
-func (c CompletionTombStone) WithUsage(usage Usage) CompletionTombStone {
+func (c Tombstone) WithUsage(usage Usage) Tombstone {
 	c.usage = usage
 	return c
 }
 
-func (c CompletionTombStone) Timestamp() time.Time {
+func (c Tombstone) Timestamp() time.Time {
 	return c.timestamp
 }
 
-func (c CompletionTombStone) WithTimestamp(t time.Time) CompletionTombStone {
+func (c Tombstone) WithTimestamp(t time.Time) Tombstone {
 	c.timestamp = t
 	return c
 }
