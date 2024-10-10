@@ -181,7 +181,7 @@ var rootCmd = &cobra.Command{
 			)
 			if err != nil {
 				if strings.Contains(err.Error(), "context canceled") {
-					fmt.Println("Request canceled.")
+					fmt.Println("\nRequest canceled by the user.")
 					return
 				}
 				fmt.Printf("Error generating completion: %v\n", err)
