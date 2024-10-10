@@ -7,7 +7,7 @@ import (
 )
 
 type Message struct {
-	Id        uuid.UUID `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	Role      Role      `json:"role"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
@@ -16,7 +16,7 @@ type Message struct {
 
 func NewMessage(role Role, content string) Message {
 	return Message{
-		Id:        uuid.New(),
+		ID:        uuid.New(),
 		Role:      role,
 		Content:   content,
 		CreatedAt: time.Now().UTC(),
@@ -25,7 +25,7 @@ func NewMessage(role Role, content string) Message {
 
 func NewFileMessage(role Role, content string) Message {
 	return Message{
-		Id:        uuid.New(),
+		ID:        uuid.New(),
 		Role:      role,
 		Content:   content,
 		CreatedAt: time.Now().UTC(),

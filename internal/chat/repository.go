@@ -11,7 +11,10 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+
+	// sqlite driver
 	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/nullswan/golem/internal/migrations"
 )
 
@@ -29,12 +32,12 @@ type sqliteRepository struct {
 func NewSQLiteRepository(dbPath string) (Repository, error) {
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error opening database: %w", err)
 	}
 
 	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating sqlite driver: %w", err)
 	}
 
 	migrations, err := migrations.GetMigrations()
@@ -58,7 +61,7 @@ func NewSQLiteRepository(dbPath string) (Repository, error) {
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return nil, err
+		return nil, fmt.Errorf("error running migrations: %w", err)
 	}
 
 	return &sqliteRepository{db: db}, nil
@@ -81,7 +84,7 @@ func (r *sqliteRepository) SaveConversation(
 		time.Now().UTC().Format(time.RFC3339),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("error inserting conversation: %w", err)
 	}
 
 	// Insert messages
@@ -89,7 +92,7 @@ func (r *sqliteRepository) SaveConversation(
 	for _, msg := range conversation.GetMessages() {
 		_, err = tx.Exec(
 			insertMessage,
-			msg.Id,
+			msg.ID,
 			conversation.GetId(),
 			msg.Role,
 			msg.Content,
@@ -97,11 +100,16 @@ func (r *sqliteRepository) SaveConversation(
 			msg.IsFile,
 		)
 		if err != nil {
-			return err
+			return fmt.Errorf("error inserting message: %w", err)
 		}
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("error committing transaction: %w", err)
+	}
+
+	return nil
 }
 
 func (r *sqliteRepository) LoadConversation(
@@ -110,17 +118,17 @@ func (r *sqliteRepository) LoadConversation(
 	queryConversation := `SELECT id, created_at FROM conversations WHERE id = ?`
 	row := r.db.QueryRow(queryConversation, id)
 
-	var convoId string
+	var convoID string
 	var convoCreatedAt time.Time
-	err := row.Scan(&convoId, &convoCreatedAt)
+	err := row.Scan(&convoID, &convoCreatedAt)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error scanning conversation: %w", err)
 	}
 
 	queryMessages := `SELECT id, role, content, created_at, is_file FROM messages WHERE conversation_id = ? ORDER BY id ASC`
 	rows, err := r.db.Query(queryMessages, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting messages: %w", err)
 	}
 	defer rows.Close()
 
@@ -128,14 +136,14 @@ func (r *sqliteRepository) LoadConversation(
 	for rows.Next() {
 		var msg Message
 		err := rows.Scan(
-			&msg.Id,
+			&msg.ID,
 			&msg.Role,
 			&msg.Content,
 			&msg.CreatedAt,
 			&msg.IsFile,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error scanning message: %w", err)
 		}
 		msg.CreatedAt = msg.CreatedAt.UTC()
 		messages = append(messages, msg)
@@ -143,25 +151,30 @@ func (r *sqliteRepository) LoadConversation(
 
 	return &stackedConversation{
 		repo:      r,
-		id:        convoId,
+		id:        convoID,
 		messages:  messages,
 		createdAt: convoCreatedAt.UTC(),
 	}, nil
 }
 
 func (r *sqliteRepository) Close() error {
-	return r.db.Close()
+	err := r.db.Close()
+	if err != nil {
+		return fmt.Errorf("error closing database: %w", err)
+	}
+
+	return nil
 }
 
 func (r *sqliteRepository) Reset() error {
 	_, err := r.db.Exec("DELETE FROM conversations")
 	if err != nil {
-		return err
+		return fmt.Errorf("error deleting conversations: %w", err)
 	}
 
 	_, err = r.db.Exec("DELETE FROM messages")
 	if err != nil {
-		return err
+		return fmt.Errorf("error deleting messages: %w", err)
 	}
 
 	return nil
@@ -171,21 +184,21 @@ func (r *sqliteRepository) GetConversations() ([]Conversation, error) {
 	queryConversations := `SELECT id FROM conversations`
 	rows, err := r.db.Query(queryConversations)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting conversations: %w", err)
 	}
 	defer rows.Close()
 
 	var convos []Conversation
 	for rows.Next() {
-		var convoId string
-		err := rows.Scan(&convoId)
+		var convoID string
+		err := rows.Scan(&convoID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error scanning conversation: %w", err)
 		}
 
-		convo, err := r.LoadConversation(convoId)
+		convo, err := r.LoadConversation(convoID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error loading conversation: %w", err)
 		}
 
 		convos = append(convos, convo)
