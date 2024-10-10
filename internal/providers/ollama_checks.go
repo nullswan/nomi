@@ -12,82 +12,9 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
-	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/nullswan/golem/internal/config"
-	baseprovider "github.com/nullswan/golem/internal/providers/base"
-	"github.com/nullswan/golem/internal/providers/ollamaprovider"
-	"github.com/nullswan/golem/internal/providers/openaiprovider"
 )
-
-func CheckProvider() string {
-	if os.Getenv("OPENAI_API_KEY") != "" {
-		return "openai"
-	}
-
-	return "ollama"
-}
-
-func LoadTextToTextProvider(
-	provider string,
-	model string,
-) (baseprovider.TextToTextProvider, error) {
-	switch provider {
-	case "openai":
-		oaiConfig := openaiprovider.NewOAIProviderConfig(
-			os.Getenv("OPENAI_API_KEY"),
-			model,
-		)
-		p, err := openaiprovider.NewTextToTextProvider(
-			oaiConfig,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("error creating openai provider: %w", err)
-		}
-
-		return p, nil
-	case "ollama":
-		var cmd *exec.Cmd
-		if !ollamaServerIsRunning() {
-			var err error
-			cmd, err = tryStartOllama()
-			if err != nil {
-				ollamaOutput := config.GetProgramDirectory() + "/ollama"
-				err = backoff.Retry(func() error {
-					fmt.Printf(
-						"Download ollama to %s\n",
-						ollamaOutput,
-					)
-					return downloadOllama(
-						context.TODO(),
-						ollamaOutput,
-					)
-				}, backoff.WithMaxRetries(backoff.NewConstantBackOff(time.Second), 3))
-				if err != nil {
-					return nil, fmt.Errorf("error installing ollama: %w", err)
-				}
-			}
-		}
-		url := getOllamaURL()
-
-		ollamaConfig := ollamaprovider.NewOlamaProviderConfig(
-			url,
-			model,
-		)
-		p, err := ollamaprovider.NewTextToTextProvider(
-			ollamaConfig,
-			cmd,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("error creating ollama provider: %w", err)
-		}
-
-		return p, nil
-	default:
-		return nil, fmt.Errorf("unknown provider: %s", provider)
-	}
-}
 
 func ollamaServerIsRunning() bool {
 	defaultURL := "http://localhost:11434"
