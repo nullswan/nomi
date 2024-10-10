@@ -11,9 +11,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/glamour/styles"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/completion"
 	"github.com/nullswan/golem/internal/config"
@@ -109,26 +106,6 @@ var rootCmd = &cobra.Command{
 		}
 
 		var cancelRequest context.CancelFunc
-
-		var renderer *glamour.TermRenderer
-		if !interactiveMode {
-			var styleOpt glamour.TermRendererOption
-			darkStyle := styles.DarkStyleConfig
-			darkStyle.Document.Margin = uintPtr(0)
-			darkStyle.CodeBlock.Margin = uintPtr(0)
-			styleOpt = glamour.WithStyles(darkStyle)
-
-			renderer, err = glamour.NewTermRenderer(
-				styleOpt,
-				glamour.WithWordWrap(0),
-				glamour.WithEmoji(),
-			)
-			if err != nil {
-				fmt.Printf("Error creating renderer: %v\n", err)
-				return
-			}
-		}
-
 		processInput := func(text string) {
 			if cancelRequest != nil {
 				cancelRequest()
@@ -138,28 +115,12 @@ var rootCmd = &cobra.Command{
 			cancelRequest = newCancelRequest
 
 			if text == "" {
-				fmt.Println()
 				return
 			}
 
 			if isLocalResource(text) {
 				processLocalResource(conversation, text)
 				return
-			}
-
-			if interactiveMode {
-				fmt.Printf("You:\n%s\n\n", text)
-			} else {
-				style := lipgloss.NewStyle().
-					Foreground(lipgloss.Color("#FF00FF"))
-				fmt.Printf("%s\n", style.Render("You:"))
-				renderedContent, err := renderer.Render(text)
-				if err != nil {
-					fmt.Printf("Error rendering input: %v\n", err)
-					return
-				}
-
-				fmt.Printf("%s\n", renderedContent)
 			}
 
 			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
@@ -177,7 +138,6 @@ var rootCmd = &cobra.Command{
 				requestContext,
 				conversation,
 				textToTextBackend,
-				renderer,
 			)
 			if err != nil {
 				if strings.Contains(err.Error(), "context canceled") {
@@ -202,7 +162,16 @@ var rootCmd = &cobra.Command{
 			case <-ctx.Done():
 				return
 			default:
-				text := term.NewInputArea()
+				text, err := term.NewInputArea()
+				if err != nil {
+					if errors.Is(err, term.ErrInputInterrupted) ||
+						errors.Is(err, term.ErrInputKilled) {
+						cancel()
+						return
+					}
+					fmt.Printf("Error reading input: %v\n", err)
+					return
+				}
 				processInput(text)
 			}
 		}
@@ -223,6 +192,8 @@ func main() {
 	// #region Conversation commands
 	rootCmd.AddCommand(conversationCmd)
 	conversationCmd.AddCommand(conversationListCmd)
+	conversationCmd.AddCommand(conversationShowCmd)
+	conversationCmd.AddCommand(conversationDeleteCmd)
 	// #endregion
 
 	// #region Version commands
@@ -277,7 +248,6 @@ func generateCompletion(
 	ctx context.Context,
 	conversation chat.Conversation,
 	textToTextBackend baseprovider.TextToTextProvider,
-	renderer *glamour.TermRenderer,
 ) (string, error) {
 	outCh := make(chan completion.Completion)
 
@@ -291,33 +261,12 @@ func generateCompletion(
 		}
 	}()
 
-	fmt.Println("AI:")
 	var fullContent string
 
 	for {
 		select {
 		case cmpl, ok := <-outCh:
 			if isTombStone(cmpl) {
-				if renderer != nil {
-					renderedContent, err := renderer.Render(fullContent)
-					if err != nil {
-						fmt.Printf("Error rendering completion: %v\n", err)
-						return fullContent, errors.New(
-							"error rendering completion",
-						)
-					}
-
-					lines := strings.Split(fullContent, "\n")
-					fmt.Print("\033[2K")
-					for i := 0; i < len(lines)+1; i++ { // Need to clear AI prefix too
-						fmt.Print("\033[1F\033[2K")
-					}
-
-					style := lipgloss.NewStyle().
-						Foreground(lipgloss.Color("#00C0FF"))
-					fmt.Printf("%s\n%s", style.Render("AI:"), renderedContent)
-				}
-
 				return fullContent, nil
 			}
 

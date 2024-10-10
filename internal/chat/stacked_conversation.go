@@ -32,7 +32,10 @@ func (c *stackedConversation) GetMessages() []Message {
 
 func (c *stackedConversation) AddMessage(message Message) {
 	c.messages = append(c.messages, message)
-	c.repo.SaveConversation(c)
+	err := c.repo.SaveConversation(c)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (c *stackedConversation) WithPrompt(prompt prompts.Prompt) {

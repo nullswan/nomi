@@ -91,7 +91,7 @@ func (r *sqliteRepository) SaveConversation(
 	}
 
 	// Insert messages
-	insertMessage := `INSERT OR IGNORE INTO messages (id, conversation_id, role, content, created_at, is_file) VALUES (?, ?, ?, ?, ?)`
+	insertMessage := `INSERT OR IGNORE INTO messages (id, conversation_id, role, content, created_at, is_file) VALUES (?, ?, ?, ?, ?, ?)`
 	for _, msg := range conversation.GetMessages() {
 		_, err = tx.Exec(
 			insertMessage,
@@ -128,7 +128,7 @@ func (r *sqliteRepository) LoadConversation(
 		return nil, fmt.Errorf("error scanning conversation: %w", err)
 	}
 
-	queryMessages := `SELECT id, role, content, created_at, is_file FROM messages WHERE conversation_id = ? ORDER BY id ASC`
+	queryMessages := `SELECT id, role, content, created_at, is_file FROM messages WHERE conversation_id = ? ORDER BY created_at ASC`
 	rows, err := r.db.Query(queryMessages, id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting messages: %w", err)
@@ -195,7 +195,7 @@ func (r *sqliteRepository) Reset() error {
 }
 
 func (r *sqliteRepository) GetConversations() ([]Conversation, error) {
-	queryConversations := `SELECT id FROM conversations`
+	queryConversations := `SELECT id FROM conversations ORDER BY created_at DESC`
 	rows, err := r.db.Query(queryConversations)
 	if err != nil {
 		return nil, fmt.Errorf("error getting conversations: %w", err)

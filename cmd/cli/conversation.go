@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/nullswan/golem/internal/chat"
@@ -34,7 +35,7 @@ var conversationListCmd = &cobra.Command{
 		t.Style().Options.SeparateColumns = false
 
 		t.AppendHeader(
-			table.Row{"Id", "Created At"},
+			table.Row{"Id", "Created At", "Since", "Messages"},
 		)
 
 		repo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
@@ -54,7 +55,9 @@ var conversationListCmd = &cobra.Command{
 			t.AppendRow(
 				[]interface{}{
 					convo.GetId(),
-					convo.GetCreatedAt(),
+					convo.GetCreatedAt().Format(time.RFC3339),
+					time.Since(convo.GetCreatedAt()).Round(time.Second),
+					len(convo.GetMessages()),
 				},
 			)
 		}
@@ -88,5 +91,47 @@ var conversationDeleteCmd = &cobra.Command{
 		}
 
 		fmt.Println("Conversation deleted.")
+	},
+}
+
+var conversationShowCmd = &cobra.Command{
+	Use:   "show [id]",
+	Short: "Show a conversation",
+	Long:  `Show a conversation by its ID.`,
+	Run: func(_ *cobra.Command, args []string) {
+		if len(args) == 0 {
+			fmt.Println("Please provide the ID of the conversation to show.")
+			return
+		}
+		id := args[0]
+
+		repo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
+		if err != nil {
+			fmt.Println("Error creating repository:", err)
+			return
+		}
+		defer repo.Close()
+
+		convo, err := repo.LoadConversation(id)
+		if err != nil {
+			fmt.Println("Error showing conversation:", err)
+			return
+		}
+
+		fmt.Println("Conversation showed:", convo.GetId())
+
+		for _, msg := range convo.GetMessages() {
+			switch msg.Role {
+			case chat.RoleUser:
+				fmt.Println("User:")
+			case chat.RoleAssistant:
+				fmt.Println("Assistant:")
+			case chat.RoleSystem:
+				fmt.Println("System:")
+			}
+
+			fmt.Println(msg.Content)
+			fmt.Println()
+		}
 	},
 }
