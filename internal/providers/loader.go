@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -70,9 +71,9 @@ func LoadTextToTextProvider(
 
 		return p, nil
 	case OpenRouterProvider:
-		return nil, fmt.Errorf("openrouter provider not implemented")
+		return nil, errors.New("openrouter provider not implemented")
 	case AnthropicProvider:
-		return nil, fmt.Errorf("anthropic provider not implemented")
+		return nil, errors.New("anthropic provider not implemented")
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", provider)
 	}
