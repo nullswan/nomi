@@ -109,7 +109,7 @@ func tryStartOllama() (*exec.Cmd, error) {
 			return nil, fmt.Errorf("error installing ollama: %w", err)
 		}
 
-		if err := os.Chmod(localTarget, 0755); err != nil {
+		if err := os.Chmod(localTarget, 0o755); err != nil {
 			return nil, fmt.Errorf(
 				"error setting permissions on ollama binary: %w",
 				err,
@@ -198,7 +198,7 @@ func downloadOllama(
 		}
 	}
 
-	ollama, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0755)
+	ollama, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o755)
 	if err != nil {
 		return fmt.Errorf(
 			"unable to create file for ollama binary download: %w",
