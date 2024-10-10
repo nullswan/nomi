@@ -19,7 +19,8 @@ import (
 func ollamaServerIsRunning() bool {
 	defaultURL := "http://localhost:11434"
 	req := defaultURL + "/health"
-	_, err := http.Get(req)
+	resp, err := http.Get(req)
+	defer resp.Body.Close()
 	return err == nil
 }
 
