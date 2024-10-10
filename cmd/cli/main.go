@@ -89,7 +89,7 @@ var rootCmd = &cobra.Command{
 		// Welcome message
 		if !interactiveMode {
 			fmt.Printf("----\n")
-			fmt.Printf("Welcome to Golem! (v%s) 🗿\n", buildVersion)
+			fmt.Printf("Welcome to Golem! (%s) 🗿\n", buildVersion)
 			fmt.Println()
 			fmt.Println("Configuration")
 			fmt.Printf("  Start prompt: %s\n", startPrompt)
