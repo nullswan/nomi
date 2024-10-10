@@ -5,19 +5,19 @@ type olamaProviderConfig struct {
 	model   string
 }
 
-func NewOlamaProviderConfig(baseUrl, model string) olamaProviderConfig {
+func NewOlamaProviderConfig(baseURL, model string) olamaProviderConfig {
 	return olamaProviderConfig{
-		baseURL: baseUrl,
+		baseURL: baseURL,
 		model:   model,
 	}
 }
 
-func (o olamaProviderConfig) BaseUrl() string {
+func (o olamaProviderConfig) BaseURL() string {
 	return o.baseURL
 }
 
-func (o olamaProviderConfig) WithBaseUrl(baseUrl string) olamaProviderConfig {
-	o.baseURL = baseUrl
+func (o olamaProviderConfig) WithBaseURL(baseURL string) olamaProviderConfig {
+	o.baseURL = baseURL
 	return o
 }
 

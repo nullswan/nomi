@@ -35,7 +35,7 @@ func NewTextToTextProvider(
 		Timeout: 10 * time.Second,
 	}
 
-	url, err := url.Parse(config.BaseUrl())
+	url, err := url.Parse(config.BaseURL())
 	if err != nil {
 		panic(err)
 	}
@@ -60,6 +60,9 @@ func NewTextToTextProvider(
 
 	for {
 		listResp, err := p.client.List(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("error listing models: %w", err)
+		}
 		for _, model := range listResp.Models {
 			if model.Name == config.model {
 				return p, nil
