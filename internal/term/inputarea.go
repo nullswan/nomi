@@ -1,11 +1,10 @@
 package term
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
-
-	"errors"
 
 	"github.com/chzyer/readline"
 )
