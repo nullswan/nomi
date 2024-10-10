@@ -18,7 +18,7 @@ var conversationListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all conversations",
 	Long:  `List all available conversations with their ID and Created At.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		t := table.NewWriter()
 		t.SetOutputMirror(os.Stdout)
 		t.SetStyle(table.StyleLight)

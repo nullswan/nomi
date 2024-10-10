@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -301,7 +302,9 @@ func generateCompletion(
 					renderedContent, err := renderer.Render(fullContent)
 					if err != nil {
 						fmt.Printf("Error rendering completion: %v\n", err)
-						return fullContent, err
+						return fullContent, errors.New(
+							"error rendering completion",
+						)
 					}
 
 					lines := strings.Split(fullContent, "\n")
@@ -320,7 +323,7 @@ func generateCompletion(
 
 			if !ok {
 				fmt.Println()
-				return fullContent, fmt.Errorf("error reading completion")
+				return fullContent, errors.New("error reading completion")
 			}
 
 			if cmpl.Content() == "" {
@@ -330,7 +333,7 @@ func generateCompletion(
 			fullContent += cmpl.Content()
 			fmt.Printf("%s", cmpl.Content())
 		case <-ctx.Done():
-			return fullContent, fmt.Errorf("context canceled")
+			return fullContent, errors.New("context canceled")
 		}
 	}
 }
@@ -431,7 +434,7 @@ func addFileToConversation(
 }
 
 func formatFileMessage(fileName, content string) string {
-	return fileName + "-----\n" + string(content) + "-----\n"
+	return fileName + "-----\n" + content + "-----\n"
 }
 
 func uintPtr(u uint) *uint { return &u }
