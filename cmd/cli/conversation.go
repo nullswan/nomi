@@ -62,3 +62,31 @@ var conversationListCmd = &cobra.Command{
 		t.Render()
 	},
 }
+
+var conversationDeleteCmd = &cobra.Command{
+	Use:   "delete [id]",
+	Short: "Delete a conversation",
+	Long:  `Delete a conversation by its ID.`,
+	Run: func(_ *cobra.Command, args []string) {
+		if len(args) == 0 {
+			fmt.Println("Please provide the ID of the conversation to delete.")
+			return
+		}
+		id := args[0]
+
+		repo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
+		if err != nil {
+			fmt.Println("Error creating repository:", err)
+			return
+		}
+		defer repo.Close()
+
+		err = repo.DeleteConversation(id)
+		if err != nil {
+			fmt.Println("Error deleting conversation:", err)
+			return
+		}
+
+		fmt.Println("Conversation deleted.")
+	},
+}

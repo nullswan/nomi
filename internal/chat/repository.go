@@ -21,7 +21,10 @@ import (
 type Repository interface {
 	SaveConversation(conversation Conversation) error
 	LoadConversation(id string) (Conversation, error)
+	DeleteConversation(id string) error
+
 	GetConversations() ([]Conversation, error)
+
 	Close() error
 }
 
@@ -155,6 +158,17 @@ func (r *sqliteRepository) LoadConversation(
 		messages:  messages,
 		createdAt: convoCreatedAt.UTC(),
 	}, nil
+}
+
+func (r *sqliteRepository) DeleteConversation(id string) error {
+	// This will cascade delete messages
+	deleteConversation := `DELETE FROM conversations WHERE id = ?`
+	_, err := r.db.Exec(deleteConversation, id)
+	if err != nil {
+		return fmt.Errorf("error deleting conversation: %w", err)
+	}
+
+	return nil
 }
 
 func (r *sqliteRepository) Close() error {

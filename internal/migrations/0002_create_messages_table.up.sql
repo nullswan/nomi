@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS messages (
   content TEXT,
   created_at TIMESTAMP,
   is_file BOOLEAN,
-  FOREIGN KEY(conversation_id) REFERENCES conversations(id)
+  FOREIGN KEY(conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 );
