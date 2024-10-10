@@ -17,7 +17,7 @@ import (
 var promptCmd = &cobra.Command{
 	Use:   "prompt",
 	Short: "Manage prompts",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Println("Use 'golem prompt list' to list available prompts.")
 	},
 }
@@ -26,7 +26,7 @@ var promptAddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a new prompt",
 	Long:  `Add a new prompt to the system.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if len(args) == 0 {
 			fmt.Println("Please provide the URL of the YAML file.")
 			return
@@ -86,7 +86,7 @@ var promptListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all prompts",
 	Long:  `List all available prompts with their ID, Name, and Description.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		t := table.NewWriter()
 		t.SetOutputMirror(os.Stdout)
 		t.SetStyle(table.StyleLight)
@@ -128,7 +128,7 @@ var promptEditCmd = &cobra.Command{
 	Use:   "edit [id]",
 	Short: "Edit an existing prompt",
 	Long:  `Edit an existing prompt by its ID.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if len(args) == 0 {
 			fmt.Println("Please provide the ID of the prompt to edit.")
 			return
@@ -171,13 +171,13 @@ var promptEditCmd = &cobra.Command{
 			editor = "vim"
 		}
 
-		cmd_ := exec.Command(editor, tempFile.Name())
-		cmd_.Stdin = os.Stdin
-		cmd_.Stdout = os.Stdout
-		cmd_.Stderr = os.Stderr
+		process := exec.Command(editor, tempFile.Name())
+		process.Stdin = os.Stdin
+		process.Stdout = os.Stdout
+		process.Stderr = os.Stderr
 
 		// Open the temp file in Vim
-		if err := cmd_.Run(); err != nil {
+		if err := process.Run(); err != nil {
 			fmt.Printf("Error opening Vim: %v\n", err)
 			return
 		}
