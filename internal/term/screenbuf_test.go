@@ -101,9 +101,77 @@ func TestClear(t *testing.T) {
 	}
 
 	output := w.buf.String()
-	if !strings.Contains(output, "\033[H") ||
-		!strings.Contains(output, "\033[J") {
-		t.Errorf("Clear didn't output correct ANSI escape sequences")
+	expectedSequences := []string{
+		"\033[5F", // Move up 5 lines
+		"\033[2K", // Clear entire line
+		"\033[1E", // Move to next line
+		"\033[5F", // Move back up 5 lines
+	}
+	for _, seq := range expectedSequences {
+		if !strings.Contains(output, seq) {
+			t.Errorf("Clear didn't output expected sequence: %q", seq)
+		}
+	}
+
+	// Check that it doesn't contain the full screen clear sequence
+	if strings.Contains(output, "\033[J") {
+		t.Errorf("Clear shouldn't have cleared the full screen")
+	}
+}
+
+func TestClearPartial(t *testing.T) {
+	w := &mockWriter{}
+	sb := NewScreenBuf(w)
+	sb.height = 5 // Set a fixed height for testing
+
+	// Write fewer lines than the buffer height
+	lines := []string{"1", "2", "3"}
+	for _, line := range lines {
+		sb.WriteLine(line)
+	}
+
+	sb.Clear()
+
+	if len(sb.lines) != 0 {
+		t.Errorf("Expected lines to be empty after clear, got %v", sb.lines)
+	}
+
+	output := w.buf.String()
+	expectedSequences := []string{
+		"\033[3F", // Move up 3 lines
+		"\033[2K", // Clear entire line
+		"\033[1E", // Move to next line
+		"\033[3F", // Move back up 3 lines
+	}
+	for _, seq := range expectedSequences {
+		if !strings.Contains(output, seq) {
+			t.Errorf("Clear didn't output expected sequence: %q", seq)
+		}
+	}
+
+	// Check that it doesn't contain the full screen clear sequence
+	if strings.Contains(output, "\033[J") {
+		t.Errorf("Clear shouldn't have cleared the full screen")
+	}
+}
+
+func TestClearEmpty(t *testing.T) {
+	w := &mockWriter{}
+	sb := NewScreenBuf(w)
+
+	// Clear an empty buffer
+	sb.Clear()
+
+	if len(sb.lines) != 0 {
+		t.Errorf("Expected lines to be empty after clear, got %v", sb.lines)
+	}
+
+	output := w.buf.String()
+	if output != "" {
+		t.Errorf(
+			"Clear on empty buffer shouldn't output anything, got: %q",
+			output,
+		)
 	}
 }
 
