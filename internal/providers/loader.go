@@ -41,6 +41,7 @@ func LoadTextToTextProvider(
 			cmd, err = tryStartOllama()
 			if err != nil {
 				ollamaOutput := config.GetProgramDirectory() + "/ollama"
+				const maxDownloadRetries = 3
 				err = backoff.Retry(func() error {
 					fmt.Printf(
 						"Download ollama to %s\n",
@@ -50,7 +51,7 @@ func LoadTextToTextProvider(
 						context.TODO(),
 						ollamaOutput,
 					)
-				}, backoff.WithMaxRetries(backoff.NewConstantBackOff(time.Second), 3))
+				}, backoff.WithMaxRetries(backoff.NewConstantBackOff(time.Second), maxDownloadRetries))
 				if err != nil {
 					return nil, fmt.Errorf("error installing ollama: %w", err)
 				}
