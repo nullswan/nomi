@@ -12,7 +12,6 @@ import (
 	"syscall"
 
 	"github.com/charmbracelet/glamour"
-	"github.com/manifoldco/promptui/screenbuf"
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/completion"
 	"github.com/nullswan/golem/internal/config"
@@ -297,7 +296,7 @@ func generateCompletion(
 		}
 	}()
 
-	sb := screenbuf.New(os.Stdout)
+	sb := term.NewScreenBuf(os.Stdout)
 	var fullContent string
 	currentLine := ""
 
@@ -315,7 +314,8 @@ func generateCompletion(
 						err,
 					)
 				}
-				fmt.Println(mdContent)
+
+				sb.WriteLine(mdContent)
 				return fullContent, nil
 			}
 
@@ -331,7 +331,14 @@ func generateCompletion(
 			fullContent += cmpl.Content()
 			currentLine += cmpl.Content()
 			if strings.Contains(currentLine, "\n") {
-				sb.WriteString(currentLine)
+				lines := strings.Split(currentLine, "\n")
+				for i, line := range lines {
+					if i == len(lines)-1 {
+						currentLine = line
+						continue
+					}
+					sb.WriteLine(line)
+				}
 				currentLine = currentLine[strings.LastIndex(currentLine, "\n")+1:]
 			}
 		case <-ctx.Done():

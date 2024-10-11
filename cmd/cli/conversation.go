@@ -3,11 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/manifoldco/promptui/screenbuf"
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/term"
 	"github.com/spf13/cobra"
@@ -132,15 +130,6 @@ var conversationShowCmd = &cobra.Command{
 
 		for _, msg := range convo.GetMessages() {
 			fmt.Printf("%s:\n", msg.Role.String())
-
-			sb := screenbuf.New(os.Stdout)
-
-			lines := strings.Split(msg.Content, "\n")
-			for _, line := range lines {
-				sb.WriteString(line)
-			}
-
-			sb.Clear()
 
 			mdContent, err := renderer.Render(msg.Content)
 			if err != nil {
