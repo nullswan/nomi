@@ -5,6 +5,8 @@ import (
 )
 
 func TestFormatExecutionResultForLLM(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		results  []ExecutionResult
@@ -78,6 +80,8 @@ Third output`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			result := FormatExecutionResultForLLM(tt.results)
 			if result != tt.expected {
 				t.Errorf(

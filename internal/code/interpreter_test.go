@@ -6,6 +6,8 @@ import (
 )
 
 func TestInterpretCodeBlocks(t *testing.T) {
+	t.Parallel()
+
 	// Register mock executors
 	registerExecutor(
 		"python",
