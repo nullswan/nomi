@@ -1,13 +1,14 @@
 package code
 
 import (
-	"fmt"
 	"runtime"
 	"sync"
 )
 
-var executors = make(map[string]Executor)
-var onceExecutorRegistration sync.Once
+var (
+	executors                = make(map[string]Executor)
+	onceExecutorRegistration sync.Once
+)
 
 func registerExecutor(language string, executor Executor) {
 	executors[language] = executor
@@ -25,7 +26,7 @@ func ExecuteCodeBlock(block CodeBlock) ExecutionResult {
 	executor, ok := executors[block.Language]
 	if !ok {
 		return ExecutionResult{
-			Stderr:   fmt.Sprintf("Unsupported language: %s", block.Language),
+			Stderr:   "Unsupported language: " + block.Language,
 			ExitCode: 1,
 		}
 	}
