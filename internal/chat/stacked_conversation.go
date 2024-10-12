@@ -54,6 +54,22 @@ func (c *stackedConversation) WithPrompt(prompt prompts.Prompt) {
 	}
 }
 
+func (c *stackedConversation) Reset() Conversation {
+	conversastion := NewStackedConversation(c.repo)
+
+	// Copy system messages
+	for _, message := range c.messages {
+		if message.Role != RoleSystem {
+			break
+		}
+		conversastion.AddMessage(
+			message,
+		)
+	}
+
+	return conversastion
+}
+
 func NewStackedConversation(
 	repo Repository,
 ) Conversation {

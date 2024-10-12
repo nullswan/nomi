@@ -14,4 +14,6 @@ type Conversation interface {
 	AddMessage(message Message)
 
 	WithPrompt(prompt prompts.Prompt)
+
+	Reset() Conversation
 }

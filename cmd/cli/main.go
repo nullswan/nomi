@@ -145,8 +145,8 @@ var rootCmd = &cobra.Command{
 				return
 			}
 
-			if isLocalResource(text) {
-				processLocalResource(conversation, text)
+			text = handleCommands(text, conversation)
+			if text == "" {
 				return
 			}
 
@@ -444,4 +444,52 @@ func addFileToConversation(
 
 func formatFileMessage(fileName, content string) string {
 	return fileName + "-----\n" + content + "-----\n"
+}
+
+func handleCommands(text string, conversation chat.Conversation) string {
+	lines := strings.Split(text, "\n")
+	if len(lines) == 0 {
+		return text
+	}
+
+	ret := ""
+	for _, line := range lines {
+		if !strings.HasPrefix(line, "/") {
+			ret += line + "\n"
+			continue
+		}
+
+		switch {
+		case strings.HasPrefix(line, "/help"):
+			fmt.Println("Available commands:")
+			fmt.Println("  /help        Show this help message")
+			fmt.Println("  /reset       Reset the conversation")
+			fmt.Println(
+				"  /add <file>  Add a file or directory to the conversation",
+			)
+			fmt.Println("  /exit        Exit the application")
+		case strings.HasPrefix(line, "/reset"):
+			conversation = conversation.Reset()
+			fmt.Println("Conversation reset.")
+		case strings.HasPrefix(line, "/add"):
+			args := strings.Fields(line)
+			if len(args) < 2 {
+				fmt.Println("Usage: /add <file or directory>")
+				continue
+			}
+
+			if !isLocalResource(args[1]) {
+				fmt.Println("Invalid file or directory: " + args[1])
+				continue
+			}
+			processLocalResource(conversation, args[1])
+		case strings.HasPrefix(line, "/exit"):
+			fmt.Println("Exiting...")
+			os.Exit(0)
+		default:
+			ret += line + "\n"
+		}
+	}
+
+	return ret
 }
