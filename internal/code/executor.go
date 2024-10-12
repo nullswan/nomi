@@ -18,6 +18,7 @@ func ExecuteCodeBlock(block CodeBlock) ExecutionResult {
 	onceExecutorRegistration.Do(
 		func() {
 			initBashExecutor()
+			initPowerShellExecutor()
 			initPythonExecutor()
 			initOsascriptExecutor()
 		},
@@ -34,6 +35,13 @@ func ExecuteCodeBlock(block CodeBlock) ExecutionResult {
 	if block.Language == "osascript" && runtime.GOOS != "darwin" {
 		return ExecutionResult{
 			Stderr:   "Osascript is only supported on macOS",
+			ExitCode: 1,
+		}
+	}
+
+	if block.Language == "powershell" && runtime.GOOS != "windows" {
+		return ExecutionResult{
+			Stderr:   "Powershell is only supported on Windows",
 			ExitCode: 1,
 		}
 	}
