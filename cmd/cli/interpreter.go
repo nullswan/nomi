@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/code"
-	prompts "github.com/nullswan/golem/internal/prompt"
 	"github.com/nullswan/golem/internal/providers"
 	baseprovider "github.com/nullswan/golem/internal/providers/base"
 	"github.com/nullswan/golem/internal/term"
@@ -41,7 +41,16 @@ var interpreterCmd = &cobra.Command{
 
 		var err error
 		var textToTextBackend baseprovider.TextToTextProvider
-		if prompts.DefaultInterpreterPrompt.Preferences.Reasoning {
+
+		interpreterAskPrompt, err := code.GetDefaultInterpreterPrompt(
+			runtime.GOOS,
+		)
+		if err != nil {
+			fmt.Printf("Error getting default interpreter prompt: %v\n", err)
+			os.Exit(1)
+		}
+
+		if interpreterAskPrompt.Preferences.Reasoning {
 			textToTextBackend, err = providers.LoadTextToTextReasoningProvider(
 				provider,
 				targetModel,
@@ -74,7 +83,7 @@ var interpreterCmd = &cobra.Command{
 		defer repo.Close()
 
 		conversation := chat.NewStackedConversation(repo)
-		conversation.WithPrompt(prompts.DefaultInterpreterPrompt)
+		conversation.WithPrompt(interpreterAskPrompt)
 
 		// Display welcome message
 		fmt.Printf("----\n")
