@@ -39,5 +39,12 @@ func ExecuteCodeBlock(block CodeBlock) ExecutionResult {
 		}
 	}
 
+	if block.Language == "powershell" && runtime.GOOS != "windows" {
+		return ExecutionResult{
+			Stderr:   "Powershell is only supported on Windows",
+			ExitCode: 1,
+		}
+	}
+
 	return executor.Execute(block.Code)
 }
