@@ -14,11 +14,10 @@ func TestParseCodeBlocks(t *testing.T) {
 		expected []CodeBlock
 	}{
 		{
-			name:  "Multiple languages",
+			name:  "Multiple languages, selects first language (python)",
 			input: "```python\nprint('Hello')\n```\n```bash\necho 'World'\n```",
 			expected: []CodeBlock{
 				{Language: "python", Code: "print('Hello')"},
-				{Language: "bash", Code: "echo 'World'"},
 			},
 		},
 		{
@@ -40,9 +39,17 @@ func TestParseCodeBlocks(t *testing.T) {
 				{Language: "python", Code: "print('Unclosed')"},
 			},
 		},
+		{
+			name:  "Multiple languages, selects first language (bash)",
+			input: "```bash\necho 'World'\n```\n```python\nprint('Hello')\n```",
+			expected: []CodeBlock{
+				{Language: "bash", Code: "echo 'World'"},
+			},
+		},
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
