@@ -46,5 +46,8 @@ func ExecuteCodeBlock(block CodeBlock) ExecutionResult {
 		}
 	}
 
-	return executor.Execute(block.Code)
+	r := executor.Execute(block.Code)
+	r.Block = block
+
+	return r
 }
