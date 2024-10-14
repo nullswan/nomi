@@ -19,6 +19,7 @@ all: build
 build-dev:
 	@echo "Building..."
 	@go build -o dist/ ./...
+	@echo "Done!"
 
 .PHONY: dev
 dev: build-dev

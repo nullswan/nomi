@@ -12,6 +12,8 @@ import (
 
 	"github.com/nullswan/golem/internal/chat"
 	"github.com/nullswan/golem/internal/code"
+	"github.com/nullswan/golem/internal/completion"
+	"github.com/nullswan/golem/internal/logger"
 	"github.com/nullswan/golem/internal/providers"
 	baseprovider "github.com/nullswan/golem/internal/providers/base"
 	"github.com/nullswan/golem/internal/term"
@@ -27,10 +29,12 @@ var interpreterCmd = &cobra.Command{
 	Use:   "interpreter",
 	Short: "Start the interpreter",
 	Run: func(_ *cobra.Command, _ []string) {
+		log := logger.Init()
+
 		// Ensure the provider is OpenAI
 		provider := providers.CheckProvider()
 		if provider != providers.OpenAIProvider {
-			fmt.Println("Error: only openai is supported currently.")
+			log.Error("Error: only openai is supported currently.")
 			os.Exit(1)
 		}
 
@@ -40,49 +44,69 @@ var interpreterCmd = &cobra.Command{
 		provider = providers.CheckProvider()
 
 		var err error
-		var textToTextBackend baseprovider.TextToTextProvider
+		var codeGenerationBackend baseprovider.TextToTextProvider
+		var codeInferenceBackend baseprovider.TextToTextProvider
 
 		interpreterAskPrompt, err := code.GetDefaultInterpreterPrompt(
 			runtime.GOOS,
 		)
 		if err != nil {
-			fmt.Printf("Error getting default interpreter prompt: %v\n", err)
+			log.With("error", err).
+				Error("Error getting default interpreter prompt")
 			os.Exit(1)
 		}
 
 		if interpreterAskPrompt.Preferences.Reasoning {
-			textToTextBackend, err = providers.LoadTextToTextReasoningProvider(
+			codeGenerationBackend, err = providers.LoadTextToTextReasoningProvider(
 				provider,
 				targetModel,
 			)
 			if err != nil {
-				fmt.Printf(
-					"Error loading text-to-text reasoning provider: %v\n",
-					err,
-				)
+				log.With("error", err).
+					Warn("Error loading text-to-text reasoning provider")
 			}
 		}
-		if textToTextBackend == nil {
-			textToTextBackend, err = providers.LoadTextToTextProvider(
+		if codeGenerationBackend == nil {
+			codeGenerationBackend, err = providers.LoadTextToTextProvider(
 				provider,
 				targetModel,
 			)
 			if err != nil {
-				fmt.Printf("Error loading text-to-text provider: %v\n", err)
+				log.With("error", err).
+					Error("Error loading text-to-text provider")
 				os.Exit(1)
 			}
 		}
+		defer codeGenerationBackend.Close()
 
-		defer textToTextBackend.Close()
-
-		repo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
+		codeInferenceBackend, err = providers.LoadTextToTextProvider(
+			provider,
+			"", // default to fast
+		)
 		if err != nil {
-			fmt.Printf("Error creating repository: %v\n", err)
+			log.With("error", err).
+				Error("Error loading text-to-text provider")
 			os.Exit(1)
 		}
-		defer repo.Close()
+		defer codeInferenceBackend.Close()
 
-		conversation := chat.NewStackedConversation(repo)
+		chatRepo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
+		if err != nil {
+			log.With("error", err).
+				Error("Error creating chat repository")
+			os.Exit(1)
+		}
+		defer chatRepo.Close()
+
+		codeRepo, err := code.NewSQLiteRepository(cfg.Output.Sqlite.Path)
+		if err != nil {
+			log.With("error", err).
+				Error("Error creating code repository")
+			os.Exit(1)
+		}
+		defer codeRepo.Close()
+
+		conversation := chat.NewStackedConversation(chatRepo)
 		conversation.WithPrompt(interpreterAskPrompt)
 
 		// Display welcome message
@@ -95,7 +119,8 @@ var interpreterCmd = &cobra.Command{
 		)
 		fmt.Printf("  Conversation: %s\n", conversation.GetID())
 		fmt.Printf("  Provider: %s\n", provider)
-		fmt.Printf("  Model: %s\n", textToTextBackend.GetModel())
+		fmt.Printf("  Code Model: %s\n", codeGenerationBackend.GetModel())
+		fmt.Printf("  Inference Model: %s\n", codeInferenceBackend.GetModel())
 		fmt.Printf("  Build Date: %s\n", buildDate)
 		fmt.Printf("-----\n")
 		fmt.Printf("Press Enter twice to send a message.\n")
@@ -105,13 +130,27 @@ var interpreterCmd = &cobra.Command{
 
 		pipedInput, err := term.GetPipedInput()
 		if err != nil {
-			fmt.Printf("Error reading piped input: %v\n", err)
+			log.With("error", err).
+				Error("Error reading piped input")
 		}
 
 		renderer, err := term.InitRenderer()
 		if err != nil {
-			fmt.Printf("Error initializing renderer: %v\n", err)
+			log.With("error", err).
+				Error("Error initializing renderer")
 			os.Exit(1)
+		}
+
+		availableBlocks, err := codeRepo.LoadCodeBlocks()
+		if err != nil {
+			log.With("error", err).
+				Error("Error loading code blocks")
+			return
+		}
+
+		blockMap := make(map[string]code.CodeBlock, len(availableBlocks))
+		for _, block := range availableBlocks {
+			blockMap[block.ID] = block
 		}
 
 		var lastResult []code.ExecutionResult
@@ -129,8 +168,8 @@ var interpreterCmd = &cobra.Command{
 				return
 			}
 
-			if isLocalResource(text) {
-				processLocalResource(conversation, text)
+			text = handleCommands(text, conversation)
+			if text == "" {
 				return
 			}
 
@@ -145,10 +184,44 @@ var interpreterCmd = &cobra.Command{
 			defer signal.Stop(sigCh)
 			defer close(sigCh)
 
+			if len(blockMap) > 0 && retries == 0 {
+				log.Debug("Trying to get suggestion from available code blocks")
+
+				var cachedBlock *code.CodeBlock
+				block, err := getSuggestionFromBlocks(
+					text,
+					codeInferenceBackend,
+					availableBlocks,
+				)
+				if err != nil {
+					log.With("error", err).
+						Error("Error getting suggestion from blocks")
+				} else if block != nil {
+					cachedBlock = block
+				}
+
+				if cachedBlock != nil {
+					execResult := code.ExecuteCodeBlock(*cachedBlock)
+					lastResult = []code.ExecutionResult{execResult}
+					fmt.Printf(
+						"Received (%d): %s\n%s\n",
+						execResult.ExitCode,
+						execResult.Stdout,
+						execResult.Stderr,
+					)
+					return
+				}
+			}
+
+			fmt.Printf(
+				"I don't know the answer to that question. Let me try to find out...\n",
+			)
+
+			// TODO: Display the code that is going to be interpreted temporarily
 			completion, err := generateCompletion(
 				requestContext,
 				conversation,
-				textToTextBackend,
+				codeGenerationBackend,
 				renderer,
 			)
 			if err != nil {
@@ -156,7 +229,9 @@ var interpreterCmd = &cobra.Command{
 					fmt.Println("\nRequest canceled by the user.")
 					return
 				}
-				fmt.Printf("Error generating completion: %v\n", err)
+				log.With("error", err).
+					Error("Error generating completion")
+
 				return
 			}
 
@@ -167,11 +242,31 @@ var interpreterCmd = &cobra.Command{
 			// Exec the command
 			result := code.InterpretCodeBlocks(completion)
 			for _, r := range result {
-				if r.ExitCode != 0 {
+				if r.ExitCode == 0 && r.Stderr == "" {
+					description, err := storeCodePrompt(
+						codeInferenceBackend,
+						r.Block,
+						codeRepo,
+					)
+					if err != nil {
+						log.With("error", err).
+							Error("Error storing code prompt")
+						continue
+					}
+
+					r.Block.Description = description
+					blockMap[r.Block.ID] = r.Block
+				} else {
 					fmt.Printf("Error executing command: %s\n", r.Stderr)
 				}
 
-				fmt.Printf("Received: %s\n%s\n", r.Stdout, r.Stderr)
+				// TODO(nullswan): Display in a better way
+				fmt.Printf(
+					"Received (%d): %s\n%s\n",
+					r.ExitCode,
+					r.Stdout,
+					r.Stderr,
+				)
 			}
 
 			if len(result) == 0 {
@@ -238,11 +333,131 @@ var interpreterCmd = &cobra.Command{
 						cancel()
 						return
 					}
-					fmt.Printf("Error reading input: %v\n", err)
+					log.With("error", err).
+						Error("Error reading input")
 					return
 				}
 				processInput(text)
 			}
 		}
 	},
+}
+
+func storeCodePrompt(
+	textToTextBackend baseprovider.TextToTextProvider,
+	block code.CodeBlock,
+	repo code.Repository,
+) (string, error) {
+	outCh := make(chan completion.Completion)
+	messages := []chat.Message{
+		{
+			Role:    chat.RoleSystem,
+			Content: code.DefaultInterpreterInferencePrompt.Settings.SystemPrompt,
+		},
+		{
+			Role:    chat.RoleUser,
+			Content: block.Code,
+		},
+	}
+
+	go func() {
+		defer close(outCh)
+		if err := textToTextBackend.GenerateCompletion(
+			context.Background(),
+			messages,
+			outCh,
+		); err != nil {
+			if strings.Contains(err.Error(), "context canceled") {
+				return
+			}
+			fmt.Printf("Error generating completion: %v\n", err)
+		}
+	}()
+
+	for {
+		select {
+		case cmpl, ok := <-outCh:
+			if !ok {
+				return "", fmt.Errorf("error generating completion")
+			}
+
+			if !isTombStone(cmpl) {
+				continue
+			}
+
+			block.Description = cmpl.Content()
+			err := repo.SaveCodeBlock(block)
+			if err != nil {
+				fmt.Printf("Error saving code block: %v\n", err)
+			}
+
+			return block.Description, nil
+		}
+	}
+}
+
+func getSuggestionFromBlocks(
+	prompt string,
+	inferenceProvider baseprovider.TextToTextProvider,
+	availableBlocks []code.CodeBlock,
+) (*code.CodeBlock, error) {
+	outCh := make(chan completion.Completion)
+
+	availableBlocksText := ""
+	for _, block := range availableBlocks {
+		availableBlocksText += fmt.Sprintf(
+			"%s: %s\n",
+			block.ID,
+			block.Description,
+		)
+	}
+
+	messages := []chat.Message{
+		{
+			Role:    chat.RoleSystem,
+			Content: code.DefaultInterpreterCachePrompt.Settings.SystemPrompt + "\n----\nAvailable blocks:\n" + availableBlocksText,
+		},
+		{
+			Role:    chat.RoleUser,
+			Content: "Question:\n" + prompt,
+		},
+	}
+
+	go func() {
+		defer close(outCh)
+		if err := inferenceProvider.GenerateCompletion(
+			context.Background(),
+			messages,
+			outCh,
+		); err != nil {
+			if strings.Contains(err.Error(), "context canceled") {
+				return
+			}
+
+			fmt.Printf("Error generating completion: %v\n", err)
+		}
+	}()
+
+	for {
+		select {
+		case cmpl, ok := <-outCh:
+			if !ok {
+				return nil, fmt.Errorf("error generating completion")
+			}
+
+			if !isTombStone(cmpl) {
+				continue
+			}
+
+			fmt.Printf("Sent: %s\n", prompt)
+			fmt.Printf("Received: %s\n", cmpl.Content())
+			for _, block := range availableBlocks {
+				if block.ID == cmpl.Content() {
+					return &block, nil
+				}
+			}
+
+			return nil, nil
+		}
+	}
 }
