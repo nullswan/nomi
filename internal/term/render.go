@@ -11,6 +11,8 @@ import (
 	"golang.org/x/term"
 )
 
+type Renderer = glamour.TermRenderer
+
 func InitRenderer() (*glamour.TermRenderer, error) {
 	var style ansi.StyleConfig
 	switch {
