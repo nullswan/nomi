@@ -1,6 +1,6 @@
-# Golem
+# Nomi
 
-A simple, boring, and productive LLM runtime.
+AI runtime, multi-modal, supporting action & private data. 
 
 > **Note:** This project is still in development and not yet ready for production use.
 >
@@ -56,7 +56,7 @@ A simple, boring, and productive LLM runtime.
 ### Basic Conversation
 
 ```shell
-golem
+nomi
 >>> Hello, World!
 >>>
 >>>
@@ -67,7 +67,7 @@ Hello, World!
 ### Cancelation
 
 ```shell
-golem
+nomi
 >>> Give me a list of 100 random words.
 >>>
 >>>
@@ -80,19 +80,19 @@ Here is a list of 100 random words:
 ### Prompt Management
 
 ```shell
-golem prompt list
+nomi prompt list
 >>> ...
 
-golem prompt add https://raw.githubusercontent.com/nullswan/golem/refs/heads/main/prompts/native-code.yml
+nomi prompt add https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/prompts/native-code.yml
 >>> Prompt added successfully.
 
-golem prompt edit native-code
+nomi prompt edit native-code
 ...
 ```
 ### File Upload
 
 ```shell
-golem
+nomi
 >>> ./users/root/file.txt
 >>>
 >>>

@@ -59,8 +59,10 @@ var updateCmd = &cobra.Command{
 	},
 }
 
+const releaseURL = "https://api.github.com/repos/nullswan/nomi/releases/latest"
+
 func getLatestRelease() (string, string, error) {
-	url := "https://api.github.com/repos/nullswan/golem/releases/latest"
+	url := releaseURL
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to fetch latest release: %w", err)
@@ -81,7 +83,8 @@ func getLatestRelease() (string, string, error) {
 
 	version := strings.TrimPrefix(release.TagName, "v") // Remove 'v' prefix
 	assetName := fmt.Sprintf(
-		"golem_%s_%s_%s.tar.gz",
+		"%s_%s_%s_%s.tar.gz",
+		binName,
 		version,
 		runtime.GOOS,
 		runtime.GOARCH,
@@ -109,7 +112,7 @@ func downloadAndReplace(url string) error {
 	}
 	defer resp.Body.Close()
 
-	tmpFile, err := os.CreateTemp("", "golem-update-*.tar.gz")
+	tmpFile, err := os.CreateTemp("", "nomi-update-*.tar.gz")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
@@ -122,7 +125,7 @@ func downloadAndReplace(url string) error {
 	tmpFile.Close()
 
 	// Extract the tar.gz
-	extractDir, err := os.MkdirTemp("", "golem-update")
+	extractDir, err := os.MkdirTemp("", "nomi-update")
 	if err != nil {
 		return fmt.Errorf("failed to create extract directory: %w", err)
 	}

@@ -12,14 +12,14 @@ import (
 	"syscall"
 
 	"github.com/charmbracelet/glamour"
-	"github.com/nullswan/golem/internal/chat"
-	"github.com/nullswan/golem/internal/completion"
-	"github.com/nullswan/golem/internal/config"
-	"github.com/nullswan/golem/internal/providers"
-	baseprovider "github.com/nullswan/golem/internal/providers/base"
-	"github.com/nullswan/golem/internal/term"
+	"github.com/nullswan/nomi/internal/chat"
+	"github.com/nullswan/nomi/internal/completion"
+	"github.com/nullswan/nomi/internal/config"
+	"github.com/nullswan/nomi/internal/providers"
+	baseprovider "github.com/nullswan/nomi/internal/providers/base"
+	"github.com/nullswan/nomi/internal/term"
 
-	prompts "github.com/nullswan/golem/internal/prompt"
+	prompts "github.com/nullswan/nomi/internal/prompt"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +32,7 @@ var (
 )
 
 const (
-	binName = "golem"
+	binName = "nomi"
 )
 
 var rootCmd = &cobra.Command{

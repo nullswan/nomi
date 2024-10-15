@@ -24,6 +24,6 @@ build-dev:
 .PHONY: dev
 dev: build-dev
 	@echo "Deploying..."
-	@cp ./dist/cli ~/.local/bin/golem
-	@chmod +x ~/.local/bin/golem
+	@cp ./dist/cli ~/.local/bin/nomi
+	@chmod +x ~/.local/bin/nomi
 	@echo "Done!"

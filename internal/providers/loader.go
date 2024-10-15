@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/nullswan/golem/internal/config"
-	baseprovider "github.com/nullswan/golem/internal/providers/base"
-	"github.com/nullswan/golem/internal/providers/ollamaprovider"
-	"github.com/nullswan/golem/internal/providers/openaiprovider"
-	openrouterprovider "github.com/nullswan/golem/internal/providers/openrouter"
+	"github.com/nullswan/nomi/internal/config"
+	baseprovider "github.com/nullswan/nomi/internal/providers/base"
+	"github.com/nullswan/nomi/internal/providers/ollamaprovider"
+	"github.com/nullswan/nomi/internal/providers/openaiprovider"
+	openrouterprovider "github.com/nullswan/nomi/internal/providers/openrouter"
 )
 
 func LoadTextToTextProvider(

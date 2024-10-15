@@ -10,13 +10,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/nullswan/golem/internal/chat"
-	"github.com/nullswan/golem/internal/code"
-	"github.com/nullswan/golem/internal/completion"
-	"github.com/nullswan/golem/internal/logger"
-	"github.com/nullswan/golem/internal/providers"
-	baseprovider "github.com/nullswan/golem/internal/providers/base"
-	"github.com/nullswan/golem/internal/term"
+	"github.com/nullswan/nomi/internal/chat"
+	"github.com/nullswan/nomi/internal/code"
+	"github.com/nullswan/nomi/internal/completion"
+	"github.com/nullswan/nomi/internal/logger"
+	"github.com/nullswan/nomi/internal/providers"
+	baseprovider "github.com/nullswan/nomi/internal/providers/base"
+	"github.com/nullswan/nomi/internal/term"
 	"github.com/spf13/cobra"
 )
 

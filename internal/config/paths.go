@@ -15,7 +15,7 @@ func GetHomeDir() string {
 }
 
 // GetProgramDirectory returns the application's data directory
-// e.g., ~/.golem on Unix systems.
+// e.g., ~/.nomi on Unix systems.
 func GetProgramDirectory() string {
 	homeDir := GetHomeDir()
 	dataDir := filepath.Join(homeDir, configDir)

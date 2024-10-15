@@ -10,7 +10,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"gopkg.in/yaml.v2"
 
-	prompts "github.com/nullswan/golem/internal/prompt"
+	prompts "github.com/nullswan/nomi/internal/prompt"
 	"github.com/spf13/cobra"
 )
 

@@ -1,4 +1,4 @@
-module github.com/nullswan/golem
+module github.com/nullswan/nomi
 
 go 1.23.1
 

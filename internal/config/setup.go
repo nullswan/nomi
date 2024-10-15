@@ -4,7 +4,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/nullswan/golem/internal/term"
+	"github.com/nullswan/nomi/internal/term"
 )
 
 func Setup() error {

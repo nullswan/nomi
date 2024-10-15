@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/nullswan/golem/internal/chat"
-	"github.com/nullswan/golem/internal/term"
+	"github.com/nullswan/nomi/internal/chat"
+	"github.com/nullswan/nomi/internal/term"
 	"github.com/spf13/cobra"
 )
 

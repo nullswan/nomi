@@ -15,7 +15,7 @@ import (
 	// sqlite driver
 	_ "modernc.org/sqlite"
 
-	"github.com/nullswan/golem/internal/migrations"
+	"github.com/nullswan/nomi/internal/migrations"
 )
 
 type Repository interface {

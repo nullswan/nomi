@@ -3,8 +3,8 @@ package baseprovider
 import (
 	"context"
 
-	"github.com/nullswan/golem/internal/chat"
-	"github.com/nullswan/golem/internal/completion"
+	"github.com/nullswan/nomi/internal/chat"
+	"github.com/nullswan/nomi/internal/completion"
 )
 
 type TextToTextProvider interface {
