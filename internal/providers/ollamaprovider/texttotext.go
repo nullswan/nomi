@@ -31,8 +31,9 @@ func NewTextToTextProvider(
 	config olamaProviderConfig,
 	cmd *exec.Cmd,
 ) (baseprovider.TextToTextProvider, error) {
+	const defaultTimeout = 10 * time.Second
 	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: defaultTimeout,
 	}
 
 	url, err := url.Parse(config.BaseURL())
