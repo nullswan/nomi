@@ -6,21 +6,27 @@ import (
 )
 
 func ParseCodeBlocks(input string) []CodeBlock {
-	blocks := []CodeBlock{}
+	var blocks []CodeBlock
 	scanner := bufio.NewScanner(strings.NewReader(input))
 	var currentBlock CodeBlock
 	inCodeBlock := false
+	var selectedLang string
 
 	for scanner.Scan() {
 		line := scanner.Text()
 
 		if strings.HasPrefix(line, "```") {
 			if inCodeBlock {
-				blocks = append(blocks, currentBlock)
+				if currentBlock.Language == selectedLang {
+					blocks = append(blocks, currentBlock)
+				}
 				currentBlock = CodeBlock{}
 				inCodeBlock = false
 			} else {
 				currentBlock.Language = strings.TrimSpace(strings.TrimPrefix(line, "```"))
+				if selectedLang == "" {
+					selectedLang = currentBlock.Language
+				}
 				inCodeBlock = true
 			}
 		} else if inCodeBlock {
@@ -33,7 +39,9 @@ func ParseCodeBlocks(input string) []CodeBlock {
 	}
 
 	if inCodeBlock {
-		blocks = append(blocks, currentBlock)
+		if currentBlock.Language == selectedLang {
+			blocks = append(blocks, currentBlock)
+		}
 	}
 
 	return blocks
