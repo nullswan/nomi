@@ -288,7 +288,11 @@ func generateCompletion(
 
 	go func() {
 		defer close(outCh)
-		if err := textToTextBackend.GenerateCompletion(ctx, conversation.GetMessages(), outCh); err != nil {
+		if err := textToTextBackend.GenerateCompletion(
+			ctx,
+			conversation.GetMessages(),
+			outCh,
+		); err != nil {
 			if strings.Contains(err.Error(), "context canceled") {
 				return
 			}
