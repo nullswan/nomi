@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"golang.org/x/term"
@@ -47,7 +48,7 @@ func (sb *ScreenBuf) WriteLine(s string) {
 		) // Delete the top line
 		fmt.Fprint(
 			sb.writer,
-			"\033["+fmt.Sprint(sb.height-1)+";1H",
+			"\033["+strconv.Itoa(sb.height-1)+";1H",
 		) // Move cursor to last line
 		fmt.Fprint(
 			sb.writer,
