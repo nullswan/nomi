@@ -1,17 +1,16 @@
 package main
 
 import (
-	"fmt"
-	"strings"
-
 	"archive/tar"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/blang/semver"
 	"github.com/spf13/cobra"
@@ -20,7 +19,7 @@ import (
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Automatically update the application",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		fmt.Println("Checking for updates...")
 
 		latestVersion, downloadURL, err := getLatestRelease()
@@ -64,7 +63,7 @@ func getLatestRelease() (string, string, error) {
 	url := "https://api.github.com/repos/nullswan/golem/releases/latest"
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to fetch latest release: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -77,7 +76,7 @@ func getLatestRelease() (string, string, error) {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	version := strings.TrimPrefix(release.TagName, "v") // Remove 'v' prefix

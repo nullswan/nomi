@@ -38,7 +38,7 @@ const (
 var rootCmd = &cobra.Command{
 	Use:   binName + " [flags] [arguments]",
 	Short: "An enhanced AI runtime, focusing on ease of use and extensibility.",
-	Run: func(_ *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		selectedPrompt := &prompts.DefaultPrompt
 		if startPrompt != "" {
 			var err error
@@ -254,7 +254,7 @@ func main() {
 		BoolVarP(&interactiveMode, "interactive", "i", false, "Start in interactive mode")
 
 	// Initialize cfg in PersistentPreRun, making it available to all commands
-	rootCmd.PersistentPreRun = func(_ *cobra.Command, args []string) {
+	rootCmd.PersistentPreRun = func(_ *cobra.Command, _ []string) {
 		if !config.Exists() {
 			fmt.Println("Looks like this is your first time running Golem! 🗿")
 			if err := config.Setup(); err != nil {
