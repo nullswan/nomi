@@ -138,10 +138,6 @@ func (v *VAD) process() {
 
 			v.handleAudioBuffer(audioBuf, energy)
 
-		case <-ticker.C:
-			// Periodic flush
-			v.flushBuffer()
-
 		case <-silenceChan:
 			// Silence duration elapsed, end speech
 			v.handleSpeechEnd()
@@ -149,6 +145,10 @@ func (v *VAD) process() {
 		case <-pauseChan:
 			// Pause duration elapsed, trigger pause callback
 			v.handlePause()
+
+		case <-ticker.C:
+			// Periodic flush
+			v.flushBuffer()
 		}
 	}
 }
