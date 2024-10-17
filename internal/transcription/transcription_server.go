@@ -42,48 +42,51 @@ func NewTranscriptionServer(
 
 func (ts *TranscriptionServer) Start() {
 	ts.wg.Add(2)
-	go ts.processLoop(ts.bufferManagerPrimary)
-	go ts.processLoop(ts.bufferManagerSecondary)
+	go ts.processLoop(ts.bufferManagerPrimary, "primary")
+	go ts.processLoop(ts.bufferManagerSecondary, "secondary")
 }
 
 // AddAudio adds incoming audio data to the buffer manager.
 func (ts *TranscriptionServer) AddAudio(audio []byte) {
 	ts.bufferManagerPrimary.AddAudio(audio)
+	ts.bufferManagerSecondary.AddAudio(audio)
 }
 
 // processLoop continuously listens for buffer flush signals to initiate transcription.
-func (ts *TranscriptionServer) processLoop(bm *BufferManager) {
+func (ts *TranscriptionServer) processLoop(bm *BufferManager, caller string) {
 	defer ts.wg.Done()
 	for {
-		audioChunck, ok := bm.GetAudio()
+		audioChunk, ok := bm.GetAudio()
 		if !ok {
 			return
 		}
-		if len(audioChunck.Data) == 0 {
+		if len(audioChunk.Data) == 0 {
 			continue
 		}
 
-		transcribed, err := ts.transcriptionHandler.Transcribe(audioChunck.Data)
-		if err != nil {
-			ts.logger.
-				With("error", err).
-				Error("Failed to transcribe audio")
+		// For now, we call it in a goroutine to avoid blocking the main loop.
+		// In the future, we may want to consider a more sophisticated approach.
+		go func() {
+			transcribed, err := ts.transcriptionHandler.Transcribe(
+				audioChunk.Data,
+				caller,
+			)
+			if err != nil {
+				ts.logger.
+					With("error", err).
+					Error("Failed to transcribe audio")
 
-			continue
-		}
+				return
+			}
 
-		ts.textReconciler.AddSegment(
-			audioChunck.Timestamp,
-			transcribed,
-			audioChunck.BufferSource,
-		)
-		ts.callback(ts.textReconciler.GetCombinedText())
+			ts.textReconciler.AddSegment(
+				audioChunk.StartDuration,
+				audioChunk.EndDuration,
+				transcribed,
+			)
+			ts.callback(ts.textReconciler.GetCombinedText())
+		}()
 	}
-}
-
-// GetText retrieves the current transcribed text.
-func (ts *TranscriptionServer) GetText() string {
-	return ts.textReconciler.GetExistingText()
 }
 
 // Close gracefully shuts down the TranscriptionServer.
@@ -93,12 +96,12 @@ func (ts *TranscriptionServer) Close() {
 	ts.wg.Wait()
 }
 
-// Reset clears the current transcribed text.
+// Reset clears the buffer managers and text reconciler.
 func (ts *TranscriptionServer) Reset() {
-	ts.textReconciler.UpdateText("")
-}
+	ts.bufferManagerPrimary.Reset()
+	ts.bufferManagerSecondary.Reset()
 
-// Clear clears the buffer manager.
-func (ts *TranscriptionServer) Flush() {
-	ts.bufferManagerPrimary.Flush()
+	ts.textReconciler.Reset()
+
+	// TODO(nullswan): Cancel the context of the transcription handler
 }

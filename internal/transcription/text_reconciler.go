@@ -1,94 +1,128 @@
 package transcription
 
 import (
-	"context"
-	"fmt"
 	"strings"
+	"sync"
 	"time"
 
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/nullswan/nomi/internal/logger"
 )
 
+// TextSegment holds a piece of transcribed text with its timestamp.
+type TextSegment struct {
+	StartDuration time.Duration
+	EndDuration   time.Duration
+	Text          string
+}
+
+// TextReconciler manages text segments and handles reconciliation.
 type TextReconciler struct {
-	existingText string
-	enableFixing bool
-	apiKey       string
+	logger *logger.Logger
+
+	segments []TextSegment
+	mu       sync.Mutex
 }
 
-func NewTextReconciler(apiKey string) *TextReconciler {
+// NewTextReconciler creates a new TextReconciler instance.
+func NewTextReconciler(logger *logger.Logger) *TextReconciler {
 	return &TextReconciler{
-		apiKey: apiKey,
+		logger:   logger.With("component", "text_reconciler"),
+		segments: make([]TextSegment, 0),
 	}
 }
 
-func (tr *TextReconciler) SetEnableFixing(enabled bool) {
-	tr.enableFixing = enabled
-}
+// AddSegment adds a new text segment with its start and end durations.
+// It prefers longer segments by merging consecutive segments within a short time gap.
+func (tr *TextReconciler) AddSegment(start, end time.Duration, newText string) {
+	tr.mu.Lock()
+	defer tr.mu.Unlock()
 
-// Reconcile merges existing and new text, handling overlaps.
-func (tr *TextReconciler) Reconcile(existing, newText string) string {
 	trimmedNew := strings.TrimSpace(newText)
-	if existing != "" && !strings.HasSuffix(existing, " ") {
-		existing += " "
+	if len(trimmedNew) == 0 {
+		return
 	}
-	combined := existing + trimmedNew
 
-	if tr.enableFixing {
-		fixed, err := tr.FixText(combined)
-		if err != nil {
-			fmt.Printf("FixText error: %v\n", err)
-			return combined
+	// Define a maximum allowed gap between segments to consider them for merging
+	const maxGap = 100 * time.Millisecond
+
+	// If there are existing segments, check if the new segment is contiguous or overlapping
+	if len(tr.segments) > 0 {
+		lastSegment := &tr.segments[len(tr.segments)-1]
+		gap := start - lastSegment.EndDuration
+
+		if gap <= maxGap && gap >= 0 {
+			// Merge with the last segment
+			lastSegment.Text += " " + trimmedNew
+
+			// Update the end duration to the new segment's end
+			if end > lastSegment.EndDuration {
+				lastSegment.EndDuration = end
+			}
+			return
 		}
-		return fixed
 	}
+
+	// Append as a new segment
+	tr.segments = append(tr.segments, TextSegment{
+		StartDuration: start,
+		EndDuration:   end,
+		Text:          trimmedNew,
+	})
+}
+
+// GetCombinedText merges all segments into a single string and erases them.
+func (tr *TextReconciler) GetCombinedText() string {
+	tr.mu.Lock()
+	defer tr.mu.Unlock()
+
+	for _, segment := range tr.segments {
+		tr.logger.With("start", segment.StartDuration).
+			With("end", segment.EndDuration).
+			With("text", segment.Text).
+			Debug("Segment")
+	}
+
+	// Build the combined text
+	combined := tr.getCombinedText()
+
+	// Erase all segments after fetching
+	tr.segments = tr.segments[:0]
 
 	return combined
 }
 
-// GetExistingText retrieves the current transcribed text.
-func (tr *TextReconciler) GetExistingText() string {
-	return tr.existingText
+// getCombinedText builds the combined text from all segments.
+func (tr *TextReconciler) getCombinedText() string {
+	var combined strings.Builder
+	for _, segment := range tr.segments {
+		combined.WriteString(segment.Text)
+		if !strings.HasSuffix(segment.Text, " ") {
+			combined.WriteString(" ")
+		}
+	}
+	return strings.TrimSpace(combined.String())
 }
 
-// UpdateText updates the existing transcribed text.
-func (tr *TextReconciler) UpdateText(newText string) {
-	tr.existingText = newText
+// EraseTextInWindow removes text segments within the specified time window.
+// Remove this method if not needed.
+func (tr *TextReconciler) EraseTextInWindow(start, end time.Duration) {
+	tr.mu.Lock()
+	defer tr.mu.Unlock()
+
+	var updatedSegments []TextSegment
+	for _, segment := range tr.segments {
+		// Retain segments that end before the start or start after the end of the window
+		if segment.EndDuration <= start || segment.StartDuration >= end {
+			updatedSegments = append(updatedSegments, segment)
+		}
+	}
+	tr.segments = updatedSegments
 }
 
-// FixText implements text correction using OpenAI's ChatCompletion API.
-func (tr *TextReconciler) FixText(text string) (string, error) {
-	client := openai.NewClient(tr.apiKey)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+// Reset clears all text segments.
+func (tr *TextReconciler) Reset() {
+	tr.mu.Lock()
+	defer tr.mu.Unlock()
 
-	prompt := fmt.Sprintf(
-		"Please correct the following transcription for accuracy and readability:\n\n%s",
-		text,
-	)
-
-	req := openai.ChatCompletionRequest{
-		Model: openai.GPT4oMini,
-		Messages: []openai.ChatCompletionMessage{
-			{
-				Role:    "system",
-				Content: "You are an assistant that corrects and improves transcriptions for accuracy and readability.",
-			},
-			{
-				Role:    "user",
-				Content: prompt,
-			},
-		},
-	}
-
-	resp, err := client.CreateChatCompletion(ctx, req)
-	if err != nil {
-		return "", fmt.Errorf("chat completion error: %w", err)
-	}
-
-	if len(resp.Choices) == 0 {
-		return text, fmt.Errorf("no response from OpenAI")
-	}
-
-	fixedText := strings.TrimSpace(resp.Choices[0].Message.Content)
-	return fixedText, nil
+	tr.segments = tr.segments[:0]
 }

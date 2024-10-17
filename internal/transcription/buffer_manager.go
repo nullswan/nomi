@@ -1,3 +1,5 @@
+package transcription
+
 import (
 	"sync"
 	"time"
@@ -5,11 +7,13 @@ import (
 	"github.com/nullswan/nomi/internal/audio"
 )
 
-// AudioChunk represents a chunk of audio data with a timestamp and buffer source identifier.
+const flushChanSz = 100
+
+// AudioChunk represents a chunk of audio data with a timestamp.
 type AudioChunk struct {
-	Data         []byte
-	Timestamp    time.Time
-	BufferSource string // "primary" or "secondary"
+	Data          []byte
+	StartDuration time.Duration
+	EndDuration   time.Duration
 }
 
 // BufferManager manages audio buffering and flushing based on minimum buffer duration.
@@ -24,25 +28,24 @@ type BufferManager struct {
 	bytesPerSample int
 	bitsPerSample  int
 
-	mu        sync.Mutex
-	flushChan chan AudioChunk
-	quitChan  chan struct{}
-
-	bufferSource string // Identifier for the buffer instance ("primary" or "secondary")
+	mu         sync.Mutex
+	flushChan  chan AudioChunk
+	baseOffset time.Duration
 }
 
-// NewBufferManager creates a new BufferManager instance with the specified source identifier.
-func NewBufferManager(audioOpts *audio.AudioOptions, bufferSource string) *BufferManager {
+// NewBufferManager creates a new BufferManager instance.
+func NewBufferManager(audioOpts *audio.AudioOptions) *BufferManager {
 	bm := &BufferManager{
-		flushChan:      make(chan AudioChunk, 2), // Buffer size accommodates two instances
-		quitChan:       make(chan struct{}),
+		flushChan: make(
+			chan AudioChunk,
+			flushChanSz,
+		),
 		sampleRate:     int(audioOpts.SampleRate),
 		channels:       audioOpts.Channels,
 		bytesPerSample: audioOpts.BytesPerSample,
 		bitsPerSample:  audioOpts.BitsPerSample,
-		bufferSource:   bufferSource,
+		baseOffset:     0,
 	}
-	go bm.run()
 	return bm
 }
 
@@ -61,29 +64,16 @@ func (bm *BufferManager) SetOverlapDuration(duration time.Duration) {
 }
 
 // AddAudio appends audio data to the buffer and flushes if the minimum duration is met.
-func (bm *BufferManager) AddAudio(audio []byte) {
+// It also provides a manual Flush capability.
+func (bm *BufferManager) AddAudio(audioData []byte) {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
-	bm.buffer = append(bm.buffer, audio...)
+	bm.buffer = append(bm.buffer, audioData...)
 	audioDuration := bm.computeDuration(len(bm.buffer))
 
 	if audioDuration >= bm.minBufferDuration {
-		select {
-		case bm.flushChan <- AudioChunk{
-			Data:         append([]byte{}, bm.buffer...),
-			Timestamp:    time.Now(),
-			BufferSource: bm.bufferSource,
-		}:
-			overlapBytes := bm.computeBytes(bm.overlapDuration)
-			if overlapBytes < len(bm.buffer) {
-				bm.buffer = bm.buffer[len(bm.buffer)-overlapBytes:]
-			} else {
-				bm.buffer = bm.buffer[:0]
-			}
-		default:
-			// Flush channel is full; skip flushing to avoid blocking
-		}
+		bm.flushBuffer(audioDuration)
 	}
 }
 
@@ -92,43 +82,46 @@ func (bm *BufferManager) Flush() {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
-	if len(bm.buffer) > 0 {
-		select {
-		case bm.flushChan <- AudioChunk{
-			Data:         append([]byte{}, bm.buffer...),
-			Timestamp:    time.Now(),
-			BufferSource: bm.bufferSource,
-		}:
-			overlapBytes := bm.computeBytes(bm.overlapDuration)
-			if overlapBytes < len(bm.buffer) {
-				bm.buffer = bm.buffer[len(bm.buffer)-overlapBytes:]
-			} else {
-				bm.buffer = bm.buffer[:0]
-			}
-		default:
-			// Flush channel is full; skip flushing to avoid blocking
-		}
-	}
+	bm.flushBuffer(0)
 }
 
-// run starts the buffer manager's ticker for periodic checking and flushing.
-func (bm *BufferManager) run() {
-	ticker := time.NewTicker(500 * time.Millisecond) // Adjust tick duration as needed
-	defer ticker.Stop()
-	for {
-		select {
-		case <-bm.quitChan:
-			return
-		case <-ticker.C:
-			bm.mu.Lock()
-			bufferDuration := bm.computeDuration(len(bm.buffer))
-			if bufferDuration >= bm.minBufferDuration {
-				bm.mu.Unlock()
-				bm.Flush()
-			} else {
-				bm.mu.Unlock()
-			}
+// [#unsafe] flushBuffer handles the flushing logic to prevent code duplication.
+// It assumes that bm.mu is already locked.
+func (bm *BufferManager) flushBuffer(bufferDuration time.Duration) {
+	if len(bm.buffer) == 0 {
+		return
+	}
+
+	var duration time.Duration
+	if bufferDuration > 0 {
+		duration = bufferDuration
+	} else {
+		// This is the case when we're manually flushing the buffer
+		duration = bm.computeDuration(len(bm.buffer))
+	}
+
+	start := bm.baseOffset
+	end := bm.baseOffset + duration
+
+	chunk := AudioChunk{
+		Data:          append([]byte{}, bm.buffer...),
+		StartDuration: start,
+		EndDuration:   end,
+	}
+
+	select {
+	case bm.flushChan <- chunk:
+		// Retain overlap duration if buffer is not empty
+		overlapBytes := bm.computeBytes(bm.overlapDuration)
+		if overlapBytes < len(bm.buffer) {
+			bm.buffer = bm.buffer[len(bm.buffer)-overlapBytes:]
+			bm.baseOffset = end - bm.overlapDuration
+		} else {
+			bm.buffer = bm.buffer[:0]
+			bm.baseOffset = end
 		}
+	default:
+		// Flush channel is full; skip flushing to avoid blocking
 	}
 }
 
@@ -137,8 +130,13 @@ func (bm *BufferManager) computeDuration(bufferLength int) time.Duration {
 	if bm.sampleRate == 0 || bm.channels == 0 || bm.bytesPerSample == 0 {
 		return 0
 	}
+
 	bytesPerSecond := bm.sampleRate * bm.channels * bm.bytesPerSample
-	return time.Duration(bufferLength) * time.Second / time.Duration(bytesPerSecond)
+	return time.Duration(
+		bufferLength,
+	) * time.Second / time.Duration(
+		bytesPerSecond,
+	)
 }
 
 // computeBytes calculates the number of bytes for a given duration.
@@ -146,6 +144,7 @@ func (bm *BufferManager) computeBytes(duration time.Duration) int {
 	if bm.sampleRate == 0 || bm.channels == 0 || bm.bytesPerSample == 0 {
 		return 0
 	}
+
 	bytesPerSecond := bm.sampleRate * bm.channels * bm.bytesPerSample
 	return int(duration.Seconds() * float64(bytesPerSecond))
 }
@@ -156,24 +155,22 @@ func (bm *BufferManager) GetAudio() (AudioChunk, bool) {
 	return audio, ok
 }
 
+// Reset resets the BufferManager's baseOffset and clears the buffer.
+// It should be called when a new speech session starts.
+func (bm *BufferManager) Reset() {
+	bm.mu.Lock()
+	defer bm.mu.Unlock()
+
+	bm.baseOffset = 0
+	bm.buffer = bm.buffer[:0]
+}
+
 // Close gracefully shuts down the BufferManager by flushing remaining data and closing channels.
 func (bm *BufferManager) Close() {
 	bm.mu.Lock()
 	// Flush remaining buffer if it exists
-	if len(bm.buffer) > 0 {
-		select {
-		case bm.flushChan <- AudioChunk{
-			Data:         append([]byte{}, bm.buffer...),
-			Timestamp:    time.Now(),
-			BufferSource: bm.bufferSource,
-		}:
-			bm.buffer = bm.buffer[:0]
-		default:
-			// Flush channel is full; skip flushing to avoid blocking
-		}
-	}
+	bm.flushBuffer(0)
 	bm.mu.Unlock()
 
 	close(bm.flushChan)
-	close(bm.quitChan)
 }

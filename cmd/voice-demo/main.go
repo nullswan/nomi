@@ -43,38 +43,54 @@ func main() {
 		fmt.Println("Transcribed Text:", text)
 	}
 
-	ts := transcription.NewTranscriptionServer(
+	bufferManagerPrimary := transcription.NewBufferManager(audioOpts)
+	bufferManagerPrimary.SetMinBufferDuration(500 * time.Millisecond)
+	bufferManagerPrimary.SetOverlapDuration(100 * time.Millisecond)
+
+	bufferManagerSecondary := transcription.NewBufferManager(audioOpts)
+	bufferManagerSecondary.SetMinBufferDuration(2 * time.Second)
+	bufferManagerSecondary.SetOverlapDuration(400 * time.Millisecond)
+
+	textReconcilier := transcription.NewTextReconciler(logger)
+	tsHandler := transcription.NewTranscriptionHandler(
 		oaiKey,
+		audioOpts,
+		logger,
+	)
+	tsHandler.SetEnableDumping(true)
+	tsHandler.SetEnableFixing(true)
+
+	ts := transcription.NewTranscriptionServer(
+		bufferManagerPrimary,
+		bufferManagerSecondary,
+		tsHandler,
+		textReconcilier,
 		logger,
 		callback,
-		audioOpts,
-		transcription.WithOverlapDuration(500*time.Millisecond),
-		transcription.WithMinChunkDuration(500*time.Millisecond),
-		transcription.WithMaxChunkDuration(2000*time.Millisecond),
-		transcription.WithContextTimeout(30*time.Second),
-		transcription.WithEnableFixing(false),
 	)
+	ts.Start()
 	defer ts.Close()
 
 	// Initialize VAD
 	vad := audio.NewVAD(
 		audio.VADConfig{
-			EnergyThreshold: 0.02,                   // Adjust based on testing
-			FlushInterval:   250 * time.Millisecond, // Flush every 250ms
-			SilenceDuration: 800 * time.Millisecond, // Silence duration to detect end of speech
-			PauseDuration:   200 * time.Millisecond, // Pause duration to detect end of speech
+			EnergyThreshold: 0.015,                  // Adjust based on testing
+			FlushInterval:   210 * time.Millisecond, // Ideally, should fit the min buffer duration
+			SilenceDuration: 800 * time.Millisecond, // Detect end of speech
+			PauseDuration:   200 * time.Millisecond, // Detect pause within speech
 		},
 		audio.VADCallbacks{
 			OnSpeechStart: func() {
 				logger.Info("VAD: Speech started")
-				// ts.Reset()
+				ts.Reset()
 			},
 			OnSpeechEnd: func() {
 				logger.Info("VAD: Speech ended")
 
-				ts.Flush()
-				final := ts.GetText()
+				bufferManagerPrimary.Flush()
+				bufferManagerSecondary.Flush()
 
+				final := textReconcilier.GetCombinedText()
 				fmt.Println("Final Text:", final)
 			},
 			OnFlush: func(buffer []float32) {
@@ -83,11 +99,11 @@ func main() {
 
 				data, err := audio.Float32ToPCM(buffer)
 				if err != nil {
-					logger.Error(
-						"Failed to convert float32 to PCM",
-						"error",
-						err,
-					)
+					logger.
+						With("error", err).
+						Error(
+							"Failed to convert float32 to PCM",
+						)
 					return
 				}
 
@@ -95,12 +111,13 @@ func main() {
 			},
 			OnPause: func() {
 				logger.Info("VAD: Speech paused")
-				ts.Flush()
+				bufferManagerPrimary.Flush()
 			},
 		},
 		logger,
 	)
 
+	startedAt := time.Now()
 	vad.Start()
 	defer vad.Stop()
 
@@ -137,6 +154,15 @@ func main() {
 	if err := inputStream.Close(); err != nil {
 		logger.Error("Failed to close input stream", "error", err)
 	}
+
+	workflowDuration := time.Since(startedAt)
+	totalInferencedTime := tsHandler.GetMetrics().GetTotalDuration()
+	logger.Info(
+		"Total infered time: " + totalInferencedTime.String(),
+	)
+	logger.Info(
+		"Total workflow duration: " + workflowDuration.String(),
+	)
 
 	logger.Info("Program terminated gracefully")
 }
