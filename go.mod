@@ -17,7 +17,6 @@ require (
 	github.com/ollama/ollama v0.3.12
 	github.com/sashabaranov/go-openai v1.31.0
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	golang.org/x/sync v0.8.0
 	golang.org/x/term v0.25.0
 	gopkg.in/yaml.v2 v2.4.0
