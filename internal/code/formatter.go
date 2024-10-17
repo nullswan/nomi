@@ -19,14 +19,14 @@ func FormatExecutionResultForLLM(results []ExecutionResult) string {
 		if r.Stderr != "" {
 			sectionParts = append(
 				sectionParts,
-				fmt.Sprintf("Error:\n%s", r.Stderr),
+				"Error:\n"+r.Stderr,
 			)
 		}
 
 		if r.Stdout != "" {
 			sectionParts = append(
 				sectionParts,
-				fmt.Sprintf("Output:\n%s", r.Stdout),
+				"Output:\n"+r.Stdout,
 			)
 		}
 
