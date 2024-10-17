@@ -6,6 +6,8 @@ import (
 	"sync"
 )
 
+type Logger = slog.Logger
+
 var (
 	logger *slog.Logger
 	once   sync.Once
