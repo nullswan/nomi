@@ -22,6 +22,8 @@ func (m *MockExecutor) Execute(code string) ExecutionResult {
 }
 
 func TestExecuteCodeBlock(t *testing.T) {
+	t.Parallel()
+
 	// Register mock executors
 	registerExecutor(
 		"mock",
@@ -68,6 +70,8 @@ func TestExecuteCodeBlock(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			result := ExecuteCodeBlock(tt.block)
 			if !reflect.DeepEqual(result, tt.expected) {
 				t.Errorf(
@@ -81,6 +85,8 @@ func TestExecuteCodeBlock(t *testing.T) {
 }
 
 func TestOsascriptExecution(t *testing.T) {
+	t.Parallel()
+
 	registerExecutor(
 		"osascript",
 		&MockExecutor{output: "Osascript output", err: "", code: 0},

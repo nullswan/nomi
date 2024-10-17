@@ -12,10 +12,17 @@ type mockWriter struct {
 }
 
 func (m *mockWriter) Write(p []byte) (n int, err error) {
-	return m.buf.Write(p)
+	wN, wErr := m.buf.Write(p)
+	if wErr != nil {
+		return wN, fmt.Errorf("failed to write to buffer: %v", wErr)
+	}
+
+	return wN, nil
 }
 
 func TestNewScreenBuf(t *testing.T) {
+	t.Parallel()
+
 	w := &mockWriter{}
 	sb := NewScreenBuf(w)
 
@@ -37,6 +44,8 @@ func TestNewScreenBuf(t *testing.T) {
 }
 
 func TestWriteLine(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		lines    []string
@@ -61,6 +70,8 @@ func TestWriteLine(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			w := &mockWriter{}
 			sb := NewScreenBuf(w)
 			sb.height = 5 // Set a fixed height for testing
@@ -85,6 +96,8 @@ func TestWriteLine(t *testing.T) {
 }
 
 func TestClear(t *testing.T) {
+	t.Parallel()
+
 	w := &mockWriter{}
 	sb := NewScreenBuf(w)
 	sb.height = 5 // Set a fixed height for testing
@@ -120,6 +133,8 @@ func TestClear(t *testing.T) {
 }
 
 func TestClearPartial(t *testing.T) {
+	t.Parallel()
+
 	w := &mockWriter{}
 	sb := NewScreenBuf(w)
 	sb.height = 5 // Set a fixed height for testing
@@ -156,6 +171,8 @@ func TestClearPartial(t *testing.T) {
 }
 
 func TestClearEmpty(t *testing.T) {
+	t.Parallel()
+
 	w := &mockWriter{}
 	sb := NewScreenBuf(w)
 
@@ -176,6 +193,8 @@ func TestClearEmpty(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
+	t.Parallel()
+
 	sb := &ScreenBuf{
 		lines: []string{"Line 1", "Line 2", "Line 3"},
 	}
@@ -187,6 +206,8 @@ func TestString(t *testing.T) {
 }
 
 func TestScreenBufIntegration(t *testing.T) {
+	t.Parallel()
+
 	w := &mockWriter{}
 	sb := NewScreenBuf(w)
 	sb.height = 5 // Set a fixed height for testing
