@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	prompts "github.com/nullswan/golem/internal/prompt"
+	prompts "github.com/nullswan/nomi/internal/prompt"
 )
 
 func GetDefaultInterpreterPrompt(os string) (prompts.Prompt, error) {

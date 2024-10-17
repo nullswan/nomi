@@ -3,7 +3,7 @@ package chat
 import (
 	"time"
 
-	prompts "github.com/nullswan/golem/internal/prompt"
+	prompts "github.com/nullswan/nomi/internal/prompt"
 )
 
 type Conversation interface {

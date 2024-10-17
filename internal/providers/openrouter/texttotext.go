@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/nullswan/golem/internal/chat"
-	"github.com/nullswan/golem/internal/completion"
-	baseprovider "github.com/nullswan/golem/internal/providers/base"
+	"github.com/nullswan/nomi/internal/chat"
+	"github.com/nullswan/nomi/internal/completion"
+	baseprovider "github.com/nullswan/nomi/internal/providers/base"
 	"github.com/sashabaranov/go-openai"
 )
 

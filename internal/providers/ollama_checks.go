@@ -13,7 +13,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/nullswan/golem/internal/config"
+	"github.com/nullswan/nomi/internal/config"
 )
 
 func ollamaServerIsRunning() bool {

@@ -5,7 +5,7 @@ before:
     - go mod tidy
 
 builds:
-  - id: golem-cli
+  - id: nomi-cli
     goos:
       - linux
       - darwin
@@ -18,7 +18,7 @@ builds:
       - ppc64le
     goarm:
       - "7"
-    binary: golem-cli
+    binary: nomi-cli
     main: ./cmd/cli
     ldflags:
       - "-X main.buildDate={{ .Date }}"

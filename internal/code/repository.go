@@ -13,7 +13,7 @@ import (
 	// sqlite driver
 	_ "modernc.org/sqlite"
 
-	"github.com/nullswan/golem/internal/migrations"
+	"github.com/nullswan/nomi/internal/migrations"
 )
 
 // TODO(nullswan): Add sqlc here

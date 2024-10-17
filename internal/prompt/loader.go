@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nullswan/golem/internal/config"
+	"github.com/nullswan/nomi/internal/config"
 	"gopkg.in/yaml.v2"
 )
 
