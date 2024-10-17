@@ -65,8 +65,22 @@ func (sb *ScreenBuf) WriteLine(s string) {
 }
 
 func (sb *ScreenBuf) Clear() {
-	fmt.Fprint(sb.writer, "\033[H") // Move cursor to top-left corner
-	fmt.Fprint(sb.writer, "\033[J") // Clear screen from cursor down
+	if len(sb.lines) == 0 {
+		return
+	}
+
+	// Move cursor up by the number of lines we've written
+	fmt.Fprintf(sb.writer, "\033[%dF", len(sb.lines))
+
+	// Clear each line individually
+	for range sb.lines {
+		fmt.Fprint(sb.writer, "\033[2K") // Clear entire line
+		fmt.Fprint(sb.writer, "\033[1E") // Move to next line
+	}
+
+	// Move cursor back up
+	fmt.Fprintf(sb.writer, "\033[%dF", len(sb.lines))
+
 	sb.lines = sb.lines[:0]
 }
 
