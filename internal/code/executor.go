@@ -18,6 +18,7 @@ func ExecuteCodeBlock(block CodeBlock) ExecutionResult {
 	onceExecutorRegistration.Do(
 		func() {
 			initBashExecutor()
+			initPowerShellExecutor()
 			initPythonExecutor()
 			initOsascriptExecutor()
 		},
