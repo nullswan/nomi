@@ -1,108 +1,108 @@
-# Nomi
+# Nomi - A Multi-Modal AI Runtime
 
-AI runtime, multi-modal, supporting action & private data. 
+Born from the principles that **data ownership is challenging** and **AI simplifies communication**, the Nomi project aims to complement human intelligence by orchestrating data to enhance **decision-making** and handle **automated micro-tasks**.
 
-> **Note:** This project is still in development and not yet ready for production use.
+Our mission is to make AI more accessible and easy to use for everyone, ensuring that you have control over your data whenever you need it.
+
+**Nomi**, is a versatile and lightweight AI runtime that integrates with AI services like OpenAI, OpenRouter, and Ollama, enabling you to leverage their capabilities. While using these providers involves sending your data externally, Nomi also maintains a local archive of your data, ensuring you retain control and ownership.
+
+Supporting multiple data types, including text and audio, with image support coming soon, Nomi offers flexibility while safeguarding your information.
+
+> **Note:** This project is still being developed and isn't ready for full use yet, but we are working hard to make it stable and reliable.
 >
-> However, feel free to try it out and provide feedback.
-> 
-> You can email me at [pro@nullswan.io](mailto:pro@nullswan.io) or open an issue on GitHub.
+> We welcome any feedback, suggestions, or contributions. Thank you for trying Nomi!
 
 # Table of Contents
 
 - [Features](#features)
-  - [Conversation Management](#conversation-management)
-  - [Prompt Management](#prompt-management)
+  - [Manage Conversations](#manage-conversations)
+  - [Manage Prompts](#manage-prompts)
   - [AI Provider Integration](#ai-provider-integration)
-  - [Terminal Input Handling](#terminal-input-handling)
-  - [Markdown Output](#markdown-output)
-  - [Fallback on Auto Ollama Installation](#fallback-on-auto-ollama-installation)
-- [Example Usage](#example-usage)
-  - [Basic Conversation](#basic-conversation)
-  - [Cancelation](#cancelation)
-  - [Prompt Management](#prompt-management-1)
-  - [File Upload](#file-upload)
+  - [Terminal Features](#terminal-features)
+  - [Real-time Voice](#real-time-voice)
+  - [Interpreter Mode](#interpreter-mode)
+  - [Additional Features](#additional-features)
+- [Roadmap](#roadmap)
+- [Installation](#installation)
+
+
+## Nomi
+
+![Nomi Logo](./nomi-logo.png)
+
 
 ## Features
 
 ### Conversation Management
-- Create, load, and list conversations.
-- Supports adding messages to conversations.
-- Handles file messages.
 
-### Prompt Management
-- Add, edit, and list prompts.
-- Fetch prompts from specified URLs.
-- Validate prompts before saving.
+Create new conversations, load existing ones, list all conversations, add messages or files to a conversation, and reset conversations when needed.
+
+### Prompts Management
+
+Add new prompts, edit existing ones, list all available prompts, and fetch prompts from a URL for easy access and organization.
+
+### Code interpreting capabilities
+
+Run code on the fly with interpreter mode, making it easy to execute and test code directly within Nomi.
 
 ### AI Provider Integration
-- Integration with multiple AI providers (OpenAI, OpenRouter, Ollama).
-- Generate text completions based on user input.
-- Support for streaming responses from AI models.
 
-### Terminal Input Handling
-- Supports interactive terminal input.
-- Can read piped input from standard input.
+Connect seamlessly with AI providers like OpenAI, OpenRouter, and Ollama. Nomi can automatically install Ollama for you, simplifying the setup process.
 
-### Markdown Output
-- Render AI responses in a formatted markdown style.
-- Incorporate emojis and styled output for better readability.
+### Real-time Voice
 
-### Fallback on Auto Ollama Installation
-- Automatically downloads and installs necessary binaries for Ollama when not already present.
+Enable real-time voice interactions, allowing for a more dynamic and interactive user experience.
 
-## Example Usage
+### Terminal Experience
 
-### Basic Conversation
+Enjoy markdown-formatted output, read inputs with piped commands, and cancel operations easily within the terminal.
+
+### Additional Features
+
+Explore more functionalities and upcoming features in the [Roadmap](#roadmap).
+
+## Roadmap
+
+These features are planned for future updates. They are not in any specific order and may be partially or not implemented yet.
+
+- [ ] Image support
+- [ ] Local Whisper
+- [ ] Anthropic API
+- [ ] Long transcript processing
+- [ ] Transcript saving
+- [ ] Daemon mode + HTTP Interface
+- [ ] Editor mode
+- [ ] Ask before making decisions
+- [ ] Remember decisions
+- [ ] Track metrics
+- [ ] GUI
+- [ ] Auto-update (Update command is already available)
+- [ ] Interpreter safety
+- [ ] Actions
+- [ ] Action chains
+- [ ] Real-time file management
+- [ ] Memory embedding
+
+## Installation
+
+### Linux & MacOS
 
 ```shell
-nomi
->>> Hello, World!
->>>
->>>
-AI:
-Hello, World!
+# Check the script before running it.
+curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.sh | bash
 ```
 
-### Cancelation
+### Windows
 
 ```shell
-nomi
->>> Give me a list of 100 random words.
->>>
->>>
-AI:
-Here is a list of 100 random words:
-1. Word1
-2. Word2^CRequest canceled by user.
+# Check the script before running it.
+curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.bat | cmd
 ```
 
-### Prompt Management
+### Compile from Source
 
 ```shell
-nomi prompt list
->>> ...
-
-nomi prompt add https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/prompts/native-code.yml
->>> Prompt added successfully.
-
-nomi prompt edit native-code
-...
-```
-### File Upload
-
-```shell
-nomi
->>> ./users/root/file.txt
->>>
->>>
-Added file: ./users/root/file.txt
-
->>> What is the content of the file?
->>>
->>>
-
-AI:
-The content of the file is:
-Hello, World!
+git clone https://github.com/nullswan/nomi.git
+cd nomi
+make build
 ```
