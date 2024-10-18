@@ -2,7 +2,9 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/nullswan/nomi/internal/chat"
@@ -92,22 +94,39 @@ func GenerateCompletion(
 	go func() {
 		defer close(outCh)
 		if err := textToTextBackend.GenerateCompletion(ctx, conversation.GetMessages(), outCh); err != nil {
-			if fmt.Sprintf("%v", err) != "" { // Simplified error check
-				fmt.Printf("Error generating completion: %v\n", err)
+			if strings.Contains(err.Error(), "context canceled") {
+				return
 			}
+			fmt.Printf("Error generating completion: %v\n", err)
 		}
 	}()
 
-	sb := term.NewScreenBuf(nil) // Adjust as needed
+	sb := term.NewScreenBuf(os.Stdout)
 	var fullContent string
 	currentLine := ""
 
 	for {
 		select {
 		case cmpl, ok := <-outCh:
+			if completion.IsTombStone(cmpl) {
+				sb.Clear()
+
+				mdContent, err := renderer.Render(fullContent)
+				if err != nil {
+					fmt.Println("Error rendering markdown:", err)
+					return fullContent, fmt.Errorf(
+						"rendering markdown: %w",
+						err,
+					)
+				}
+
+				sb.WriteLine(mdContent)
+				return fullContent, nil
+			}
+
 			if !ok {
 				fmt.Println()
-				return fullContent, fmt.Errorf("error reading completion")
+				return fullContent, errors.New("error reading completion")
 			}
 
 			if cmpl.Content() == "" {
@@ -128,7 +147,7 @@ func GenerateCompletion(
 				currentLine = currentLine[strings.LastIndex(currentLine, "\n")+1:]
 			}
 		case <-ctx.Done():
-			return fullContent, fmt.Errorf("context canceled")
+			return fullContent, errors.New("context canceled")
 		}
 	}
 }
