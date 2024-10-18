@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/nullswan/nomi/internal/chat"
+	"github.com/nullswan/nomi/internal/cli"
 	"github.com/nullswan/nomi/internal/code"
 	"github.com/nullswan/nomi/internal/completion"
 	"github.com/nullswan/nomi/internal/logger"
@@ -90,7 +91,7 @@ var interpreterCmd = &cobra.Command{
 		}
 		defer codeInferenceBackend.Close()
 
-		chatRepo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
+		chatRepo, err := cli.InitChatDatabase(cfg.Output.Sqlite.Path)
 		if err != nil {
 			log.With("error", err).
 				Error("Error creating chat repository")

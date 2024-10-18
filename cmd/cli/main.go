@@ -20,6 +20,7 @@ import (
 	"github.com/gordonklaus/portaudio"
 	"github.com/nullswan/nomi/internal/audio"
 	"github.com/nullswan/nomi/internal/chat"
+	"github.com/nullswan/nomi/internal/cli"
 	"github.com/nullswan/nomi/internal/completion"
 	"github.com/nullswan/nomi/internal/config"
 	"github.com/nullswan/nomi/internal/logger"
@@ -151,7 +152,11 @@ func runApp(_ *cobra.Command, _ []string) {
 	logger := logger.Init()
 
 	// Initialize Providers
-	textToTextBackend, err := initProviders(logger)
+	textToTextBackend, err := cli.InitProviders(
+		logger,
+		startPrompt,
+		targetModel,
+	)
 	if err != nil {
 		fmt.Printf("Error initializing providers: %v\n", err)
 		os.Exit(1)
@@ -159,7 +164,9 @@ func runApp(_ *cobra.Command, _ []string) {
 	defer textToTextBackend.Close()
 
 	// Initialize Database
-	repo, err := initDatabase()
+	repo, err := cli.InitChatDatabase(
+		cfg.Output.Sqlite.Path,
+	)
 	if err != nil {
 		fmt.Printf("Error creating repository: %v\n", err)
 		os.Exit(1)
@@ -277,60 +284,6 @@ func runApp(_ *cobra.Command, _ []string) {
 	)
 }
 
-func initProviders(
-	logger *logger.Logger,
-) (baseprovider.TextToTextProvider, error) {
-	selectedPrompt := &prompts.DefaultPrompt
-	if startPrompt != "" {
-		var err error
-		selectedPrompt, err = prompts.LoadPrompt(startPrompt)
-		if err != nil {
-			return nil, fmt.Errorf("error loading prompt: %w", err)
-		}
-	}
-
-	provider := providers.CheckProvider()
-
-	var textToTextBackend baseprovider.TextToTextProvider
-	if selectedPrompt.Preferences.Reasoning {
-		var err error
-		textToTextBackend, err = providers.LoadTextToTextReasoningProvider(
-			provider,
-			targetModel,
-		)
-		if err != nil {
-			logger.
-				With("error", err).
-				Error(
-					"Error loading text-to-text reasoning provider",
-				)
-		}
-	}
-	if textToTextBackend == nil {
-		var err error
-		textToTextBackend, err = providers.LoadTextToTextProvider(
-			provider,
-			targetModel,
-		)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"error loading text-to-text provider: %w",
-				err,
-			)
-		}
-	}
-
-	return textToTextBackend, nil
-}
-
-func initDatabase() (chat.Repository, error) {
-	repo, err := chat.NewSQLiteRepository(cfg.Output.Sqlite.Path)
-	if err != nil {
-		return nil, fmt.Errorf("error creating repository: %w", err)
-	}
-	return repo, nil
-}
-
 func initConversation(repo chat.Repository) (chat.Conversation, error) {
 	var err error
 	var conversation chat.Conversation
@@ -361,7 +314,7 @@ func displayWelcome(conversation chat.Conversation, model string) {
 	fmt.Printf("Press Enter twice to send a message.\n")
 	fmt.Printf("Press Ctrl+C to exit.\n")
 	fmt.Printf("Press Ctrl+K to cancel the current request.\n")
-	fmt.Printf("Press Cmd to record audio.\n")
+	fmt.Printf("Press any[once] and CMD to record audio.\n")
 	fmt.Printf("-----\n\n")
 }
 
@@ -601,6 +554,8 @@ func processInput(
 	textToTextBackend baseprovider.TextToTextProvider,
 	rl *readline.Instance,
 ) {
+	defer rl.Refresh()
+
 	if text == "" {
 		return
 	}
@@ -627,7 +582,6 @@ func processInput(
 		fmt.Printf("Error generating completion: %v\n", err)
 		return
 	}
-	rl.Refresh()
 
 	conversation.AddMessage(chat.NewMessage(chat.RoleAssistant, completion))
 }
