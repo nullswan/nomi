@@ -39,8 +39,8 @@ func main() {
 		return
 	}
 
-	callback := func(text string) {
-		fmt.Println("Transcribed Text:", text)
+	callback := func(text string, isProcessing bool) {
+		fmt.Println("Transcribed Text:", text, isProcessing)
 	}
 
 	bufferManagerPrimary := transcription.NewBufferManager(audioOpts)

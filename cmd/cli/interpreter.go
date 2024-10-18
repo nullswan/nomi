@@ -111,7 +111,7 @@ var interpreterCmd = &cobra.Command{
 
 		// Display welcome message
 		fmt.Printf("----\n")
-		fmt.Printf("✨ Welcome to Golem Interpreter! 🗿✨\n")
+		fmt.Printf("✨ Welcome to Nomi Interpreter! (%s) ✨\n", buildVersion)
 		fmt.Println()
 		fmt.Println("Configuration")
 		fmt.Printf(
@@ -221,8 +221,8 @@ var interpreterCmd = &cobra.Command{
 			completion, err := generateCompletion(
 				requestContext,
 				conversation,
-				codeGenerationBackend,
 				renderer,
+				codeGenerationBackend,
 			)
 			if err != nil {
 				if strings.Contains(err.Error(), "context canceled") {
