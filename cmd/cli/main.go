@@ -149,11 +149,21 @@ func runApp(_ *cobra.Command, _ []string) {
 	// Initialize Logger
 	logger := logger.Init()
 
+	selectedPrompt := &prompts.DefaultPrompt
+	if startPrompt != "" {
+		var err error
+		selectedPrompt, err = prompts.LoadPrompt(startPrompt)
+		if err != nil {
+			fmt.Printf("Error loading prompt: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
 	// Initialize Providers
 	textToTextBackend, err := cli.InitProviders(
 		logger,
-		startPrompt,
 		targetModel,
+		selectedPrompt.Preferences.Reasoning,
 	)
 	if err != nil {
 		fmt.Printf("Error initializing providers: %v\n", err)

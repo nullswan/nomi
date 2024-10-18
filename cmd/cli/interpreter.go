@@ -45,8 +45,6 @@ var interpreterCmd = &cobra.Command{
 		provider = providers.CheckProvider()
 
 		var err error
-		var codeGenerationBackend baseprovider.TextToTextProvider
-		var codeInferenceBackend baseprovider.TextToTextProvider
 
 		interpreterAskPrompt, err := code.GetDefaultInterpreterPrompt(
 			runtime.GOOS,
@@ -57,39 +55,27 @@ var interpreterCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if interpreterAskPrompt.Preferences.Reasoning {
-			codeGenerationBackend, err = providers.LoadTextToTextReasoningProvider(
-				provider,
-				targetModel,
-			)
-			if err != nil {
-				log.With("error", err).
-					Warn("Error loading text-to-text reasoning provider")
-			}
-		}
-		if codeGenerationBackend == nil {
-			codeGenerationBackend, err = providers.LoadTextToTextProvider(
-				provider,
-				targetModel,
-			)
-			if err != nil {
-				log.With("error", err).
-					Error("Error loading text-to-text provider")
-				os.Exit(1)
-			}
-		}
-		defer codeGenerationBackend.Close()
-
-		codeInferenceBackend, err = providers.LoadTextToTextProvider(
-			provider,
-			"", // default to fast
+		codeGenerationBackend, err := cli.InitProviders(
+			log,
+			"",
+			interpreterAskPrompt.Preferences.Reasoning,
 		)
 		if err != nil {
 			log.With("error", err).
-				Error("Error loading text-to-text provider")
+				Error("Error initializing code generation providers")
 			os.Exit(1)
 		}
-		defer codeInferenceBackend.Close()
+
+		codeInferenceBackend, err := cli.InitProviders(
+			log,
+			"",
+			interpreterAskPrompt.Preferences.Reasoning,
+		)
+		if err != nil {
+			log.With("error", err).
+				Error("Error initializing code inference providers")
+			os.Exit(1)
+		}
 
 		chatRepo, err := cli.InitChatDatabase(cfg.Output.Sqlite.Path)
 		if err != nil {

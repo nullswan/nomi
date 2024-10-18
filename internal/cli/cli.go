@@ -11,7 +11,6 @@ import (
 	"github.com/nullswan/nomi/internal/code"
 	"github.com/nullswan/nomi/internal/completion"
 	"github.com/nullswan/nomi/internal/logger"
-	prompt "github.com/nullswan/nomi/internal/prompt"
 	"github.com/nullswan/nomi/internal/providers"
 	baseprovider "github.com/nullswan/nomi/internal/providers/base"
 	"github.com/nullswan/nomi/internal/term"
@@ -20,22 +19,13 @@ import (
 // InitProviders initializes the text-to-text provider.
 func InitProviders(
 	logger *logger.Logger,
-	startPrompt string,
 	targetModel string,
+	reasoning bool,
 ) (baseprovider.TextToTextProvider, error) {
-	selectedPrompt := &prompt.DefaultPrompt
-	if startPrompt != "" {
-		var err error
-		selectedPrompt, err = prompt.LoadPrompt(startPrompt)
-		if err != nil {
-			return nil, fmt.Errorf("error loading prompt: %w", err)
-		}
-	}
-
 	provider := providers.CheckProvider()
 
 	var textToTextBackend baseprovider.TextToTextProvider
-	if selectedPrompt.Preferences.Reasoning {
+	if reasoning {
 		var err error
 		textToTextBackend, err = providers.LoadTextToTextReasoningProvider(
 			provider,
