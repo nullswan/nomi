@@ -383,7 +383,7 @@ func storeCodePrompt(
 				return "", fmt.Errorf("error generating completion")
 			}
 
-			if !isTombStone(cmpl) {
+			if !completion.IsTombStone(cmpl) {
 				continue
 			}
 
@@ -447,7 +447,7 @@ func getSuggestionFromBlocks(
 				return nil, fmt.Errorf("error generating completion")
 			}
 
-			if !isTombStone(cmpl) {
+			if !completion.IsTombStone(cmpl) {
 				continue
 			}
 
