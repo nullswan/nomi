@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"syscall"
 	"time"
@@ -21,7 +20,6 @@ import (
 	"github.com/nullswan/nomi/internal/audio"
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
-	"github.com/nullswan/nomi/internal/completion"
 	"github.com/nullswan/nomi/internal/config"
 	"github.com/nullswan/nomi/internal/logger"
 	prompts "github.com/nullswan/nomi/internal/prompt"
@@ -722,8 +720,4 @@ func addFileToConversation(
 
 func formatFileMessage(fileName, content string) string {
 	return fileName + "-----\n" + content + "-----\n"
-}
-
-func isTombStone(cmpl completion.Completion) bool {
-	return reflect.TypeOf(cmpl) == reflect.TypeOf(completion.Tombstone{})
 }
