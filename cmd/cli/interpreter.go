@@ -99,10 +99,11 @@ var interpreterCmd = &cobra.Command{
 		}
 		defer chatRepo.Close()
 
-		codeRepo, err := code.NewSQLiteRepository(cfg.Output.Sqlite.Path)
+		codeRepo, err := cli.InitCodeDatabase(cfg.Output.Sqlite.Path)
 		if err != nil {
 			log.With("error", err).
 				Error("Error creating code repository")
+
 			os.Exit(1)
 		}
 		defer codeRepo.Close()
