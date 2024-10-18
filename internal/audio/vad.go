@@ -50,16 +50,16 @@ func NewVAD(
 ) *VAD {
 	// Set default values if not provided
 	if config.EnergyThreshold == 0 {
-		config.EnergyThreshold = 0.02 // Increased default threshold for better noise handling
+		config.EnergyThreshold = 0.005 // Increased default threshold for better noise handling
 	}
 	if config.FlushInterval == 0 {
-		config.FlushInterval = 200 * time.Millisecond // Default flush interval
+		config.FlushInterval = 310 * time.Millisecond // Default flush interval
 	}
 	if config.SilenceDuration == 0 {
-		config.SilenceDuration = 800 * time.Millisecond // Duration to detect end of speech
+		config.SilenceDuration = 500 * time.Millisecond // Duration to detect end of speech
 	}
 	if config.PauseDuration == 0 {
-		config.PauseDuration = 200 * time.Millisecond // Duration to detect a pause within speech
+		config.PauseDuration = 300 * time.Millisecond // Duration to detect a pause within speech
 	}
 
 	return &VAD{

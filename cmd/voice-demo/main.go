@@ -74,10 +74,10 @@ func main() {
 	// Initialize VAD
 	vad := audio.NewVAD(
 		audio.VADConfig{
-			EnergyThreshold: 0.015,                  // Adjust based on testing
-			FlushInterval:   210 * time.Millisecond, // Ideally, should fit the min buffer duration
-			SilenceDuration: 800 * time.Millisecond, // Detect end of speech
-			PauseDuration:   200 * time.Millisecond, // Detect pause within speech
+			EnergyThreshold: 0.005,                  // Adjust based on testing
+			FlushInterval:   310 * time.Millisecond, // Ideally, should fit the min buffer duration
+			SilenceDuration: 500 * time.Millisecond, // Detect end of speech
+			PauseDuration:   300 * time.Millisecond, // Detect pause within speech
 		},
 		audio.VADCallbacks{
 			OnSpeechStart: func() {
