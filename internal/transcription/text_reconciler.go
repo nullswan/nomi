@@ -1,6 +1,7 @@
 package transcription
 
 import (
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -8,121 +9,137 @@ import (
 	"github.com/nullswan/nomi/internal/logger"
 )
 
-// TextSegment holds a piece of transcribed text with its timestamp.
+// TextSegment represents a transcribed text segment with start and end timestamps.
 type TextSegment struct {
-	StartDuration time.Duration
-	EndDuration   time.Duration
-	Text          string
+	Start time.Duration
+	End   time.Duration
+	Text  string
 }
 
-// TextReconciler manages text segments and handles reconciliation.
+// TextReconciler manages and reconciles text segments.
 type TextReconciler struct {
-	logger *logger.Logger
-
+	logger   *logger.Logger
 	segments []TextSegment
 	mu       sync.Mutex
 }
 
-// NewTextReconciler creates a new TextReconciler instance.
+// NewTextReconciler initializes a new TextReconciler instance.
 func NewTextReconciler(logger *logger.Logger) *TextReconciler {
 	return &TextReconciler{
 		logger:   logger.With("component", "text_reconciler"),
-		segments: make([]TextSegment, 0),
+		segments: []TextSegment{},
 	}
 }
 
-// AddSegment adds a new text segment with its start and end durations.
-// It prefers longer segments by merging consecutive segments within a short time gap.
-func (tr *TextReconciler) AddSegment(start, end time.Duration, newText string) {
+// AddSegment adds a new text segment without merging it with existing segments.
+func (tr *TextReconciler) AddSegment(start, end time.Duration, text string) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 
-	trimmedNew := strings.TrimSpace(newText)
-	if len(trimmedNew) == 0 {
+	trimmedText := strings.TrimSpace(text)
+	if trimmedText == "" {
 		return
 	}
 
-	// Define a maximum allowed gap between segments to consider them for merging
-	const maxGap = 100 * time.Millisecond
-
-	// If there are existing segments, check if the new segment is contiguous or overlapping
-	if len(tr.segments) > 0 {
-		lastSegment := &tr.segments[len(tr.segments)-1]
-		gap := start - lastSegment.EndDuration
-
-		if gap <= maxGap && gap >= 0 {
-			// Merge with the last segment
-			lastSegment.Text += " " + trimmedNew
-
-			// Update the end duration to the new segment's end
-			if end > lastSegment.EndDuration {
-				lastSegment.EndDuration = end
-			}
-			return
-		}
-	}
-
-	// Append as a new segment
 	tr.segments = append(tr.segments, TextSegment{
-		StartDuration: start,
-		EndDuration:   end,
-		Text:          trimmedNew,
+		Start: start,
+		End:   end,
+		Text:  trimmedText,
 	})
 }
 
-// GetCombinedText merges all segments into a single string and erases them.
+// GetCombinedText compacts overlapping segments by preferring longer segments and returns the combined text.
 func (tr *TextReconciler) GetCombinedText() string {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 
-	for _, segment := range tr.segments {
-		tr.logger.With("start", segment.StartDuration).
-			With("end", segment.EndDuration).
-			With("text", segment.Text).
+	if len(tr.segments) == 0 {
+		return ""
+	}
+
+	compacted := tr.compactSegments()
+	tr.logSegments(compacted)
+	return tr.buildCombinedText(compacted)
+}
+
+// compactSegments merges overlapping segments, preferring longer segments within overlapping windows.
+func (tr *TextReconciler) compactSegments() []TextSegment {
+	sorted := make([]TextSegment, len(tr.segments))
+	copy(sorted, tr.segments)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Start < sorted[j].Start
+	})
+
+	var compacted []TextSegment
+	for _, seg := range sorted {
+		overlapIndex := tr.findOverlap(compacted, seg)
+		if overlapIndex != -1 {
+			existing := &compacted[overlapIndex]
+			if segmentLength(seg) > segmentLength(*existing) {
+				compacted[overlapIndex] = seg
+			}
+		} else {
+			compacted = append(compacted, seg)
+		}
+	}
+
+	return compacted
+}
+
+// findOverlap checks if a segment overlaps with any in the compacted list and returns the index.
+func (tr *TextReconciler) findOverlap(
+	compacted []TextSegment,
+	seg TextSegment,
+) int {
+	for i, existing := range compacted {
+		if segmentsOverlap(existing, seg) {
+			return i
+		}
+	}
+	return -1
+}
+
+// segmentsOverlap determines if two segments overlap.
+func segmentsOverlap(a, b TextSegment) bool {
+	return a.Start <= b.End && b.Start <= a.End
+}
+
+// segmentLength returns the duration of a segment.
+func segmentLength(seg TextSegment) time.Duration {
+	return seg.End - seg.Start
+}
+
+// logSegments logs each segment's details.
+func (tr *TextReconciler) logSegments(segments []TextSegment) {
+	for _, seg := range segments {
+		tr.logger.With("start", seg.Start).
+			With("end", seg.End).
+			With("text", seg.Text).
 			Debug("Segment")
 	}
+}
 
-	// Build the combined text
-	combined := tr.getCombinedText()
+// buildCombinedText concatenates all segment texts into a single string.
+func (tr *TextReconciler) buildCombinedText(segments []TextSegment) string {
+	var builder strings.Builder
+	for _, seg := range segments {
+		builder.WriteString(seg.Text)
+		if !strings.HasSuffix(seg.Text, " ") {
+			builder.WriteString(" ")
+		}
+	}
+	return strings.TrimSpace(builder.String())
+}
 
-	// Erase all segments after fetching
+// [#unsafe] clearSegments resets the segments slice.
+// This assume that the caller has acquired the lock.
+func (tr *TextReconciler) clearSegments() {
 	tr.segments = tr.segments[:0]
-
-	return combined
 }
 
-// getCombinedText builds the combined text from all segments.
-func (tr *TextReconciler) getCombinedText() string {
-	var combined strings.Builder
-	for _, segment := range tr.segments {
-		combined.WriteString(segment.Text)
-		if !strings.HasSuffix(segment.Text, " ") {
-			combined.WriteString(" ")
-		}
-	}
-	return strings.TrimSpace(combined.String())
-}
-
-// EraseTextInWindow removes text segments within the specified time window.
-// Remove this method if not needed.
-func (tr *TextReconciler) EraseTextInWindow(start, end time.Duration) {
-	tr.mu.Lock()
-	defer tr.mu.Unlock()
-
-	var updatedSegments []TextSegment
-	for _, segment := range tr.segments {
-		// Retain segments that end before the start or start after the end of the window
-		if segment.EndDuration <= start || segment.StartDuration >= end {
-			updatedSegments = append(updatedSegments, segment)
-		}
-	}
-	tr.segments = updatedSegments
-}
-
-// Reset clears all text segments.
+// Reset removes all text segments.
 func (tr *TextReconciler) Reset() {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
-
-	tr.segments = tr.segments[:0]
+	tr.clearSegments()
 }

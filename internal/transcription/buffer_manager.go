@@ -22,6 +22,7 @@ type BufferManager struct {
 	buffer            []byte
 	overlapDuration   time.Duration
 	minBufferDuration time.Duration
+	overlapBytes      int
 
 	sampleRate     int
 	channels       int
@@ -61,6 +62,7 @@ func (bm *BufferManager) SetOverlapDuration(duration time.Duration) {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 	bm.overlapDuration = duration
+	bm.overlapBytes = bm.computeBytes(duration)
 }
 
 // AddAudio appends audio data to the buffer and flushes if the minimum duration is met.
@@ -112,9 +114,8 @@ func (bm *BufferManager) flushBuffer(bufferDuration time.Duration) {
 	select {
 	case bm.flushChan <- chunk:
 		// Retain overlap duration if buffer is not empty
-		overlapBytes := bm.computeBytes(bm.overlapDuration)
-		if overlapBytes < len(bm.buffer) {
-			bm.buffer = bm.buffer[len(bm.buffer)-overlapBytes:]
+		if bm.overlapBytes < len(bm.buffer) {
+			bm.buffer = bm.buffer[len(bm.buffer)-bm.overlapBytes:]
 			bm.baseOffset = end - bm.overlapDuration
 		} else {
 			bm.buffer = bm.buffer[:0]
@@ -173,4 +174,12 @@ func (bm *BufferManager) Close() {
 	bm.mu.Unlock()
 
 	close(bm.flushChan)
+}
+
+// IsEmpty returns true if the buffer is empty.
+func (bm *BufferManager) IsEmpty() bool {
+	bm.mu.Lock()
+	defer bm.mu.Unlock()
+
+	return len(bm.buffer) <= bm.overlapBytes
 }
