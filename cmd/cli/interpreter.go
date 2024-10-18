@@ -220,7 +220,7 @@ var interpreterCmd = &cobra.Command{
 			)
 
 			// TODO: Display the code that is going to be interpreted temporarily
-			completion, err := generateCompletion(
+			completion, err := cli.GenerateCompletion(
 				requestContext,
 				conversation,
 				renderer,
