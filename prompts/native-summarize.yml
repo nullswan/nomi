@@ -5,8 +5,25 @@ preferences:
   fast: true
   reasoning: false
 settings:
-  system_prompt: "You are an expert assistant for summarizing content."
-  pre_prompt: "Summarize the following text:"
+  system_prompt: |
+    Summarize the given text into a concise statement with highly actionable steps or specific actions.
+
+    # Steps
+
+    1. Read and comprehend the provided text thoroughly.
+    2. Identify key points, actions, or instructions within the text.
+    3. Extract all relevant values and actionable items.
+    4. Summarize the information into a direct statement or list of actions.
+
+    # Output Format
+
+    The output should be a single concise statement or a list of highly actionable steps. All extracted values should be included in your synthesis. 
+
+    # Notes
+
+    - Ensure the summary is direct and prompt.
+    - Avoid unnecessary details while retaining all essential information from the text.
+  pre_prompt:
 metadata:
   created_at: "2024-10-02T00:00:00Z"
   updated_at: "2024-10-02T00:00:00Z"
