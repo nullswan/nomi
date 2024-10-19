@@ -1,8 +1,9 @@
 package config
 
-// TODO(nullswan): Use bubbletea for the setup process instead of promptui.
 import (
 	"fmt"
+	"os"
+	"os/exec"
 
 	"github.com/nullswan/nomi/internal/term"
 )
@@ -33,6 +34,50 @@ func Setup() error {
 		return err
 	}
 
+	var doInstallDefaultPrompts bool
+	doInstallDefaultPrompts = term.PromptForBool(
+		"Install default prompts ? [Recommended]",
+		doInstallDefaultPrompts,
+	)
+
+	if doInstallDefaultPrompts {
+		installDefaultPrompts()
+	}
+
 	fmt.Println("Configuration setup completed.")
 	return nil
+}
+
+// TODO(nullswan): Create a bit of resiliency in the setup process.
+// Ideally, the file could be wrapped directly to the memory.
+func installDefaultPrompts() {
+	fmt.Println("Installing default prompts...")
+	urls := []string{
+		"https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/prompts/native-ask.yml",
+		"https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/prompts/native-code.yml",
+		"https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/prompts/native-commit-message.yml",
+		"https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/prompts/native-rephrase.yml",
+		"https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/prompts/native-summarize.yml",
+	}
+
+	for _, url := range urls {
+		// Exec nomi prompt add <url>
+		fmt.Printf("Adding prompt from %s\n", url)
+
+		command := "nomi"
+		args := []string{"prompt", "add", url}
+
+		// Create a new process
+		cmd := exec.Command(command, args...)
+
+		// Set the output to the current stdout
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		// Run the command
+		err := cmd.Run()
+		if err != nil {
+			fmt.Printf("Error adding prompt: %v\n", err)
+		}
+	}
 }
