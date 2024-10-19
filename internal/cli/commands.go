@@ -40,7 +40,7 @@ func HandleCommands(text string, conversation chat.Conversation) string {
 			}
 
 			processLocalResource(conversation, args[1])
-		case strings.HasPrefix(line, "/exit"):
+		case strings.HasPrefix(line, "/exit") || strings.HasPrefix(line, "/quit"):
 			fmt.Println("Exiting...")
 			os.Exit(0)
 		default:
