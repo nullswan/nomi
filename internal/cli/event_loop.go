@@ -68,6 +68,7 @@ func EventLoop(
 			}
 			fmt.Printf("Error reading input: %v\n", err)
 		case <-audioStartCh:
+			// TODO(nullswan): Add graphical feedback for audio recording.
 			if !audioRunning {
 				audioRunning = true
 				err := inputStream.Start()
@@ -76,6 +77,7 @@ func EventLoop(
 				}
 			}
 		case <-audioEndCh:
+			// TODO(nullswan): Add graphical feedback for audio recording.
 			if audioRunning {
 				audioRunning = false
 				err := inputStream.Stop()

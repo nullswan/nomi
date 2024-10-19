@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/signal"
 	"strings"
@@ -111,7 +109,24 @@ func runApp(_ *cobra.Command, _ []string) {
 
 	// Display Welcome Message
 	if !interactiveMode {
-		displayWelcome(conversation, textToTextBackend.GetModel())
+		cli.DisplayWelcome(cli.NewWelcomeConfig(
+			conversation,
+			cli.WithWelcomeMessage("Nomi is ready to assist you."),
+			cli.WithBuildDate(buildDate),
+			cli.WithBuildVersion(buildVersion),
+			cli.WithStartPrompt(startPrompt),
+			cli.WithModelProvider(textToTextBackend),
+			cli.WithProvider(providers.CheckProvider()),
+			cli.WithInstruction("Press [ENTER] twice to send a message."),
+			cli.WithInstruction("Press [CTRL+C] to exit."),
+			cli.WithInstruction(
+				"Press [CTRL+K] to cancel the current request.",
+			),
+			// TODO(nullswan): Remove the any-key requirement
+			cli.WithInstruction(
+				"Press [any key - once] and [CMD] to record audio.",
+			),
+		))
 	}
 
 	// Initialize Renderer
@@ -122,6 +137,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	}
 
 	// Initialize Audio
+	// TODO(nullswan): Only when using audio, till local whisper is supported
 	oaiKey := os.Getenv("OPENAI_API_KEY")
 	if oaiKey == "" {
 		fmt.Println("OPENAI_API_KEY is not set")
@@ -195,13 +211,13 @@ func runApp(_ *cobra.Command, _ []string) {
 	defer inputStream.Close()
 
 	// Start Input Reader Goroutine
-	go readInput(rl, inputCh, inputErrCh)
+	go cli.ReadInput(rl, inputCh, inputErrCh)
 
 	// Initialize Key Hooks
 	audioStartCh, audioEndCh := cli.SetupKeyHooks(cmdKeyCode)
 
 	// Main Event Loop
-	eventLoop(
+	cli.EventLoop(
 		ctx,
 		cancel,
 		inputCh,
@@ -214,141 +230,8 @@ func runApp(_ *cobra.Command, _ []string) {
 		renderer,
 		textToTextBackend,
 		rl,
+		processInput,
 	)
-}
-
-func displayWelcome(conversation chat.Conversation, model string) {
-	fmt.Printf("----\n")
-	fmt.Printf("Nomi (%s)\n", buildVersion)
-	fmt.Println()
-	fmt.Println("Configuration")
-	fmt.Printf("  Start prompt: %s\n", startPrompt)
-	fmt.Printf("  Conversation: %s\n", conversation.GetID())
-	fmt.Printf("  Provider: %s\n", providers.CheckProvider())
-	fmt.Printf("  Model: %s\n", model)
-	fmt.Printf("  Build Date: %s\n", buildDate)
-	fmt.Printf("-----\n")
-	fmt.Printf("Press Enter twice to send a message.\n")
-	fmt.Printf("Press Ctrl+C to exit.\n")
-	fmt.Printf("Press Ctrl+K to cancel the current request.\n")
-	fmt.Printf("Press any[once] and CMD to record audio.\n")
-	fmt.Printf("-----\n\n")
-}
-
-func readInput(
-	rl *readline.Instance,
-	inputCh chan<- string,
-	inputErrCh chan<- error,
-) {
-	for {
-		line, err := rl.Readline()
-		if err != nil {
-			if err == readline.ErrInterrupt {
-				inputErrCh <- term.ErrInputInterrupted
-				return
-			}
-			if err == io.EOF {
-				// when killed, wait for alive..
-				inputErrCh <- term.ErrInputKilled
-				return
-			}
-			inputErrCh <- fmt.Errorf("error reading input: %w", err)
-			return
-		}
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		inputCh <- line
-	}
-}
-
-func eventLoop(
-	ctx context.Context,
-	cancel context.CancelFunc,
-	inputCh chan string,
-	inputErrCh chan error,
-	audioStartCh, audioEndCh <-chan struct{},
-	inputStream *audio.AudioStream,
-	logger *logger.Logger,
-	conversation chat.Conversation,
-	renderer *term.Renderer,
-	textToTextBackend baseprovider.TextToTextProvider,
-	rl *readline.Instance,
-) {
-	audioRunning := false
-	// var wg sync.WaitGroup
-
-	defer func() {
-		if audioRunning {
-			inputStream.Stop()
-		}
-	}()
-
-	eventCtx, eventCtxCancel := context.WithCancel(ctx)
-	defer eventCtxCancel()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case line := <-inputCh:
-			eventCtxCancel()
-			eventCtx, eventCtxCancel = context.WithCancel(ctx)
-			defer eventCtxCancel()
-
-			processInput(
-				eventCtx,
-				line,
-				conversation,
-				renderer,
-				textToTextBackend,
-				rl,
-			)
-		case err := <-inputErrCh:
-			if errors.Is(err, term.ErrInputInterrupted) ||
-				errors.Is(err, term.ErrInputKilled) {
-				cancel()
-				break
-			}
-			fmt.Printf("Error reading input: %v\n", err)
-		case <-audioStartCh:
-			if !audioRunning {
-				audioRunning = true
-				// fmt.Println("Recording audio...")
-				err := inputStream.Start()
-				if err != nil {
-					logger.
-						With("error", err).
-						Error("Failed to start input stream")
-				}
-				// closeReadline()
-			}
-		case <-audioEndCh:
-			if audioRunning {
-				audioRunning = false
-				// fmt.Println("Audio recording stopped.")
-				err := inputStream.Stop()
-				if err != nil {
-					logger.
-						With("error", err).
-						Error("Failed to stop input stream")
-				}
-				// reinitReadline(&wg, inputCh, inputErrCh)
-			}
-		}
-	}
-}
-
-func setupReadline(
-	rl *readline.Instance,
-	inputCh chan<- string,
-	inputErrCh chan<- error,
-) {
-	go readInput(rl, inputCh, inputErrCh)
-}
-
-func setupNewReadline() (*readline.Instance, error) {
-	return term.InitReadline()
 }
 
 func processInput(

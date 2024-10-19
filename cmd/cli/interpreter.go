@@ -174,24 +174,27 @@ var interpreterCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Display welcome message
-		fmt.Printf("----\n")
-		fmt.Printf("✨ Welcome to Nomi Interpreter! (%s) ✨\n", buildVersion)
-		fmt.Println()
-		fmt.Println("Configuration")
-		fmt.Printf(
-			"  Start prompt: default-interpreter\n",
-		)
-		fmt.Printf("  Conversation: %s\n", conversation.GetID())
-		fmt.Printf("  Provider: %s\n", provider)
-		fmt.Printf("  Code Model: %s\n", codeGenerationBackend.GetModel())
-		fmt.Printf("  Inference Model: %s\n", codeInferenceBackend.GetModel())
-		fmt.Printf("  Build Date: %s\n", buildDate)
-		fmt.Printf("-----\n")
-		fmt.Printf("Press Enter twice to send a message.\n")
-		fmt.Printf("Press Ctrl+C to exit.\n")
-		fmt.Printf("Press Ctrl+K to cancel the current request.\n")
-		fmt.Printf("-----\n\n")
+		if !interactiveMode {
+			cli.DisplayWelcome(cli.NewWelcomeConfig(
+				conversation,
+				cli.WithWelcomeMessage("Nomi Interpreter Mode"),
+				cli.WithBuildDate(buildDate),
+				cli.WithBuildVersion(buildVersion),
+				cli.WithStartPrompt(startPrompt),
+				cli.WithModelProvider(codeGenerationBackend),
+				cli.WithModelProvider(codeInferenceBackend),
+				cli.WithProvider(provider),
+				cli.WithInstruction("Press [ENTER] twice to send a message."),
+				cli.WithInstruction("Press [CTRL+C] to exit."),
+				cli.WithInstruction(
+					"Press [CTRL+K] to cancel the current request.",
+				),
+				// TODO(nullswan): Remove the any-key requirement
+				cli.WithInstruction(
+					"Press [any key - once] and [CMD] to record audio.",
+				),
+			))
+		}
 
 		pipedInput, err := term.GetPipedInput()
 		if err != nil {
