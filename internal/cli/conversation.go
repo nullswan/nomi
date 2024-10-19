@@ -17,7 +17,7 @@ func InitConversation(
 	var err error
 	var conversation chat.Conversation
 
-	if conversationID == nil {
+	if conversationID == nil || *conversationID == "" {
 		conversation = chat.NewStackedConversation(repo)
 		conversation.WithPrompt(defaultPrompt)
 		return conversation, nil
