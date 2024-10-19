@@ -5,10 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -25,7 +23,6 @@ import (
 	"github.com/nullswan/nomi/internal/providers"
 	baseprovider "github.com/nullswan/nomi/internal/providers/base"
 	"github.com/nullswan/nomi/internal/term"
-	hook "github.com/robotn/gohook"
 
 	"github.com/spf13/cobra"
 )
@@ -44,87 +41,9 @@ const (
 	cmdKeyCode = 55
 )
 
-func main() {
-	// #region Config commands
-	// rootCmd.AddCommand(configCmd)
-	// configCmd.AddCommand(configShowCmd)
-	// configCmd.AddCommand(configSetCmd)
-	// configCmd.AddCommand(configSetupCmd)
-	// #endregion
-
-	// #region Interpreter commands
-	rootCmd.AddCommand(interpreterCmd)
-	// #endregion
-
-	// #region Conversation commands
-	rootCmd.AddCommand(conversationCmd)
-	conversationCmd.AddCommand(conversationListCmd)
-	conversationCmd.AddCommand(conversationShowCmd)
-	conversationCmd.AddCommand(conversationDeleteCmd)
-	// #endregion
-
-	// #region Version commands
-	rootCmd.AddCommand(versionCmd)
-	// #endregion
-
-	// #region Update commands
-	rootCmd.AddCommand(updateCmd)
-	// #endregion
-
-	// #region Prompt commands
-	rootCmd.AddCommand(promptCmd)
-	promptCmd.AddCommand(promptListCmd)
-	promptCmd.AddCommand(promptAddCmd)
-	promptCmd.AddCommand(promptEditCmd)
-	// #endregion
-
-	// Attach flags to rootCmd only, so they are not inherited by subcommands
-	rootCmd.Flags().
-		StringVarP(&startPrompt, "prompt", "p", "", "Specify a prompt")
-	rootCmd.Flags().
-		StringVarP(&targetModel, "model", "m", "", "Specify a model")
-	rootCmd.Flags().
-		StringVarP(&startConversationID, "conversation", "c", "", "Open a conversation by ID")
-	rootCmd.Flags().
-		BoolVarP(&interactiveMode, "interactive", "i", false, "Start in interactive mode")
-
-	// Initialize cfg in PersistentPreRun, making it available to all commands
-	rootCmd.PersistentPreRun = func(_ *cobra.Command, _ []string) {
-		if !config.Exists() {
-			fmt.Println("Looks like this is your first time running nomi!")
-			if err := config.Setup(); err != nil {
-				fmt.Printf("Error during configuration setup: %v\n", err)
-				os.Exit(1)
-			}
-		}
-
-		var err error
-		cfg, err = config.LoadConfig()
-		if err != nil {
-			fmt.Printf("Error loading config: %v\n", err)
-			os.Exit(1)
-		}
-
-		// pprof
-		// TODO(nullswan): Make optional
-		go func() {
-			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
-				fmt.Printf("Error starting pprof server: %v\n", err)
-				os.Exit(1)
-			}
-		}()
-	}
-
-	// Execute the root command
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
-}
-
 var rootCmd = &cobra.Command{
 	Use:   binName + " [flags] [arguments]",
-	Short: "An enhanced AI runtime, focusing on ease of use and extensibility.",
+	Short: "AI runtime, multi-modal, supporting action & private data. ",
 	Run:   runApp,
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
@@ -180,7 +99,11 @@ func runApp(_ *cobra.Command, _ []string) {
 	defer repo.Close()
 
 	// Initialize Repository and Conversation
-	conversation, err := initConversation(repo)
+	conversation, err := cli.InitConversation(
+		repo,
+		&startConversationID,
+		*selectedPrompt,
+	)
 	if err != nil {
 		fmt.Printf("Error initializing conversation: %v\n", err)
 		os.Exit(1)
@@ -275,7 +198,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	go readInput(rl, inputCh, inputErrCh)
 
 	// Initialize Key Hooks
-	audioStartCh, audioEndCh := setupKeyHooks()
+	audioStartCh, audioEndCh := cli.SetupKeyHooks(cmdKeyCode)
 
 	// Main Event Loop
 	eventLoop(
@@ -292,22 +215,6 @@ func runApp(_ *cobra.Command, _ []string) {
 		textToTextBackend,
 		rl,
 	)
-}
-
-func initConversation(repo chat.Repository) (chat.Conversation, error) {
-	var err error
-	var conversation chat.Conversation
-	if startConversationID != "" {
-		conversation, err = repo.LoadConversation(startConversationID)
-		if err != nil {
-			return nil, fmt.Errorf("error loading conversation: %w", err)
-		}
-	} else {
-		conversation = chat.NewStackedConversation(repo)
-		conversation.WithPrompt(prompts.DefaultPrompt)
-	}
-
-	return conversation, nil
 }
 
 func displayWelcome(conversation chat.Conversation, model string) {
@@ -353,40 +260,6 @@ func readInput(
 		}
 		inputCh <- line
 	}
-}
-
-func setupKeyHooks() (chan struct{}, chan struct{}) {
-	audioStartCh := make(chan struct{}, 1)
-	audioEndCh := make(chan struct{}, 1)
-
-	// Key Code is not specified on purpose due to the way the hook library works
-	hook.Register(hook.KeyHold, []string{""}, func(e hook.Event) {
-		if e.Rawcode != cmdKeyCode {
-			return
-		}
-		select {
-		case audioStartCh <- struct{}{}:
-		default:
-		}
-	})
-
-	// Key Code is not specified on purpose due to the way the hook library works
-	hook.Register(hook.KeyUp, []string{""}, func(e hook.Event) {
-		if e.Rawcode != cmdKeyCode {
-			return
-		}
-
-		select {
-		case audioEndCh <- struct{}{}:
-		default:
-		}
-	})
-
-	s := hook.Start()
-	go func() {
-		<-hook.Process(s)
-	}()
-	return audioStartCh, audioEndCh
 }
 
 func eventLoop(
@@ -492,7 +365,7 @@ func processInput(
 		return
 	}
 
-	text = handleCommands(text, conversation)
+	text = cli.HandleCommands(text, conversation)
 	if text == "" {
 		return
 	}
@@ -516,142 +389,4 @@ func processInput(
 	}
 
 	conversation.AddMessage(chat.NewMessage(chat.RoleAssistant, completion))
-}
-
-func handleCommands(text string, conversation chat.Conversation) string {
-	lines := strings.Split(text, "\n")
-	if len(lines) == 0 {
-		return text
-	}
-
-	ret := ""
-	for _, line := range lines {
-		if !strings.HasPrefix(line, "/") {
-			ret += line + "\n"
-			continue
-		}
-
-		switch {
-		case strings.HasPrefix(line, "/help"):
-			fmt.Println("Available commands:")
-			fmt.Println("  /help        Show this help message")
-			fmt.Println("  /reset       Reset the conversation")
-			fmt.Println(
-				"  /add <file>  Add a file or directory to the conversation",
-			)
-			fmt.Println("  /exit        Exit the application")
-		case strings.HasPrefix(line, "/reset"):
-			conversation = conversation.Reset()
-			fmt.Println("Conversation reset.")
-		case strings.HasPrefix(line, "/add"):
-			args := strings.Fields(line)
-			if len(args) < 2 {
-				fmt.Println("Usage: /add <file or directory>")
-				continue
-			}
-
-			if !isLocalResource(args[1]) {
-				fmt.Println("Invalid file or directory: " + args[1])
-				continue
-			}
-			processLocalResource(conversation, args[1])
-		case strings.HasPrefix(line, "/exit"):
-			fmt.Println("Exiting...")
-			os.Exit(0)
-		default:
-			ret += line + "\n"
-		}
-	}
-
-	return ret
-}
-
-func isLocalResource(text string) bool {
-	var path string
-	if strings.HasPrefix(text, "~") {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return false
-		}
-		path = filepath.Join(home, text[1:])
-	} else {
-		path = text
-	}
-
-	if strings.HasPrefix(path, "./") || strings.HasPrefix(path, "/") {
-		if _, err := os.Stat(path); err == nil {
-			return true
-		}
-	}
-
-	return false
-}
-
-func processLocalResource(conversation chat.Conversation, text string) {
-	if isDirectory(text) {
-		addAllFiles(conversation, text)
-	} else {
-		addSingleFile(conversation, text)
-	}
-}
-
-func isDirectory(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return info.IsDir()
-}
-
-func addAllFiles(conversation chat.Conversation, directory string) {
-	files, err := os.ReadDir(directory)
-	if err != nil {
-		fmt.Println("Error reading directory:", err)
-		return
-	}
-	for _, file := range files {
-		path := filepath.Join(directory, file.Name())
-		if file.IsDir() {
-			addAllFiles(conversation, path)
-		} else {
-			addFileToConversation(conversation, path, file.Name())
-		}
-	}
-}
-
-func addSingleFile(conversation chat.Conversation, filePath string) {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return
-	}
-	fileName := filepath.Base(filePath)
-	conversation.AddMessage(
-		chat.NewFileMessage(
-			chat.RoleUser,
-			formatFileMessage(fileName, string(content)),
-		),
-	)
-}
-
-func addFileToConversation(
-	conversation chat.Conversation,
-	filePath, fileName string,
-) {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return
-	}
-	conversation.AddMessage(
-		chat.NewFileMessage(
-			chat.RoleUser,
-			formatFileMessage(fileName, string(content)),
-		),
-	)
-	fmt.Printf("Added file: %s\n", filePath)
-}
-
-func formatFileMessage(fileName, content string) string {
-	return fileName + "-----\n" + content + "-----\n"
 }

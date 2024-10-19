@@ -164,8 +164,15 @@ var interpreterCmd = &cobra.Command{
 
 		defer inputStream.Close()
 
-		conversation := chat.NewStackedConversation(chatRepo)
-		conversation.WithPrompt(interpreterAskPrompt)
+		conversation, err := cli.InitConversation(
+			chatRepo,
+			nil,
+			interpreterAskPrompt,
+		)
+		if err != nil {
+			fmt.Printf("Error initializing conversation: %v\n", err)
+			os.Exit(1)
+		}
 
 		// Display welcome message
 		fmt.Printf("----\n")
@@ -226,7 +233,7 @@ var interpreterCmd = &cobra.Command{
 				return
 			}
 
-			text = handleCommands(text, conversation)
+			text = cli.HandleCommands(text, conversation)
 			if text == "" {
 				return
 			}
