@@ -1,0 +1,100 @@
+package cli
+
+import (
+	"time"
+
+	"github.com/nullswan/nomi/internal/audio"
+	"github.com/nullswan/nomi/internal/logger"
+	"github.com/nullswan/nomi/internal/transcription"
+)
+
+// TODO(nullswan): These values should be configurable + auto-tuned
+const (
+	primaryBufferMinBufferDuration = 500 * time.Millisecond
+	primaryBufferOverlapDuration   = 100 * time.Millisecond
+
+	secondaryBufferMinBufferDuration = 2 * time.Second
+	secondaryBufferOverlapDuration   = 400 * time.Millisecond
+
+	vadEnergyThreshold = 0.005
+	vadFlushInterval   = 310 * time.Millisecond
+	vadSilenceDuration = 500 * time.Millisecond
+	vadPauseDuration   = 300 * time.Millisecond
+)
+
+// InitTranscriptionServer initializes the Transcription Server with predefined buffer settings.
+func InitTranscriptionServer(
+	oaiKey string,
+	audioOpts *audio.AudioOptions,
+	log *logger.Logger,
+	callback transcription.TranscriptionServerCallbackT,
+) (*transcription.TranscriptionServer, error) {
+	bufferManagerPrimary := transcription.NewBufferManager(audioOpts)
+	bufferManagerPrimary.SetMinBufferDuration(primaryBufferMinBufferDuration)
+	bufferManagerPrimary.SetOverlapDuration(primaryBufferOverlapDuration)
+
+	bufferManagerSecondary := transcription.NewBufferManager(audioOpts)
+	bufferManagerSecondary.SetMinBufferDuration(
+		secondaryBufferMinBufferDuration,
+	)
+	bufferManagerSecondary.SetOverlapDuration(secondaryBufferOverlapDuration)
+
+	textReconciler := transcription.NewTextReconciler(log)
+	tsHandler := transcription.NewTranscriptionHandler(
+		oaiKey,
+		audioOpts,
+		log,
+	)
+	tsHandler.SetEnableFixing(true)
+
+	return transcription.NewTranscriptionServer(
+		bufferManagerPrimary,
+		bufferManagerSecondary,
+		tsHandler,
+		textReconciler,
+		log,
+		callback,
+	), nil
+}
+
+// InitVAD initializes the Voice Activity Detection with predefined configurations.
+func InitVAD(
+	ts *transcription.TranscriptionServer,
+	log *logger.Logger,
+) *audio.VAD {
+	vad := audio.NewVAD(
+		audio.VADConfig{
+			EnergyThreshold: vadEnergyThreshold,
+			FlushInterval:   vadFlushInterval,
+			SilenceDuration: vadSilenceDuration,
+			PauseDuration:   vadPauseDuration,
+		},
+		audio.VADCallbacks{
+			OnSpeechStart: func() {
+				log.Debug("VAD: Speech started")
+			},
+			OnSpeechEnd: func() {
+				log.Debug("VAD: Speech ended")
+				ts.FlushBuffers()
+			},
+			OnFlush: func(buffer []float32) {
+				log.With("buf_sz", len(buffer)).Debug("VAD: Buffer flushed")
+
+				data, err := audio.Float32ToPCM(buffer)
+				if err != nil {
+					log.With("error", err).
+						Error("Failed to convert float32 to PCM")
+					return
+				}
+
+				ts.AddAudio(data)
+			},
+			OnPause: func() {
+				log.Debug("VAD: Speech paused")
+				ts.FlushPrimaryBuffer()
+			},
+		},
+		log,
+	)
+	return vad
+}
