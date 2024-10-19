@@ -1,35 +1,63 @@
-# Nomi - A Multi-Modal AI Runtime
-
-Born from the principles that **data ownership is challenging** and **AI simplifies communication**, the Nomi project aims to complement human intelligence by orchestrating data to enhance **decision-making** and handle **automated micro-tasks**.
-
-Our mission is to make AI more accessible and easy to use for everyone, ensuring that you have control over your data whenever you need it.
-
-**Nomi**, is a versatile and lightweight AI runtime that integrates with AI services like OpenAI, OpenRouter, and Ollama, enabling you to leverage their capabilities. While using these providers involves sending your data externally, Nomi also maintains a local archive of your data, ensuring you retain control and ownership.
-
-Supporting multiple data types, including text and audio, with image support coming soon, Nomi offers flexibility while safeguarding your information.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/5984c6d7-0d10-4325-af74-a69a87ff0eff" alt="Nomi, the interactive layer for AI">
+</p>
 
 > **Note:** This project is still being developed and isn't ready for full use yet, but we are working hard to make it stable and reliable.
 >
 > We welcome any feedback, suggestions, or contributions. Thank you for trying Nomi!
 
-# Table of Contents
+# Introduction
 
-- [Features](#features)
-  - [Manage Conversations](#manage-conversations)
-  - [Manage Prompts](#manage-prompts)
-  - [AI Provider Integration](#ai-provider-integration)
-  - [Terminal Features](#terminal-features)
-  - [Real-time Voice](#real-time-voice)
-  - [Interpreter Mode](#interpreter-mode)
-  - [Additional Features](#additional-features)
-- [Roadmap](#roadmap)
-- [Installation](#installation)
+**Nomi** is a realtime multi-modal interface (i.e., voice and text interface) designed to **interact with your local data** and **automate your micro-tasks** thanks to LLM capabilities.
 
+### Features
 
-## Nomi
+- **Multi-Modal Interface**: Accepts text or voice inputs (soon visual inputs)
+- **Data Integration**: Interact with local files or public sources on internet
+- **Task Automation**: Built-in code interpreter for generating and running code snippets
+- **Conversation Management**: Organize, save, continue or reset conversations
+- **Prompt Engineering**: Create, edit, and manage system prompts
+- **Provider Flexibility**: Support local (e.g., Ollama) and cloud (e.g., OpenAI, OpenRouter) LLM providers
 
-![Nomi Logo](./nomi-logo.png)
+### Why Nomi?
 
+In a world where data ownership is challenging and AI is revolutionizing communication, Nomi acts as a bridge between private data and LLM providers.
+It supports integration with both local and external providers, including OpenAI, OpenRouter, and Ollama.
+
+While using external providers, like OpenAI, involves transmitting data to third parties, Nomi also works with local providers such as Ollama.
+Our aim is to democratize AI by making it more accessible and user-friendly, while ensuring control and ownership over data.
+
+### Use cases
+
+- **Personal AI Assistant**: Daily tasks automation and information retrieval
+- **Code Development Aid**: Quick testing and coding assistance
+- **Voice-Controlled AI**: Hands-free AI interaction
+- **Local Data Analysis**: Privacy-focused data interaction
+- **AI Model Comparison**: Easy switching between providers
+
+# Get Started
+
+### Linux & MacOS
+
+```shell
+# Check the script before running it.
+curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.sh | bash
+```
+
+### Windows
+
+```shell
+# Check the script before running it.
+curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.bat | cmd
+```
+
+### Compile from Source
+
+```shell
+git clone https://github.com/nullswan/nomi.git
+cd nomi
+make build
+```
 
 ## Features
 
@@ -82,27 +110,3 @@ These features are planned for future updates. They are not in any specific orde
 - [ ] Action chains
 - [ ] Real-time file management
 - [ ] Memory embedding
-
-## Installation
-
-### Linux & MacOS
-
-```shell
-# Check the script before running it.
-curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.sh | bash
-```
-
-### Windows
-
-```shell
-# Check the script before running it.
-curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.bat | cmd
-```
-
-### Compile from Source
-
-```shell
-git clone https://github.com/nullswan/nomi.git
-cd nomi
-make build
-```
