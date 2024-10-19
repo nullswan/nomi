@@ -6,6 +6,16 @@
 >
 > We welcome any feedback, suggestions, or contributions. Thank you for trying Nomi!
 
+- [Introduction](#introduction)
+  - [Features](#features)
+  - [Why Nomi?](#why-nomi)
+  - [Use cases](#use-cases)
+- [Get Started](#get-started)
+  - [Linux & MacOS](#linux--macos)
+  - [Windows](#windows)
+  - [Compile from Source](#compile-from-source)
+- [Roadmap](#roadmap)
+
 # Introduction
 
 **Nomi** is a realtime multi-modal interface (i.e., voice and text interface) designed to **interact with your local data** and **automate your micro-tasks** thanks to LLM capabilities.
@@ -13,11 +23,13 @@
 ### Features
 
 - **Multi-Modal Interface**: Accepts text or voice inputs (soon visual inputs)
-- **Data Integration**: Interact with local files or public sources on internet
+- **Data Integration**: Interact with local files (or soon, public sources on internet)
 - **Task Automation**: Built-in code interpreter for generating and running code snippets
 - **Conversation Management**: Organize, save, continue or reset conversations
 - **Prompt Engineering**: Create, edit, and manage system prompts
 - **Provider Flexibility**: Support local (e.g., Ollama) and cloud (e.g., OpenAI, OpenRouter) LLM providers
+
+Explore additional features and use cases in the [Roadmap](#roadmap) section.
 
 ### Why Nomi?
 
@@ -59,37 +71,7 @@ cd nomi
 make build
 ```
 
-## Features
-
-### Conversation Management
-
-Create new conversations, load existing ones, list all conversations, add messages or files to a conversation, and reset conversations when needed.
-
-### Prompts Management
-
-Add new prompts, edit existing ones, list all available prompts, and fetch prompts from a URL for easy access and organization.
-
-### Code interpreting capabilities
-
-Run code on the fly with interpreter mode, making it easy to execute and test code directly within Nomi.
-
-### AI Provider Integration
-
-Connect seamlessly with AI providers like OpenAI, OpenRouter, and Ollama. Nomi can automatically install Ollama for you, simplifying the setup process.
-
-### Real-time Voice
-
-Enable real-time voice interactions, allowing for a more dynamic and interactive user experience.
-
-### Terminal Experience
-
-Enjoy markdown-formatted output, read inputs with piped commands, and cancel operations easily within the terminal.
-
-### Additional Features
-
-Explore more functionalities and upcoming features in the [Roadmap](#roadmap).
-
-## Roadmap
+# Roadmap
 
 These features are planned for future updates. They are not in any specific order and may be partially or not implemented yet.
 
