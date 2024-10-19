@@ -411,7 +411,6 @@ func readInput(
 	for {
 		line, err := rl.Readline()
 		if err != nil {
-			fmt.Println("Error reading input", err)
 			if err == readline.ErrInterrupt {
 				inputErrCh <- term.ErrInputInterrupted
 				return
