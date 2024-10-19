@@ -29,7 +29,7 @@ jobs:
         run: go mod download
 
       - name: Download portaudio
-        run: apt-get install portaudio19-dev -y
+        run: sudo apt update && sudo apt-get install portaudio19-dev -y
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
