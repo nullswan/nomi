@@ -16,6 +16,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const binaryName = "nomi"
+
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Automatically update the application",
@@ -84,7 +86,7 @@ func getLatestRelease() (string, string, error) {
 	version := strings.TrimPrefix(release.TagName, "v") // Remove 'v' prefix
 	assetName := fmt.Sprintf(
 		"%s_%s_%s_%s.tar.gz",
-		binName,
+		binaryName,
 		version,
 		runtime.GOOS,
 		runtime.GOARCH,
@@ -141,7 +143,7 @@ func downloadAndReplace(url string) error {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
 
-	newExePath := filepath.Join(extractDir, binName+"-cli")
+	newExePath := filepath.Join(extractDir, binaryName+"-cli")
 	err = os.Rename(newExePath, exePath)
 	if err != nil {
 		return fmt.Errorf("failed to replace binary: %w", err)
