@@ -31,6 +31,7 @@ var configShowCmd = &cobra.Command{
 	},
 }
 
+// TODO(nullswan): Replace with editor, just like with the prompt edit
 var configSetCmd = &cobra.Command{
 	Use:   "set [key] [value]",
 	Short: "Set a configuration parameter",
