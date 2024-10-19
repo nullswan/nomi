@@ -9,12 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const ErrLocalWhisperNotSupported = "OPENAI_API_KEY is not set, voice input will be disabled -- local whisper will be supported soon!"
+
 func main() {
 	// #region Config commands
-	// rootCmd.AddCommand(configCmd)
-	// configCmd.AddCommand(configShowCmd)
-	// configCmd.AddCommand(configSetCmd)
-	// configCmd.AddCommand(configSetupCmd)
+	rootCmd.AddCommand(configCmd)
+	configCmd.AddCommand(configShowCmd)
+	configCmd.AddCommand(configSetCmd)
+	configCmd.AddCommand(configSetupCmd)
 	// #endregion
 
 	// #region Interpreter commands
@@ -70,14 +72,22 @@ func main() {
 			os.Exit(1)
 		}
 
-		// pprof
-		// TODO(nullswan): Make optional, in dev mode only
-		go func() {
-			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
-				fmt.Printf("Error starting pprof server: %v\n", err)
-				os.Exit(1)
-			}
-		}()
+		oaiKey := os.Getenv("OPENAI_API_KEY")
+		if oaiKey == "" && cfg.Input.Voice.Enabled {
+			fmt.Println(
+				ErrLocalWhisperNotSupported,
+			)
+			cfg.Input.Voice.Enabled = false
+		}
+
+		if cfg.DevMode {
+			go func() {
+				if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+					fmt.Printf("Error starting pprof server: %v\n", err)
+					os.Exit(1)
+				}
+			}()
+		}
 	}
 
 	// Execute the root command

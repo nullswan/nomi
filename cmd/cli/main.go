@@ -106,19 +106,17 @@ func runApp(_ *cobra.Command, _ []string) {
 		os.Exit(1)
 	}
 
-	// Display Welcome Message
-	if !interactiveMode {
-		cli.DisplayWelcome(cli.NewWelcomeConfig(
-			conversation,
-			cli.WithWelcomeMessage("Nomi is ready to assist you."),
-			cli.WithBuildDate(buildDate),
-			cli.WithBuildVersion(buildVersion),
-			cli.WithStartPrompt(startPrompt),
-			cli.WithModelProvider(textToTextBackend),
-			cli.WithProvider(providers.CheckProvider()),
-			cli.WithDefaultIntrustructions(),
-		))
-	}
+	// Prepare the welcome message
+	welcomeConfig := cli.NewWelcomeConfig(
+		conversation,
+		cli.WithWelcomeMessage("Nomi is ready to assist you."),
+		cli.WithBuildDate(buildDate),
+		cli.WithBuildVersion(buildVersion),
+		cli.WithStartPrompt(startPrompt),
+		cli.WithModelProvider(textToTextBackend),
+		cli.WithProvider(providers.CheckProvider()),
+		cli.WithDefaultIntrustructions(),
+	)
 
 	// Initialize Renderer
 	renderer, err := term.InitRenderer()
@@ -127,25 +125,8 @@ func runApp(_ *cobra.Command, _ []string) {
 		os.Exit(1)
 	}
 
-	// Initialize Audio
-	// TODO(nullswan): Only when using audio, till local whisper is supported
-	oaiKey := os.Getenv("OPENAI_API_KEY")
-	if oaiKey == "" {
-		fmt.Println("OPENAI_API_KEY is not set")
-		os.Exit(1)
-	}
-
-	if err := portaudio.Initialize(); err != nil {
-		fmt.Printf("Failed to initialize PortAudio: %v\n", err)
-		os.Exit(1)
-	}
-	defer portaudio.Terminate()
-
-	audioOpts, err := audio.ComputeAudioOptions(&audio.AudioOptions{})
-	if err != nil {
-		fmt.Printf("Error computing audio options: %v\n", err)
-		os.Exit(1)
-	}
+	inputCh := make(chan string)
+	inputErrCh := make(chan error)
 
 	// Initialize Readline
 	rl, err := term.InitReadline()
@@ -155,57 +136,84 @@ func runApp(_ *cobra.Command, _ []string) {
 	}
 	defer rl.Close()
 
-	inputCh := make(chan string)
-	inputErrCh := make(chan error)
+	var inputStream *audio.AudioStream
+	var audioStartCh, audioEndCh <-chan struct{}
+	if cfg.Input.Voice.Enabled {
+		// Initialize Audio
+		if err := portaudio.Initialize(); err != nil {
+			fmt.Printf("Failed to initialize PortAudio: %v\n", err)
+			os.Exit(1)
+		}
+		defer portaudio.Terminate()
 
-	// Initialize Transcription Server
-	ts, err := cli.InitTranscriptionServer(
-		oaiKey,
-		audioOpts,
-		logger,
-		func(text string, isProcessing bool) {
-			rl.Operation.Clean()
-			if !isProcessing {
-				rl.Operation.SetBuffer("")
-				fmt.Printf("%s\n\n", text)
-				inputCh <- text
-			} else {
-				rl.Operation.SetBuffer(text)
-			}
-		},
-	)
-	if err != nil {
-		fmt.Printf("Error initializing transcription server: %v\n", err)
-		os.Exit(1)
+		audioOpts, err := audio.ComputeAudioOptions(&audio.AudioOptions{})
+		if err != nil {
+			fmt.Printf("Error computing audio options: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Initialize Transcription Server
+		oaiKey := os.Getenv("OPENAI_API_KEY")
+		if oaiKey == "" {
+			fmt.Println(ErrLocalWhisperNotSupported)
+			os.Exit(1)
+		}
+
+		ts, err := cli.InitTranscriptionServer(
+			oaiKey,
+			audioOpts,
+			logger,
+			func(text string, isProcessing bool) {
+				rl.Operation.Clean()
+				if !isProcessing {
+					rl.Operation.SetBuffer("")
+					fmt.Printf("%s\n\n", text)
+					inputCh <- text
+				} else {
+					rl.Operation.SetBuffer(text)
+				}
+			},
+		)
+		if err != nil {
+			fmt.Printf("Error initializing transcription server: %v\n", err)
+			os.Exit(1)
+		}
+		defer ts.Close()
+		ts.Start()
+
+		// Initialize VAD
+		vad := cli.InitVAD(ts, logger)
+		defer vad.Stop()
+		vad.Start()
+
+		// Create Input Stream
+		inputStream, err = audio.NewInputStream(
+			logger,
+			audioOpts,
+			func(buffer []float32) {
+				vad.Feed(buffer)
+			},
+		)
+		if err != nil {
+			fmt.Printf("Failed to create input stream: %v\n", err)
+			os.Exit(1)
+		}
+
+		defer inputStream.Close()
+
+		// Initialize Key Hooks
+		audioStartCh, audioEndCh = cli.SetupKeyHooks(cmdKeyCode)
+
+		cli.WithVoiceInstructions()(&welcomeConfig)
 	}
-	defer ts.Close()
-	ts.Start()
 
-	// Initialize VAD
-	vad := cli.InitVAD(ts, logger)
-	defer vad.Stop()
-	vad.Start()
-
-	// Create Input Stream
-	inputStream, err := audio.NewInputStream(
-		logger,
-		audioOpts,
-		func(buffer []float32) {
-			vad.Feed(buffer)
-		},
-	)
-	if err != nil {
-		fmt.Printf("Failed to create input stream: %v\n", err)
-		os.Exit(1)
+	// Display Welcome Message
+	if !interactiveMode {
+		cli.DisplayWelcome(welcomeConfig)
 	}
-
-	defer inputStream.Close()
 
 	// Start Input Reader Goroutine
 	go cli.ReadInput(rl, inputCh, inputErrCh)
-
-	// Initialize Key Hooks
-	audioStartCh, audioEndCh := cli.SetupKeyHooks(cmdKeyCode)
 
 	// Main Event Loop
 	cli.EventLoop(
