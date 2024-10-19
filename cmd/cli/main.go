@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-	"time"
 
 	_ "net/http/pprof"
 
@@ -26,7 +25,6 @@ import (
 	"github.com/nullswan/nomi/internal/providers"
 	baseprovider "github.com/nullswan/nomi/internal/providers/base"
 	"github.com/nullswan/nomi/internal/term"
-	"github.com/nullswan/nomi/internal/transcription"
 	hook "github.com/robotn/gohook"
 
 	"github.com/spf13/cobra"
@@ -231,7 +229,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	inputErrCh := make(chan error)
 
 	// Initialize Transcription Server
-	ts := initTranscriptionServer(
+	ts, err := cli.InitTranscriptionServer(
 		oaiKey,
 		audioOpts,
 		logger,
@@ -246,11 +244,15 @@ func runApp(_ *cobra.Command, _ []string) {
 			}
 		},
 	)
+	if err != nil {
+		fmt.Printf("Error initializing transcription server: %v\n", err)
+		os.Exit(1)
+	}
 	defer ts.Close()
 	ts.Start()
 
 	// Initialize VAD
-	vad := initVAD(ts, logger)
+	vad := cli.InitVAD(ts, logger)
 	defer vad.Stop()
 	vad.Start()
 
@@ -324,83 +326,6 @@ func displayWelcome(conversation chat.Conversation, model string) {
 	fmt.Printf("Press Ctrl+K to cancel the current request.\n")
 	fmt.Printf("Press any[once] and CMD to record audio.\n")
 	fmt.Printf("-----\n\n")
-}
-
-func initTranscriptionServer(
-	oaiKey string,
-	audioOpts *audio.AudioOptions,
-	logger *logger.Logger,
-	callback transcription.TranscriptionServerCallbackT,
-) *transcription.TranscriptionServer {
-	bufferManagerPrimary := transcription.NewBufferManager(audioOpts)
-	bufferManagerPrimary.SetMinBufferDuration(500 * time.Millisecond)
-	bufferManagerPrimary.SetOverlapDuration(100 * time.Millisecond)
-
-	bufferManagerSecondary := transcription.NewBufferManager(audioOpts)
-	bufferManagerSecondary.SetMinBufferDuration(2 * time.Second)
-	bufferManagerSecondary.SetOverlapDuration(400 * time.Millisecond)
-
-	textReconcilier := transcription.NewTextReconciler(logger)
-	tsHandler := transcription.NewTranscriptionHandler(
-		oaiKey,
-		audioOpts,
-		logger,
-	)
-	tsHandler.SetEnableFixing(true)
-
-	ts := transcription.NewTranscriptionServer(
-		bufferManagerPrimary,
-		bufferManagerSecondary,
-		tsHandler,
-		textReconcilier,
-		logger,
-		callback,
-	)
-	return ts
-}
-
-func initVAD(
-	ts *transcription.TranscriptionServer,
-	logger *logger.Logger,
-) *audio.VAD {
-	vad := audio.NewVAD(
-		audio.VADConfig{
-			EnergyThreshold: 0.005,
-			FlushInterval:   310 * time.Millisecond,
-			SilenceDuration: 500 * time.Millisecond,
-			PauseDuration:   300 * time.Millisecond,
-		},
-		audio.VADCallbacks{
-			OnSpeechStart: func() {
-				logger.Debug("VAD: Speech started")
-			},
-			OnSpeechEnd: func() {
-				logger.Debug("VAD: Speech ended")
-				ts.FlushBuffers()
-			},
-			OnFlush: func(buffer []float32) {
-				logger.
-					With("buf_sz", len(buffer)).
-					Debug("VAD: Buffer flushed")
-
-				data, err := audio.Float32ToPCM(buffer)
-				if err != nil {
-					logger.
-						With("error", err).
-						Error("Failed to convert float32 to PCM")
-					return
-				}
-
-				ts.AddAudio(data)
-			},
-			OnPause: func() {
-				logger.Debug("VAD: Speech paused")
-				ts.FlushPrimaryBuffer()
-			},
-		},
-		logger,
-	)
-	return vad
 }
 
 func readInput(

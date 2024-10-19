@@ -10,6 +10,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/gordonklaus/portaudio"
+	"github.com/nullswan/nomi/internal/audio"
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
 	"github.com/nullswan/nomi/internal/code"
@@ -41,10 +43,6 @@ var interpreterCmd = &cobra.Command{
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-
-		provider = providers.CheckProvider()
-
-		var err error
 
 		interpreterAskPrompt, err := code.GetDefaultInterpreterPrompt(
 			runtime.GOOS,
@@ -93,6 +91,78 @@ var interpreterCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		defer codeRepo.Close()
+
+		if err := portaudio.Initialize(); err != nil {
+			fmt.Printf("Failed to initialize PortAudio: %v\n", err)
+			os.Exit(1)
+		}
+		defer portaudio.Terminate()
+
+		audioOpts, err := audio.ComputeAudioOptions(&audio.AudioOptions{})
+		if err != nil {
+			fmt.Printf("Error computing audio options: %v\n", err)
+			os.Exit(1)
+		}
+
+		oaiKey := os.Getenv("OPENAI_API_KEY")
+		if oaiKey == "" {
+			fmt.Println("OPENAI_API_KEY is not set")
+			os.Exit(1)
+		}
+
+		// Initialize Readline
+		rl, err := term.InitReadline()
+		if err != nil {
+			fmt.Printf("Error initializing readline: %v\n", err)
+			os.Exit(1)
+		}
+		defer rl.Close()
+
+		inputCh := make(chan string)
+		// inputErrCh := make(chan error)
+
+		// Initialize Realtime Voice
+		ts, err := cli.InitTranscriptionServer(
+			oaiKey,
+			audioOpts,
+			log,
+			func(text string, isProcessing bool) {
+				rl.Operation.Clean()
+				if !isProcessing {
+					rl.Operation.SetBuffer("")
+					fmt.Printf("%s\n\n", text)
+					inputCh <- text
+				} else {
+					rl.Operation.SetBuffer(text)
+				}
+			},
+		)
+		if err != nil {
+			fmt.Printf("Error initializing transcription server: %v\n", err)
+			os.Exit(1)
+		}
+		defer ts.Close()
+		ts.Start()
+
+		// Initialize VAD
+		vad := cli.InitVAD(ts, log)
+		defer vad.Stop()
+		vad.Start()
+
+		// Create Input Stream
+		inputStream, err := audio.NewInputStream(
+			log,
+			audioOpts,
+			func(buffer []float32) {
+				vad.Feed(buffer)
+			},
+		)
+		if err != nil {
+			fmt.Printf("Failed to create input stream: %v\n", err)
+			os.Exit(1)
+		}
+
+		defer inputStream.Close()
 
 		conversation := chat.NewStackedConversation(chatRepo)
 		conversation.WithPrompt(interpreterAskPrompt)
