@@ -28,6 +28,9 @@ jobs:
       - name: Download Go module dependencies
         run: go mod download
 
+      - name: Download portaudio
+        run: apt-get install portaudio19-dev -y
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
