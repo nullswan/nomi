@@ -34,13 +34,12 @@ var (
 )
 
 const (
-	binName = "nomi"
 	// TODO(nullswan): Should be configurable
 	cmdKeyCode = 55
 )
 
 var rootCmd = &cobra.Command{
-	Use:   binName + " [flags] [arguments]",
+	Use:   "nomi [flags] [arguments]",
 	Short: "AI runtime, multi-modal, supporting action & private data. ",
 	Run:   runApp,
 	CompletionOptions: cobra.CompletionOptions{
@@ -117,15 +116,7 @@ func runApp(_ *cobra.Command, _ []string) {
 			cli.WithStartPrompt(startPrompt),
 			cli.WithModelProvider(textToTextBackend),
 			cli.WithProvider(providers.CheckProvider()),
-			cli.WithInstruction("Press [ENTER] twice to send a message."),
-			cli.WithInstruction("Press [CTRL+C] to exit."),
-			cli.WithInstruction(
-				"Press [CTRL+K] to cancel the current request.",
-			),
-			// TODO(nullswan): Remove the any-key requirement
-			cli.WithInstruction(
-				"Press [any key - once] and [CMD] to record audio.",
-			),
+			cli.WithDefaultIntrustructions(),
 		))
 	}
 

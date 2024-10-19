@@ -184,22 +184,8 @@ var interpreterCmd = &cobra.Command{
 				cli.WithModelProvider(codeGenerationBackend),
 				cli.WithModelProvider(codeInferenceBackend),
 				cli.WithProvider(provider),
-				cli.WithInstruction("Press [ENTER] twice to send a message."),
-				cli.WithInstruction("Press [CTRL+C] to exit."),
-				cli.WithInstruction(
-					"Press [CTRL+K] to cancel the current request.",
-				),
-				// TODO(nullswan): Remove the any-key requirement
-				cli.WithInstruction(
-					"Press [any key - once] and [CMD] to record audio.",
-				),
+				cli.WithDefaultIntrustructions(),
 			))
-		}
-
-		pipedInput, err := term.GetPipedInput()
-		if err != nil {
-			log.With("error", err).
-				Error("Error reading piped input")
 		}
 
 		renderer, err := term.InitRenderer()
@@ -349,10 +335,6 @@ var interpreterCmd = &cobra.Command{
 			)
 
 			lastResult = result
-		}
-
-		if pipedInput != "" {
-			processInput(pipedInput)
 		}
 
 		for {

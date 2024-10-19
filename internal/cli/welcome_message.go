@@ -76,6 +76,32 @@ func WithInstruction(instr string) WelcomeOption {
 	}
 }
 
+func WithDefaultIntrustructions() WelcomeOption {
+	return func(c *WelcomeConfig) {
+		c.Instructions = append(
+			c.Instructions,
+			"Type /help for available commands.",
+		)
+		c.Instructions = append(
+			c.Instructions,
+			"Press [ENTER] twice to send a message.",
+		)
+		c.Instructions = append(
+			c.Instructions,
+			"Press [CTRL+C] to exit.",
+		)
+		c.Instructions = append(
+			c.Instructions,
+			"Press [CTRL+K] to cancel the current request.",
+		)
+		// TODO(nullswan): Remove the any-key requirement
+		c.Instructions = append(
+			c.Instructions,
+			"Press [any key - once] and [CMD] to record audio.",
+		)
+	}
+}
+
 func NewWelcomeConfig(
 	conversation Conversation,
 	opts ...WelcomeOption,
@@ -101,12 +127,12 @@ func DisplayWelcome(config WelcomeConfig) {
 	if config.StartPrompt != nil {
 		fmt.Printf("  Start prompt: %s\n", *config.StartPrompt)
 	}
+	fmt.Printf("  Conversation: %s\n", config.Conversation.GetID())
 	for i, mp := range config.ModelProviders {
 		fmt.Printf("  Model %d: %s\n", i+1, mp.GetModel())
 	}
-	fmt.Printf("  Conversation: %s\n", config.Conversation.GetID())
 	for i, provider := range config.Provider {
-		fmt.Printf("  Provider: %d: %s\n", i+1, provider.String())
+		fmt.Printf("  Provider %d: %s\n", i+1, provider.String())
 	}
 	fmt.Printf("  Build Version: %s\n", config.BuildVersion)
 	fmt.Printf("  Build Date: %s\n", config.BuildDate)
