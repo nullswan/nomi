@@ -1,22 +1,22 @@
 package config
 
 type Config struct {
-	Input  InputConfig  `yaml:"input"  json:"input"`
-	Output OutputConfig `yaml:"output" json:"output"`
+	Input   InputConfig  `yaml:"input"    json:"input"`
+	Output  OutputConfig `yaml:"output"   json:"output"`
+	DevMode bool         `yaml:"dev_mode" json:"dev_mode"`
 	// TODO(nullswan): Add memory configuration
 }
 
 // Manage the input sources
 type InputConfig struct {
 	Voice EnabledConfig `yaml:"voice" json:"voice"`
-	// TODO(nullswan): Differentiate between real-tme voice and alway-on voice
+	// TODO(nullswan): Differentiate between real-time voice and alway-on voice
 	// TODO(nullswan): Add video input
 	// TODO(nullswan): Add image input
 }
 
 type OutputConfig struct {
-	Markdown OutputDetailConfig `yaml:"markdown" json:"markdown"`
-	Sqlite   OutputDetailConfig `yaml:"sqlite"   json:"sqlite"`
+	Sqlite OutputDetailConfig `yaml:"sqlite" json:"sqlite"`
 }
 
 type EnabledConfig struct {

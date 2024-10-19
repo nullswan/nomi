@@ -54,20 +54,27 @@ func (c *stackedConversation) WithPrompt(prompt prompts.Prompt) {
 	}
 }
 
+// TODO(nullswan): Conversation should remain immutable
 func (c *stackedConversation) Reset() Conversation {
-	conversastion := NewStackedConversation(c.repo)
+	c.repo.SaveConversation(c)
+
+	conversation := NewStackedConversation(c.repo)
 
 	// Copy system messages
 	for _, message := range c.messages {
 		if message.Role != RoleSystem {
 			break
 		}
-		conversastion.AddMessage(
+		conversation.AddMessage(
 			message,
 		)
 	}
 
-	return conversastion
+	c.createdAt = conversation.GetCreatedAt()
+	c.id = conversation.GetID()
+	c.messages = conversation.GetMessages()
+
+	return c
 }
 
 func NewStackedConversation(

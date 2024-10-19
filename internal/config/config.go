@@ -72,14 +72,11 @@ func defaultConfig() Config {
 	_ = GetPromptDirectory()
 
 	return Config{
+		DevMode: false,
 		Input: InputConfig{
-			Voice: EnabledConfig{Enabled: true},
+			Voice: EnabledConfig{Enabled: false},
 		},
 		Output: OutputConfig{
-			Markdown: OutputDetailConfig{
-				Enabled: true,
-				Path:    filepath.Join(convDir, "markdown"),
-			},
 			Sqlite: OutputDetailConfig{
 				Enabled: true,
 				Path:    filepath.Join(convDir, "sqlite.db"),
