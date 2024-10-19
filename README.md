@@ -65,12 +65,14 @@ Explore more functionalities and upcoming features in the [Roadmap](#roadmap).
 
 These features are planned for future updates. They are not in any specific order and may be partially or not implemented yet.
 
+- [ ] Sound on completion
 - [ ] Image support
 - [ ] Local Whisper
 - [ ] Anthropic API
 - [ ] Long transcript processing
 - [ ] Transcript saving
 - [ ] Daemon mode + HTTP Interface
+- [ ] Scheduled tasks
 - [ ] Editor mode
 - [ ] Ask before making decisions
 - [ ] Remember decisions
@@ -79,6 +81,8 @@ These features are planned for future updates. They are not in any specific orde
 - [ ] Auto-update (Update command is already available)
 - [ ] Interpreter safety
 - [ ] Actions
+- [ ] Action presets
+- [ ] Markdown conversation backup
 - [ ] Action chains
 - [ ] Real-time file management
 - [ ] Memory embedding
