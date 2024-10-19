@@ -59,8 +59,6 @@ func setOutputConfigValue(
 		return fmt.Errorf("invalid key for output: %v", keys)
 	}
 	switch keys[0] {
-	case "markdown":
-		return setOutputDetailConfigValue(&output.Markdown, keys[1], value)
 	case "sqlite":
 		return setOutputDetailConfigValue(&output.Sqlite, keys[1], value)
 	default:
