@@ -1,3 +1,5 @@
+# Nomi - A Multi-Modal AI Runtime
+
 <p align="center">
   <img src="https://github.com/user-attachments/assets/5984c6d7-0d10-4325-af74-a69a87ff0eff" alt="Nomi, the interactive layer for AI">
 </p>
@@ -96,3 +98,7 @@ These features are planned for future updates. They are not in any specific orde
 - [ ] Action chains
 - [ ] Real-time file management
 - [ ] Memory embedding
+
+# License
+
+This project is licensed under the MIT - see the [LICENSE](LICENSE) file for details, but we believe in the power and fairness of open-source software.
