@@ -23,13 +23,7 @@ func HandleCommands(text string, conversation chat.Conversation) string {
 
 		switch {
 		case strings.HasPrefix(line, "/help"):
-			fmt.Println("Available commands:")
-			fmt.Println("  /help        Show this help message")
-			fmt.Println("  /reset       Reset the conversation")
-			fmt.Println(
-				"  /add <file>  Add a file or directory to the conversation",
-			)
-			fmt.Println("  /exit        Exit the application")
+			printHelp()
 		case strings.HasPrefix(line, "/reset"):
 			conversation = conversation.Reset()
 			fmt.Println("Conversation reset.")
@@ -50,9 +44,20 @@ func HandleCommands(text string, conversation chat.Conversation) string {
 			fmt.Println("Exiting...")
 			os.Exit(0)
 		default:
-			ret += line + "\n"
+			fmt.Println("Unknown command:", line)
+			printHelp()
 		}
 	}
 
 	return ret
+}
+
+func printHelp() {
+	fmt.Println("Available commands:")
+	fmt.Println("  /help        Show this help message")
+	fmt.Println("  /reset       Reset the conversation")
+	fmt.Println(
+		"  /add <file>  Add a file or directory to the conversation",
+	)
+	fmt.Println("  /exit        Exit the application")
 }

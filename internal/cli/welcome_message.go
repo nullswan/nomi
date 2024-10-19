@@ -84,7 +84,7 @@ func WithDefaultIntrustructions() WelcomeOption {
 		)
 		c.Instructions = append(
 			c.Instructions,
-			"Press [ENTER] twice to send a message.",
+			"Press [ENTER] to send a message.",
 		)
 		c.Instructions = append(
 			c.Instructions,
@@ -94,7 +94,12 @@ func WithDefaultIntrustructions() WelcomeOption {
 			c.Instructions,
 			"Press [CTRL+K] to cancel the current request.",
 		)
-		// TODO(nullswan): Remove the any-key requirement
+	}
+}
+
+// TODO(nullswan): Remove the any-key requirement
+func WithVoiceInstructions() WelcomeOption {
+	return func(c *WelcomeConfig) {
 		c.Instructions = append(
 			c.Instructions,
 			"Press [any key - once] and [CMD] to record audio.",
