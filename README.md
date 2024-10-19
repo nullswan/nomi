@@ -1,67 +1,79 @@
 # Nomi - A Multi-Modal AI Runtime
 
-Born from the principles that **data ownership is challenging** and **AI simplifies communication**, the Nomi project aims to complement human intelligence by orchestrating data to enhance **decision-making** and handle **automated micro-tasks**.
-
-Our mission is to make AI more accessible and easy to use for everyone, ensuring that you have control over your data whenever you need it.
-
-**Nomi**, is a versatile and lightweight AI runtime that integrates with AI services like OpenAI, OpenRouter, and Ollama, enabling you to leverage their capabilities. While using these providers involves sending your data externally, Nomi also maintains a local archive of your data, ensuring you retain control and ownership.
-
-Supporting multiple data types, including text and audio, with image support coming soon, Nomi offers flexibility while safeguarding your information.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/5984c6d7-0d10-4325-af74-a69a87ff0eff" alt="Nomi, the interactive layer for AI">
+</p>
 
 > **Note:** This project is still being developed and isn't ready for full use yet, but we are working hard to make it stable and reliable.
 >
 > We welcome any feedback, suggestions, or contributions. Thank you for trying Nomi!
 
-# Table of Contents
-
-- [Features](#features)
-  - [Manage Conversations](#manage-conversations)
-  - [Manage Prompts](#manage-prompts)
-  - [AI Provider Integration](#ai-provider-integration)
-  - [Terminal Features](#terminal-features)
-  - [Real-time Voice](#real-time-voice)
-  - [Interpreter Mode](#interpreter-mode)
-  - [Additional Features](#additional-features)
+- [Introduction](#introduction)
+  - [Features](#features)
+  - [Why Nomi?](#why-nomi)
+  - [Use cases](#use-cases)
+- [Get Started](#get-started)
+  - [Linux & MacOS](#linux--macos)
+  - [Windows](#windows)
+  - [Compile from Source](#compile-from-source)
 - [Roadmap](#roadmap)
-- [Installation](#installation)
 
+# Introduction
 
-## Nomi
+**Nomi** is a realtime multi-modal interface (i.e., voice and text interface) designed to **interact with your local data** and **automate your micro-tasks** thanks to LLM capabilities.
 
-![Nomi Logo](./nomi-logo.png)
+### Features
 
+- **Multi-Modal Interface**: Accepts text or voice inputs (soon visual inputs)
+- **Data Integration**: Interact with local files (or soon, public sources on internet)
+- **Task Automation**: Built-in code interpreter for generating and running code snippets
+- **Conversation Management**: Organize, save, continue or reset conversations
+- **Prompt Engineering**: Create, edit, and manage system prompts
+- **Provider Flexibility**: Support local (e.g., Ollama) and cloud (e.g., OpenAI, OpenRouter) LLM providers
 
-## Features
+Explore additional features and use cases in the [Roadmap](#roadmap) section.
 
-### Conversation Management
+### Why Nomi?
 
-Create new conversations, load existing ones, list all conversations, add messages or files to a conversation, and reset conversations when needed.
+In a world where data ownership is challenging and AI is revolutionizing communication, Nomi acts as a bridge between private data and LLM providers.
+It supports integration with both local and external providers, including OpenAI, OpenRouter, and Ollama.
 
-### Prompts Management
+While using external providers, like OpenAI, involves transmitting data to third parties, Nomi also works with local providers such as Ollama.
+Our aim is to democratize AI by making it more accessible and user-friendly, while ensuring control and ownership over data.
 
-Add new prompts, edit existing ones, list all available prompts, and fetch prompts from a URL for easy access and organization.
+### Use cases
 
-### Code interpreting capabilities
+- **Personal AI Assistant**: Daily tasks automation and information retrieval
+- **Code Development Aid**: Quick testing and coding assistance
+- **Voice-Controlled AI**: Hands-free AI interaction
+- **Local Data Analysis**: Privacy-focused data interaction
+- **AI Model Comparison**: Easy switching between providers
 
-Run code on the fly with interpreter mode, making it easy to execute and test code directly within Nomi.
+# Get Started
 
-### AI Provider Integration
+### Linux & MacOS
 
-Connect seamlessly with AI providers like OpenAI, OpenRouter, and Ollama. Nomi can automatically install Ollama for you, simplifying the setup process.
+```shell
+# Check the script before running it.
+curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.sh | bash
+```
 
-### Real-time Voice
+### Windows
 
-Enable real-time voice interactions, allowing for a more dynamic and interactive user experience.
+```shell
+# Check the script before running it.
+curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.bat | cmd
+```
 
-### Terminal Experience
+### Compile from Source
 
-Enjoy markdown-formatted output, read inputs with piped commands, and cancel operations easily within the terminal.
+```shell
+git clone https://github.com/nullswan/nomi.git
+cd nomi
+make build
+```
 
-### Additional Features
-
-Explore more functionalities and upcoming features in the [Roadmap](#roadmap).
-
-## Roadmap
+# Roadmap
 
 These features are planned for future updates. They are not in any specific order and may be partially or not implemented yet.
 
@@ -87,26 +99,6 @@ These features are planned for future updates. They are not in any specific orde
 - [ ] Real-time file management
 - [ ] Memory embedding
 
-## Installation
+# License
 
-### Linux & MacOS
-
-```shell
-# Check the script before running it.
-curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.sh | bash
-```
-
-### Windows
-
-```shell
-# Check the script before running it.
-curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.bat | cmd
-```
-
-### Compile from Source
-
-```shell
-git clone https://github.com/nullswan/nomi.git
-cd nomi
-make build
-```
+This project is licensed under the MIT - see the [LICENSE](LICENSE) file for details, but we believe in the power and fairness of open-source software.
