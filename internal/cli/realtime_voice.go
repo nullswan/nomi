@@ -1,9 +1,13 @@
 package cli
 
 import (
+	"fmt"
+	"os"
 	"time"
 
+	"github.com/gordonklaus/portaudio"
 	"github.com/nullswan/nomi/internal/audio"
+	"github.com/nullswan/nomi/internal/config"
 	"github.com/nullswan/nomi/internal/logger"
 	"github.com/nullswan/nomi/internal/transcription"
 )
@@ -97,4 +101,69 @@ func InitVAD(
 		log,
 	)
 	return vad
+}
+
+func InitVoice(
+	cfg *config.Config,
+	log *logger.Logger,
+	handleTranscription func(text string, isProcessing bool),
+	cmdKeyCode uint16,
+) (*audio.AudioStream, <-chan struct{}, <-chan struct{}, error) {
+	if !cfg.Input.Voice.Enabled {
+		return nil, nil, nil, nil
+	}
+
+	if err := portaudio.Initialize(); err != nil {
+		return nil, nil, nil, fmt.Errorf(
+			"failed to initialize PortAudio: %w",
+			err,
+		)
+	}
+
+	audioOpts, err := audio.ComputeAudioOptions(&audio.AudioOptions{})
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf(
+			"error computing audio options: %w",
+			err,
+		)
+	}
+
+	oaiKey := os.Getenv("OPENAI_API_KEY")
+	if oaiKey == "" {
+		return nil, nil, nil, fmt.Errorf("OPENAI_API_KEY is not set")
+	}
+
+	ts, err := InitTranscriptionServer(
+		oaiKey,
+		audioOpts,
+		log,
+		handleTranscription,
+	)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf(
+			"error initializing transcription server: %w",
+			err,
+		)
+	}
+	ts.Start()
+
+	vad := InitVAD(ts, log)
+	vad.Start()
+
+	inputStream, err := audio.NewInputStream(
+		log,
+		audioOpts,
+		func(buffer []float32) {
+			vad.Feed(buffer)
+		},
+	)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf(
+			"failed to create input stream: %w",
+			err,
+		)
+	}
+
+	audioStartCh, audioEndCh := SetupKeyHooks(cmdKeyCode)
+	return inputStream, audioStartCh, audioEndCh, nil
 }

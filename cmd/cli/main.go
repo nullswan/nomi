@@ -11,7 +11,6 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/chzyer/readline"
-	"github.com/gordonklaus/portaudio"
 	"github.com/nullswan/nomi/internal/audio"
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
@@ -139,29 +138,9 @@ func runApp(_ *cobra.Command, _ []string) {
 	var inputStream *audio.AudioStream
 	var audioStartCh, audioEndCh <-chan struct{}
 	if cfg.Input.Voice.Enabled {
-		// Initialize Audio
-		if err := portaudio.Initialize(); err != nil {
-			fmt.Printf("Failed to initialize PortAudio: %v\n", err)
-			os.Exit(1)
-		}
-		defer portaudio.Terminate()
-
-		audioOpts, err := audio.ComputeAudioOptions(&audio.AudioOptions{})
-		if err != nil {
-			fmt.Printf("Error computing audio options: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Initialize Transcription Server
-		oaiKey := os.Getenv("OPENAI_API_KEY")
-		if oaiKey == "" {
-			fmt.Println(ErrLocalWhisperNotSupported)
-			os.Exit(1)
-		}
-
-		ts, err := cli.InitTranscriptionServer(
-			oaiKey,
-			audioOpts,
+		// Initialize Voice using shared method
+		inputStream, audioStartCh, audioEndCh, err = cli.InitVoice(
+			cfg,
 			logger,
 			func(text string, isProcessing bool) {
 				rl.Operation.Clean()
@@ -173,37 +152,15 @@ func runApp(_ *cobra.Command, _ []string) {
 					rl.Operation.SetBuffer(text)
 				}
 			},
+			cmdKeyCode,
 		)
 		if err != nil {
-			fmt.Printf("Error initializing transcription server: %v\n", err)
+			fmt.Printf("Error initializing voice: %v\n", err)
 			os.Exit(1)
 		}
-		defer ts.Close()
-		ts.Start()
-
-		// Initialize VAD
-		vad := cli.InitVAD(ts, logger)
-		defer vad.Stop()
-		vad.Start()
-
-		// Create Input Stream
-		inputStream, err = audio.NewInputStream(
-			logger,
-			audioOpts,
-			func(buffer []float32) {
-				vad.Feed(buffer)
-			},
-		)
-		if err != nil {
-			fmt.Printf("Failed to create input stream: %v\n", err)
-			os.Exit(1)
-		}
-
 		defer inputStream.Close()
 
-		// Initialize Key Hooks
-		audioStartCh, audioEndCh = cli.SetupKeyHooks(cmdKeyCode)
-
+		// Apply voice-specific welcome instructions
 		cli.WithVoiceInstructions()(&welcomeConfig)
 	}
 
@@ -242,10 +199,6 @@ func processInput(
 	rl *readline.Instance,
 ) {
 	defer rl.Refresh()
-
-	if text == "" {
-		return
-	}
 
 	text = cli.HandleCommands(text, conversation)
 	if text == "" {

@@ -2,20 +2,19 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 	"runtime"
 	"strings"
-	"syscall"
 
+	"github.com/chzyer/readline"
 	"github.com/gordonklaus/portaudio"
 	"github.com/nullswan/nomi/internal/audio"
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
 	"github.com/nullswan/nomi/internal/code"
 	"github.com/nullswan/nomi/internal/completion"
+	"github.com/nullswan/nomi/internal/config"
 	"github.com/nullswan/nomi/internal/logger"
 	"github.com/nullswan/nomi/internal/providers"
 	baseprovider "github.com/nullswan/nomi/internal/providers/base"
@@ -27,7 +26,6 @@ const (
 	interpreterMaxRetries = 3
 )
 
-// Add the interpreter command
 var interpreterCmd = &cobra.Command{
 	Use:   "interpreter",
 	Short: "Start the interpreter",
@@ -38,6 +36,12 @@ var interpreterCmd = &cobra.Command{
 		provider := providers.CheckProvider()
 		if provider != providers.OpenAIProvider {
 			log.Error("Error: only openai is supported currently.")
+			os.Exit(1)
+		}
+
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			log.With("error", err).Error("Error loading configuration")
 			os.Exit(1)
 		}
 
@@ -67,7 +71,7 @@ var interpreterCmd = &cobra.Command{
 		codeInferenceBackend, err := cli.InitProviders(
 			log,
 			"",
-			interpreterAskPrompt.Preferences.Reasoning,
+			false,
 		)
 		if err != nil {
 			log.With("error", err).
@@ -92,78 +96,6 @@ var interpreterCmd = &cobra.Command{
 		}
 		defer codeRepo.Close()
 
-		if err := portaudio.Initialize(); err != nil {
-			fmt.Printf("Failed to initialize PortAudio: %v\n", err)
-			os.Exit(1)
-		}
-		defer portaudio.Terminate()
-
-		audioOpts, err := audio.ComputeAudioOptions(&audio.AudioOptions{})
-		if err != nil {
-			fmt.Printf("Error computing audio options: %v\n", err)
-			os.Exit(1)
-		}
-
-		oaiKey := os.Getenv("OPENAI_API_KEY")
-		if oaiKey == "" {
-			fmt.Println("OPENAI_API_KEY is not set")
-			os.Exit(1)
-		}
-
-		// Initialize Readline
-		rl, err := term.InitReadline()
-		if err != nil {
-			fmt.Printf("Error initializing readline: %v\n", err)
-			os.Exit(1)
-		}
-		defer rl.Close()
-
-		inputCh := make(chan string)
-		// inputErrCh := make(chan error)
-
-		// Initialize Realtime Voice
-		ts, err := cli.InitTranscriptionServer(
-			oaiKey,
-			audioOpts,
-			log,
-			func(text string, isProcessing bool) {
-				rl.Operation.Clean()
-				if !isProcessing {
-					rl.Operation.SetBuffer("")
-					fmt.Printf("%s\n\n", text)
-					inputCh <- text
-				} else {
-					rl.Operation.SetBuffer(text)
-				}
-			},
-		)
-		if err != nil {
-			fmt.Printf("Error initializing transcription server: %v\n", err)
-			os.Exit(1)
-		}
-		defer ts.Close()
-		ts.Start()
-
-		// Initialize VAD
-		vad := cli.InitVAD(ts, log)
-		defer vad.Stop()
-		vad.Start()
-
-		// Create Input Stream
-		inputStream, err := audio.NewInputStream(
-			log,
-			audioOpts,
-			func(buffer []float32) {
-				vad.Feed(buffer)
-			},
-		)
-		if err != nil {
-			fmt.Printf("Failed to create input stream: %v\n", err)
-			os.Exit(1)
-		}
-
-		defer inputStream.Close()
-
 		conversation, err := cli.InitConversation(
 			chatRepo,
 			nil,
@@ -174,18 +106,65 @@ var interpreterCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if !interactiveMode {
-			cli.DisplayWelcome(cli.NewWelcomeConfig(
-				conversation,
-				cli.WithWelcomeMessage("Nomi Interpreter Mode"),
-				cli.WithBuildDate(buildDate),
-				cli.WithBuildVersion(buildVersion),
-				cli.WithStartPrompt(startPrompt),
-				cli.WithModelProvider(codeGenerationBackend),
-				cli.WithModelProvider(codeInferenceBackend),
-				cli.WithProvider(provider),
-				cli.WithDefaultIntrustructions(),
-			))
+		welcomeConfig := cli.NewWelcomeConfig(
+			conversation,
+			cli.WithBuildDate(buildDate),
+			cli.WithBuildVersion(buildVersion),
+			cli.WithStartPrompt(startPrompt),
+			cli.WithModelProvider(codeGenerationBackend),
+			cli.WithModelProvider(codeInferenceBackend),
+			cli.WithProvider(provider),
+			cli.WithDefaultIntrustructions(),
+		)
+
+		// Initialize Readline
+		rl, err := term.InitReadline()
+		if err != nil {
+			fmt.Printf("Error initializing readline: %v\n", err)
+			os.Exit(1)
+		}
+		defer rl.Close()
+
+		inputCh := make(chan string)
+		inputErrCh := make(chan error)
+
+		var inputStream *audio.AudioStream
+		var audioStartCh, audioEndCh <-chan struct{}
+
+		if cfg.Input.Voice.Enabled {
+			// Initialize Voice using shared method
+			inputStream, audioStartCh, audioEndCh, err = cli.InitVoice(
+				cfg,
+				log,
+				func(text string, isProcessing bool) {
+					rl.Operation.Clean()
+					if !isProcessing {
+						rl.Operation.SetBuffer("")
+						fmt.Printf("%s\n\n", text)
+						inputCh <- text
+					} else {
+						rl.Operation.SetBuffer(text)
+					}
+				},
+				cmdKeyCode,
+			)
+			if err != nil {
+				fmt.Printf("Error initializing voice: %v\n", err)
+				os.Exit(1)
+			}
+			defer inputStream.Close()
+
+			if inputStream != nil {
+				defer portaudio.Terminate()
+			}
+
+			cli.WithVoiceInstructions()(&welcomeConfig)
+		}
+
+		oaiKey := os.Getenv("OPENAI_API_KEY")
+		if oaiKey == "" {
+			fmt.Println("OPENAI_API_KEY is not set")
+			os.Exit(1)
 		}
 
 		renderer, err := term.InitRenderer()
@@ -207,36 +186,21 @@ var interpreterCmd = &cobra.Command{
 			blockMap[block.ID] = block
 		}
 
-		var lastResult []code.ExecutionResult
-		var cancelRequest context.CancelFunc
+		if !interactiveMode {
+			cli.DisplayWelcome(welcomeConfig)
+		}
+
 		retries := 0
-		processInput := func(text string) {
-			if cancelRequest != nil {
-				cancelRequest()
-			}
+		processInput := func(ctx context.Context, text string, conv chat.Conversation, renderer *term.Renderer, backend baseprovider.TextToTextProvider, rl *readline.Instance) {
+			defer rl.Refresh()
 
-			requestContext, newCancelRequest := context.WithCancel(ctx)
-			cancelRequest = newCancelRequest
-
+			var lastResult []code.ExecutionResult
+			text = cli.HandleCommands(text, conv)
 			if text == "" {
 				return
 			}
 
-			text = cli.HandleCommands(text, conversation)
-			if text == "" {
-				return
-			}
-
-			conversation.AddMessage(chat.NewMessage(chat.RoleUser, text))
-
-			sigCh := make(chan os.Signal, 1)
-			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-			go func() {
-				<-sigCh
-				cancelRequest()
-			}()
-			defer signal.Stop(sigCh)
-			defer close(sigCh)
+			conv.AddMessage(chat.NewMessage(chat.RoleUser, text))
 
 			if len(blockMap) > 0 && retries == 0 {
 				log.Debug("Trying to get suggestion from available code blocks")
@@ -271,10 +235,9 @@ var interpreterCmd = &cobra.Command{
 				"I don't know the answer to that question. Let me try to find out...\n",
 			)
 
-			// TODO: Display the code that is going to be interpreted temporarily
 			completion, err := cli.GenerateCompletion(
-				requestContext,
-				conversation,
+				ctx,
+				conv,
 				renderer,
 				codeGenerationBackend,
 			)
@@ -289,7 +252,7 @@ var interpreterCmd = &cobra.Command{
 				return
 			}
 
-			conversation.AddMessage(
+			conv.AddMessage(
 				chat.NewMessage(chat.RoleAssistant, completion),
 			)
 
@@ -310,6 +273,7 @@ var interpreterCmd = &cobra.Command{
 
 					r.Block.Description = description
 					blockMap[r.Block.ID] = r.Block
+					retries = 0
 				} else {
 					fmt.Printf("Error executing command: %s\n", r.Stderr)
 				}
@@ -330,66 +294,53 @@ var interpreterCmd = &cobra.Command{
 
 			// Extend the conversation with the result
 			formattedResult := code.FormatExecutionResultForLLM(result)
-			conversation.AddMessage(
+			conv.AddMessage(
 				chat.NewMessage(chat.RoleAssistant, formattedResult),
 			)
 
 			lastResult = result
-		}
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				// Loop until we get a valid input, try again if we get an error, limit retries
-				if len(lastResult) > 0 {
-					containsError := false
-					for _, result := range lastResult {
-						if result.ExitCode != 0 {
-							containsError = true
-							break
-						}
-					}
-
-					if containsError {
-						fmt.Println(
-							"Error executing command, see previous output for details.",
-						)
-
-						retries++
-						if retries > interpreterMaxRetries {
-							fmt.Println("Max retries reached.")
-							retries = 0
-							lastResult = nil
-						} else {
-							fmt.Printf(
-								"Retrying...\n",
-							)
-							processInput(
-								"Error executing command, see previous output for details. Please, try again.",
-							)
-							continue
-						}
-					} else {
-						lastResult = nil
-					}
+			// Handle retries by pushing back to inputCh
+			containsError := false
+			for _, res := range lastResult {
+				if res.ExitCode != 0 {
+					containsError = true
+					break
 				}
+			}
 
-				text, err := term.NewInputArea()
-				if err != nil {
-					if errors.Is(err, term.ErrInputInterrupted) ||
-						errors.Is(err, term.ErrInputKilled) {
-						cancel()
-						return
-					}
-					log.With("error", err).
-						Error("Error reading input")
-					return
+			if containsError {
+				fmt.Println(
+					"Error executing command, see previous output for details.",
+				)
+				retries++
+				if retries > interpreterMaxRetries {
+					fmt.Println("Max retries reached.")
+					retries = 0
+				} else {
+					fmt.Printf("Retrying...\n")
+					inputCh <- "Error executing command, see previous output for details. Please, try again."
 				}
-				processInput(text)
 			}
 		}
+
+		go cli.ReadInput(rl, inputCh, inputErrCh)
+
+		cli.EventLoop(
+			ctx,
+			cancel,
+			inputCh,
+			inputErrCh,
+			audioStartCh,
+			audioEndCh,
+			inputStream,
+			log,
+			conversation,
+			renderer,
+			codeGenerationBackend,
+			rl,
+			processInput,
+		)
 	},
 }
 
