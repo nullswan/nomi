@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
 
@@ -36,45 +34,13 @@ var promptAddCmd = &cobra.Command{
 		}
 		url := args[0]
 
-		resp, err := http.Get(url)
+		prompt, err := prompts.AddPromptFromURL(url)
 		if err != nil {
-			fmt.Printf("Error fetching the URL: %v\n", err)
-			return
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			fmt.Printf("Error: received status code %d\n", resp.StatusCode)
-			return
-		}
-
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Printf("Error reading response body: %v\n", err)
-			return
-		}
-
-		var prompt prompts.Prompt
-		err = yaml.Unmarshal(data, &prompt)
-		if err != nil {
-			fmt.Printf("Error unmarshalling YAML: %v\n", err)
-			return
-		}
-
-		// Validate the prompt
-		if err := prompt.Validate(); err != nil {
-			fmt.Printf("Validation error: %v\n", err)
-			return
-		}
-
-		// Save the prompt
-		if err := prompt.Save(); err != nil {
-			fmt.Printf("Error saving prompt: %v\n", err)
+			fmt.Printf("Error adding prompt: %v\n", err)
 			return
 		}
 
 		fmt.Println("Prompt added successfully.")
-
 		promptYaml, err := yaml.Marshal(prompt)
 		if err != nil {
 			fmt.Printf("Error marshalling prompt to YAML: %v\n", err)
