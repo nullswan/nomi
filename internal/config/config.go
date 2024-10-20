@@ -26,7 +26,7 @@ func LoadConfig() (*Config, error) {
 
 	if !Exists() {
 		// File does not exist, create default configuration
-		cfg = defaultConfig()
+		cfg = DefaultConfig()
 		if err := SaveConfig(&cfg); err != nil {
 			return nil, err
 		}
@@ -65,7 +65,7 @@ func SaveConfig(cfg *Config) error {
 }
 
 // defaultConfig returns the default configuration.
-func defaultConfig() Config {
+func DefaultConfig() Config {
 	convDir := GetConversationDirectory()
 
 	// Do nothing, just create the directory if it doesn't exist
