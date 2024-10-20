@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/nullswan/nomi/internal/config"
+	"github.com/nullswan/nomi/internal/setup"
 	"github.com/spf13/cobra"
 )
 
@@ -59,7 +60,7 @@ var configSetupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Set up initial configuration",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := config.Setup()
+		err := setup.Setup()
 		if err != nil {
 			log.Fatalf("Error during setup: %v", err)
 		}

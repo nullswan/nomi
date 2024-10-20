@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/nullswan/nomi/internal/config"
+	"github.com/nullswan/nomi/internal/setup"
 	"github.com/spf13/cobra"
 )
 
@@ -59,7 +60,7 @@ func main() {
 	rootCmd.PersistentPreRun = func(_ *cobra.Command, _ []string) {
 		if !config.Exists() {
 			fmt.Println("Looks like this is your first time running nomi!")
-			if err := config.Setup(); err != nil {
+			if err := setup.Setup(); err != nil {
 				fmt.Printf("Error during configuration setup: %v\n", err)
 				os.Exit(1)
 			}
