@@ -98,6 +98,7 @@ These features are planned for future updates. They are not in any specific orde
 - [ ] Action chains
 - [ ] Real-time file management
 - [ ] Memory embedding
+- [ ] Interpreter ask for feedback
 
 # License
 
