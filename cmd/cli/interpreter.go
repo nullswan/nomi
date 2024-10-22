@@ -191,7 +191,14 @@ var interpreterCmd = &cobra.Command{
 		}
 
 		retries := 0
-		processInput := func(ctx context.Context, text string, conv chat.Conversation, renderer *term.Renderer, backend baseprovider.TextToTextProvider, rl *readline.Instance) {
+		processInput := func(
+			ctx context.Context,
+			text string,
+			conv chat.Conversation,
+			renderer *term.Renderer,
+			_ baseprovider.TextToTextProvider,
+			rl *readline.Instance,
+		) {
 			defer rl.Refresh()
 
 			var lastResult []code.ExecutionResult

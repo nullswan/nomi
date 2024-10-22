@@ -14,15 +14,18 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage configuration",
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+	Run: func(cmd *cobra.Command, _ []string) {
+		err := cmd.Help()
+		if err != nil {
+			log.Fatalf("Error displaying help: %v", err)
+		}
 	},
 }
 
 var configShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show current configuration",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		data, err := yaml.Marshal(cfg)
 		if err != nil {
 			log.Fatalf("Error marshalling config: %v", err)
@@ -37,7 +40,7 @@ var configSetCmd = &cobra.Command{
 	Use:   "set [key] [value]",
 	Short: "Set a configuration parameter",
 	Args:  cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		key := args[0]
 		value := args[1]
 
@@ -59,7 +62,7 @@ var configSetCmd = &cobra.Command{
 var configSetupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Set up initial configuration",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		err := setup.Setup()
 		if err != nil {
 			log.Fatalf("Error during setup: %v", err)

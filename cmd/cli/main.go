@@ -68,7 +68,7 @@ func runApp(_ *cobra.Command, _ []string) {
 		selectedPrompt, err = prompts.LoadPrompt(startPrompt)
 		if err != nil {
 			fmt.Printf("Error loading prompt: %v\n", err)
-			os.Exit(1)
+			return
 		}
 	}
 
@@ -80,7 +80,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	)
 	if err != nil {
 		fmt.Printf("Error initializing providers: %v\n", err)
-		os.Exit(1)
+		return
 	}
 	defer textToTextBackend.Close()
 
@@ -102,7 +102,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	)
 	if err != nil {
 		fmt.Printf("Error initializing conversation: %v\n", err)
-		os.Exit(1)
+		return
 	}
 
 	// Prepare the welcome message
@@ -121,7 +121,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	renderer, err := term.InitRenderer()
 	if err != nil {
 		fmt.Printf("Error initializing renderer: %v\n", err)
-		os.Exit(1)
+		return
 	}
 
 	inputCh := make(chan string)
@@ -131,7 +131,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	rl, err := term.InitReadline()
 	if err != nil {
 		fmt.Printf("Error initializing readline: %v\n", err)
-		os.Exit(1)
+		return
 	}
 	defer rl.Close()
 
@@ -156,7 +156,7 @@ func runApp(_ *cobra.Command, _ []string) {
 		)
 		if err != nil {
 			fmt.Printf("Error initializing voice: %v\n", err)
-			os.Exit(1)
+			return
 		}
 		defer inputStream.Close()
 
