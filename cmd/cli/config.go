@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/exec"
 
 	"gopkg.in/yaml.v2"
 
@@ -36,26 +38,55 @@ var configShowCmd = &cobra.Command{
 }
 
 // TODO(nullswan): Replace with editor, just like with the prompt edit
-var configSetCmd = &cobra.Command{
-	Use:   "set [key] [value]",
-	Short: "Set a configuration parameter",
-	Args:  cobra.ExactArgs(2),
-	Run: func(_ *cobra.Command, args []string) {
-		key := args[0]
-		value := args[1]
-
-		var err error
-		err = config.SetConfigValue(cfg, key, value)
+var configEditCmd = &cobra.Command{
+	Use:   "edit",
+	Short: "Edit configuration",
+	Run: func(_ *cobra.Command, _ []string) {
+		// Open editor for further editing
+		tempFile, err := os.CreateTemp("/tmp", "*.yaml")
 		if err != nil {
-			log.Fatalf("Error setting configuration: %v", err)
+			log.Fatalf("Error creating temporary file: %v", err)
+		}
+		defer os.Remove(tempFile.Name())
+
+		configYaml, err := yaml.Marshal(cfg)
+		if err != nil {
+			log.Fatalf("Error marshalling config to YAML: %v", err)
 		}
 
-		err = config.SaveConfig(cfg)
-		if err != nil {
-			log.Fatalf("Error saving configuration: %v", err)
+		if _, err := tempFile.Write(configYaml); err != nil {
+			log.Fatalf("Error writing to temp file: %v", err)
+		}
+		tempFile.Close()
+
+		editor := os.Getenv("EDITOR")
+		if editor == "" {
+			editor = "vim"
 		}
 
-		fmt.Printf("Configuration '%s' set to '%s'\n", key, value)
+		process := exec.Command(editor, tempFile.Name())
+		process.Stdin = os.Stdin
+		process.Stdout = os.Stdout
+		process.Stderr = os.Stderr
+
+		if err := process.Run(); err != nil {
+			log.Fatalf("Error opening editor: %v", err)
+		}
+
+		updatedData, err := os.ReadFile(tempFile.Name())
+		if err != nil {
+			log.Fatalf("Error reading updated file: %v", err)
+		}
+
+		if err := yaml.Unmarshal(updatedData, cfg); err != nil {
+			log.Fatalf("Error unmarshalling updated YAML: %v", err)
+		}
+
+		if err := config.SaveConfig(cfg); err != nil {
+			log.Fatalf("Error saving updated configuration: %v", err)
+		}
+
+		fmt.Println("Configuration updated successfully")
 	},
 }
 

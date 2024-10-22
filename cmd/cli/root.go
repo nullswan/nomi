@@ -16,7 +16,7 @@ func main() {
 	// #region Config commands
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configShowCmd)
-	configCmd.AddCommand(configSetCmd)
+	configCmd.AddCommand(configEditCmd)
 	configCmd.AddCommand(configSetupCmd)
 	// #endregion
 
