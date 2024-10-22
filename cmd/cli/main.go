@@ -8,8 +8,6 @@ import (
 	"strings"
 	"syscall"
 
-	_ "net/http/pprof"
-
 	"github.com/nullswan/nomi/internal/audio"
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
