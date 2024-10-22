@@ -147,7 +147,7 @@ func (th *TranscriptionHandler) Transcribe(
 			caller,
 			time.Now().Unix(),
 		)
-		err := os.WriteFile(filename, wavData, 0644)
+		err := os.WriteFile(filename, wavData, 0o644)
 		if err != nil {
 			th.logger.
 				With("error", err).
