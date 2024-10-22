@@ -106,7 +106,7 @@ func DisplayWelcome(config WelcomeConfig) {
 	fmt.Println(config.WelcomeMessage)
 	fmt.Println()
 	fmt.Println("Configuration")
-	if config.StartPrompt != nil {
+	if config.StartPrompt != nil && *config.StartPrompt != "" {
 		fmt.Printf("  Start prompt: %s\n", *config.StartPrompt)
 	}
 	fmt.Printf("  Conversation: %s\n", config.Conversation.GetID())
@@ -116,8 +116,12 @@ func DisplayWelcome(config WelcomeConfig) {
 	for i, provider := range config.Provider {
 		fmt.Printf("  Provider %d: %s\n", i+1, provider.String())
 	}
-	fmt.Printf("  Build Version: %s\n", config.BuildVersion)
-	fmt.Printf("  Build Date: %s\n", config.BuildDate)
+	if config.BuildVersion != "" {
+		fmt.Printf("  Build Version: %s\n", config.BuildVersion)
+	}
+	if config.BuildDate != "" {
+		fmt.Printf("  Build Date: %s\n", config.BuildDate)
+	}
 	for _, line := range config.AdditionalLines {
 		fmt.Println(line)
 	}

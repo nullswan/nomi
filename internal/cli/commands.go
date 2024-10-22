@@ -60,4 +60,7 @@ func printHelp() {
 		"  /add <file>  Add a file or directory to the conversation",
 	)
 	fmt.Println("  /exit        Exit the application")
+	fmt.Println()
+	fmt.Println("Use triple quotes (\"\"\") to enter multi-line text.")
+	fmt.Println("Press CMD to record a voice message.")
 }
