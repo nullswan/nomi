@@ -76,6 +76,23 @@ cd nomi
 make build
 ```
 
+# Supported Platforms
+
+- **Linux**: x86_64, ARM64, i686
+- **MacOS**: ARM64
+- **Windows**: x86_64, i686
+
+# Acknowledgments
+
+All the libraries and tools used in this project.
+- bubbletea
+- ollama
+- sqlite/sqlc/migrate
+- portaudio
+- openai
+- gohook
+- cobra
+
 # Roadmap
 
 These features are planned for future updates. They are not in any specific order and may be partially or not implemented yet.
