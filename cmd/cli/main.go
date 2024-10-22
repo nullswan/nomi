@@ -10,7 +10,6 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/chzyer/readline"
 	"github.com/nullswan/nomi/internal/audio"
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
@@ -114,7 +113,6 @@ func runApp(_ *cobra.Command, _ []string) {
 		cli.WithStartPrompt(startPrompt),
 		cli.WithModelProvider(textToTextBackend),
 		cli.WithProvider(providers.CheckProvider()),
-		cli.WithDefaultIntrustructions(),
 	)
 
 	// Initialize Renderer
@@ -126,14 +124,8 @@ func runApp(_ *cobra.Command, _ []string) {
 
 	inputCh := make(chan string)
 	inputErrCh := make(chan error)
-
-	// Initialize Readline
-	rl, err := term.InitReadline()
-	if err != nil {
-		fmt.Printf("Error initializing readline: %v\n", err)
-		return
-	}
-	defer rl.Close()
+	readyCh := make(chan struct{})
+	voiceInputCh := make(chan string)
 
 	var inputStream *audio.AudioStream
 	var audioStartCh, audioEndCh <-chan struct{}
@@ -143,13 +135,9 @@ func runApp(_ *cobra.Command, _ []string) {
 			cfg,
 			logger,
 			func(text string, isProcessing bool) {
-				rl.Operation.Clean()
 				if !isProcessing {
-					rl.Operation.SetBuffer("")
-					fmt.Printf("%s\n\n", text)
-					inputCh <- text
-				} else {
-					rl.Operation.SetBuffer(text)
+					fmt.Println(text)
+					voiceInputCh <- text
 				}
 			},
 			cmdKeyCode,
@@ -170,7 +158,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	}
 
 	// Start Input Reader Goroutine
-	go cli.ReadInput(rl, inputCh, inputErrCh)
+	go term.ReadInput(inputCh, inputErrCh, readyCh)
 
 	// Main Event Loop
 	cli.EventLoop(
@@ -178,6 +166,8 @@ func runApp(_ *cobra.Command, _ []string) {
 		cancel,
 		inputCh,
 		inputErrCh,
+		readyCh,
+		voiceInputCh,
 		audioStartCh,
 		audioEndCh,
 		inputStream,
@@ -185,7 +175,6 @@ func runApp(_ *cobra.Command, _ []string) {
 		conversation,
 		renderer,
 		textToTextBackend,
-		rl,
 		processInput,
 	)
 }
@@ -196,10 +185,7 @@ func processInput(
 	conversation chat.Conversation,
 	renderer *term.Renderer,
 	textToTextBackend baseprovider.TextToTextProvider,
-	rl *readline.Instance,
 ) {
-	defer rl.Refresh()
-
 	text = cli.HandleCommands(text, conversation)
 	if text == "" {
 		return

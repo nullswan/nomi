@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/glamour"
-	"github.com/chzyer/readline"
 	"github.com/nullswan/nomi/internal/audio"
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/logger"
@@ -15,7 +14,7 @@ import (
 )
 
 // TODO(nullswan): Refactor this to use a more generic function signature.
-type ProcessInputFuncT func(context.Context, string, chat.Conversation, *glamour.TermRenderer, baseprovider.TextToTextProvider, *readline.Instance)
+type ProcessInputFuncT func(context.Context, string, chat.Conversation, *glamour.TermRenderer, baseprovider.TextToTextProvider)
 
 // EventLoop manages the main event loop.
 func EventLoop(
@@ -23,15 +22,17 @@ func EventLoop(
 	cancel context.CancelFunc,
 	inputCh chan string,
 	inputErrCh chan error,
+	readyCh chan struct{},
+	voiceInputCh chan string,
 	audioStartCh, audioEndCh <-chan struct{},
 	inputStream *audio.AudioStream,
 	log *logger.Logger,
 	conversation chat.Conversation,
 	renderer *term.Renderer,
 	textToTextBackend baseprovider.TextToTextProvider,
-	rl *readline.Instance,
 	processInputFunc ProcessInputFuncT,
 ) {
+
 	audioRunning := false
 
 	defer func() {
@@ -43,10 +44,33 @@ func EventLoop(
 	eventCtx, eventCtxCancel := context.WithCancel(ctx)
 	defer eventCtxCancel()
 
+	// Signal that the event loop is ready to receive input.
+	readyCh <- struct{}{}
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
+		case line := <-voiceInputCh:
+			eventCtxCancel()
+			eventCtx, eventCtxCancel = context.WithCancel(ctx)
+			defer eventCtxCancel()
+
+			processInputFunc(
+				eventCtx,
+				line,
+				conversation,
+				renderer,
+				textToTextBackend,
+			)
+
+			// Signal that the event loop is ready to receive input again.
+			select {
+			case readyCh <- struct{}{}:
+			default:
+				fmt.Printf(">>> ")
+				continue
+			}
 		case line := <-inputCh:
 			eventCtxCancel()
 			eventCtx, eventCtxCancel = context.WithCancel(ctx)
@@ -58,11 +82,21 @@ func EventLoop(
 				conversation,
 				renderer,
 				textToTextBackend,
-				rl,
 			)
+
+			// Signal that the event loop is ready to receive input again.
+			select {
+			case readyCh <- struct{}{}:
+			default:
+				continue
+			}
+
 		case err := <-inputErrCh:
 			if errors.Is(err, term.ErrInputInterrupted) ||
-				errors.Is(err, term.ErrInputKilled) {
+				errors.Is(
+					err,
+					term.ErrInputKilled,
+				) || errors.Is(err, term.ErrReadlineInit) {
 				cancel()
 				return
 			}

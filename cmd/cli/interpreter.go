@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/chzyer/readline"
 	"github.com/gordonklaus/portaudio"
 	"github.com/nullswan/nomi/internal/audio"
 	"github.com/nullswan/nomi/internal/chat"
@@ -114,19 +113,12 @@ var interpreterCmd = &cobra.Command{
 			cli.WithModelProvider(codeGenerationBackend),
 			cli.WithModelProvider(codeInferenceBackend),
 			cli.WithProvider(provider),
-			cli.WithDefaultIntrustructions(),
 		)
-
-		// Initialize Readline
-		rl, err := term.InitReadline()
-		if err != nil {
-			fmt.Printf("Error initializing readline: %v\n", err)
-			os.Exit(1)
-		}
-		defer rl.Close()
 
 		inputCh := make(chan string)
 		inputErrCh := make(chan error)
+		readyCh := make(chan struct{})
+		voiceInputCh := make(chan string)
 
 		var inputStream *audio.AudioStream
 		var audioStartCh, audioEndCh <-chan struct{}
@@ -137,13 +129,9 @@ var interpreterCmd = &cobra.Command{
 				cfg,
 				log,
 				func(text string, isProcessing bool) {
-					rl.Operation.Clean()
 					if !isProcessing {
-						rl.Operation.SetBuffer("")
 						fmt.Printf("%s\n\n", text)
-						inputCh <- text
-					} else {
-						rl.Operation.SetBuffer(text)
+						voiceInputCh <- text
 					}
 				},
 				cmdKeyCode,
@@ -197,10 +185,7 @@ var interpreterCmd = &cobra.Command{
 			conv chat.Conversation,
 			renderer *term.Renderer,
 			_ baseprovider.TextToTextProvider,
-			rl *readline.Instance,
 		) {
-			defer rl.Refresh()
-
 			var lastResult []code.ExecutionResult
 			text = cli.HandleCommands(text, conv)
 			if text == "" {
@@ -331,13 +316,15 @@ var interpreterCmd = &cobra.Command{
 			}
 		}
 
-		go cli.ReadInput(rl, inputCh, inputErrCh)
+		go term.ReadInput(inputCh, inputErrCh, readyCh)
 
 		cli.EventLoop(
 			ctx,
 			cancel,
 			inputCh,
 			inputErrCh,
+			readyCh,
+			voiceInputCh,
 			audioStartCh,
 			audioEndCh,
 			inputStream,
@@ -345,7 +332,6 @@ var interpreterCmd = &cobra.Command{
 			conversation,
 			renderer,
 			codeGenerationBackend,
-			rl,
 			processInput,
 		)
 	},

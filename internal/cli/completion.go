@@ -51,6 +51,8 @@ func GenerateCompletion(
 					)
 				}
 
+				mdContent = strings.TrimSpace(mdContent)
+
 				sb.WriteLine(mdContent)
 				return fullContent, nil
 			}
