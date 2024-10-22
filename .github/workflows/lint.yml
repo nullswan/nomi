@@ -28,3 +28,4 @@ jobs:
         with:
           skip-cache: true
           version: v1.61.0
+        continue-on-error: true
