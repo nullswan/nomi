@@ -80,7 +80,7 @@ func WithDefaultIntrustructions() WelcomeOption {
 	return func(c *WelcomeConfig) {
 		c.Instructions = append(
 			c.Instructions,
-			"Type /help for available commands.",
+			"Type  /help for available commands.",
 		)
 		c.Instructions = append(
 			c.Instructions,
@@ -102,7 +102,7 @@ func WithVoiceInstructions() WelcomeOption {
 	return func(c *WelcomeConfig) {
 		c.Instructions = append(
 			c.Instructions,
-			"Press [any key - once] and [CMD] to record audio.",
+			"Hold  [CMD] to record audio.",
 		)
 	}
 }
