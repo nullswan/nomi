@@ -70,6 +70,9 @@ curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.bat | cmd
 ```shell
 git clone https://github.com/nullswan/nomi.git
 cd nomi
+# Check the script before running it.
+# This should be supporting every platform but we don't offer support for Windows.
+./hack/install-deps.sh
 make build
 ```
 
