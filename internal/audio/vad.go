@@ -1,11 +1,10 @@
 package audio
 
 import (
+	"log/slog"
 	"math"
 	"sync"
 	"time"
-
-	"log/slog"
 )
 
 // VADConfig defines configuration options for the VAD

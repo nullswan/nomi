@@ -1,6 +1,7 @@
 package audio
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -24,7 +25,7 @@ type AudioOptions struct {
 
 func ComputeAudioOptions(opts *AudioOptions) (*AudioOptions, error) {
 	if opts == nil {
-		return nil, fmt.Errorf("AudioOptions cannot be nil")
+		return nil, errors.New("AudioOptions cannot be nil")
 	}
 
 	// Get the default input device
@@ -110,17 +111,30 @@ func NewInputStream(
 
 func (a *AudioStream) Start() error {
 	a.logger.Info("Starting audio stream")
-	return a.stream.Start()
+	err := a.stream.Start()
+	if err != nil {
+		return fmt.Errorf("failed to start audio stream: %w", err)
+	}
+
+	return nil
 }
 
 func (a *AudioStream) Stop() error {
 	a.logger.Info("Stopping audio stream")
-	return a.stream.Stop()
+	err := a.stream.Stop()
+	if err != nil {
+		return fmt.Errorf("failed to stop audio stream: %w", err)
+	}
+
+	return nil
 }
 
 func (a *AudioStream) Close() error {
 	a.logger.Info("Closing audio stream")
 	err := a.stream.Close()
 	portaudio.Terminate()
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to close audio stream: %w", err)
+	}
+	return nil
 }
