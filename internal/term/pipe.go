@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func GetPipedInput() (string, error) {
+func getPipedInput() (string, error) {
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		return "", fmt.Errorf("error checking stdin stat: %v", err)
