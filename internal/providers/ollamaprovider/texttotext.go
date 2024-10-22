@@ -56,7 +56,10 @@ func NewTextToTextProvider(
 	}
 
 	if cmd != nil {
-		waitForOllamaServer(p.client)
+		err := waitForOllamaServer(p.client)
+		if err != nil {
+			return nil, fmt.Errorf("error waiting for ollama server: %w", err)
+		}
 	}
 
 	for {
@@ -96,7 +99,10 @@ func NewTextToTextProvider(
 func (p TextToTextProvider) Close() error {
 	if p.cmd != nil {
 		// We started the server, so we should stop it
-		stopOllamaServer(p.cmd)
+		err := stopOllamaServer(p.cmd)
+		if err != nil {
+			return fmt.Errorf("error stopping ollama server: %w", err)
+		}
 	}
 
 	return nil
