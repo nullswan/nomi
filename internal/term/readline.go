@@ -19,7 +19,7 @@ var (
 func InitReadline() (*readline.Instance, error) {
 	rl, err := readline.New(readline.Prompt{
 		Prompt:      ">>> ",
-		AltPrompt:   "... ",
+		AltPrompt:   "...  ",
 		Placeholder: "Send a message (/help for help)",
 	})
 	if err != nil {
@@ -96,6 +96,28 @@ func ReadInput(
 		}
 
 		switch {
+		case multiline != MultilineNone:
+			// check if there's a multiline terminating string
+			before, ok := strings.CutSuffix(line, `"""`)
+			sb.WriteString(before)
+			if !ok {
+				fmt.Fprintln(&sb)
+				continue
+			}
+
+			multiline = MultilineNone
+			rl.Prompt.UseAlt = false
+		case strings.HasPrefix(line, `"""`):
+			line := strings.TrimPrefix(line, `"""`)
+			line, ok := strings.CutSuffix(line, `"""`)
+			sb.WriteString(line)
+			if !ok {
+				// no multiline terminating string; need more input
+				fmt.Fprintln(&sb)
+				multiline = MultilinePrompt
+				rl.Prompt.UseAlt = true
+			}
+			continue
 		case rl.Pasting:
 			fmt.Fprintln(&sb, line)
 			continue
