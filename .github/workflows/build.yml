@@ -25,11 +25,11 @@ jobs:
             artifact: nomi-cli.zip
             platform: linux/amd64
           # Linux builds with specific architectures
-          # - os: linux
-          #   arch: 386
-          #   dockerfile: ./Dockerfile.linux.386
-          #   artifact: nomi-cli
-          #   platform: linux/386
+          - os: linux
+            arch: 386
+            dockerfile: ./Dockerfile.linux.386
+            artifact: nomi-cli
+            platform: linux/amd64
           - os: linux
             arch: amd64
             dockerfile: ./Dockerfile.linux.amd64

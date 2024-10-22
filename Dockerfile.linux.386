@@ -3,6 +3,7 @@ FROM golang:1.23.1-bullseye AS base-i386-linux
 LABEL os=linux
 LABEL arch=i386
 
+RUN dpkg --add-architecture i386
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   pkg-config:i386 \
@@ -17,7 +18,7 @@ RUN apt-get update \
   libxkbcommon-x11-dev:i386 \
   libxkbcommon-dev:i386 \
   gcc:i386 libc6-dev:i386 \
-  libx11-dev:i386 xorg-dev:i386 libxtst-dev:i386 \
+  libx11-dev:i386 libxtst-dev:i386 \
   xsel:i386 xclip:i386 \
   libpng++-dev:i386 && \
   apt-get clean
