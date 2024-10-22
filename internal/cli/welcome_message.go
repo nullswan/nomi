@@ -76,28 +76,6 @@ func WithInstruction(instr string) WelcomeOption {
 	}
 }
 
-func WithDefaultIntrustructions() WelcomeOption {
-	return func(c *WelcomeConfig) {
-		c.Instructions = append(
-			c.Instructions,
-			"Type  /help for available commands.",
-		)
-		c.Instructions = append(
-			c.Instructions,
-			"Press [ENTER] to send a message.",
-		)
-		c.Instructions = append(
-			c.Instructions,
-			"Press [CTRL+C] to exit.",
-		)
-		c.Instructions = append(
-			c.Instructions,
-			"Press [CTRL+K] to cancel the current request.",
-		)
-	}
-}
-
-// TODO(nullswan): Remove the any-key requirement
 func WithVoiceInstructions() WelcomeOption {
 	return func(c *WelcomeConfig) {
 		c.Instructions = append(
@@ -125,7 +103,6 @@ func NewWelcomeConfig(
 }
 
 func DisplayWelcome(config WelcomeConfig) {
-	fmt.Printf("----\n")
 	fmt.Println(config.WelcomeMessage)
 	fmt.Println()
 	fmt.Println("Configuration")
@@ -143,10 +120,6 @@ func DisplayWelcome(config WelcomeConfig) {
 	fmt.Printf("  Build Date: %s\n", config.BuildDate)
 	for _, line := range config.AdditionalLines {
 		fmt.Println(line)
-	}
-	fmt.Printf("-----\n")
-	for _, instr := range config.Instructions {
-		fmt.Println(instr)
 	}
 	fmt.Printf("-----\n\n")
 }
