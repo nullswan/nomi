@@ -33,7 +33,7 @@ func Setup() error {
 	}
 
 	if err := config.SaveConfig(&cfg); err != nil {
-		return err
+		return fmt.Errorf("error saving configuration: %w", err)
 	}
 
 	var doInstallDefaultPrompts bool
