@@ -1,0 +1,74 @@
+FROM rwgrim/msys2-cross AS builder-386-windows
+LABEL os=windows
+LABEL arch=i386
+
+ARG BUILD_DATE
+ARG BUILD_VERSION
+
+ENV GOVERSION="1.23.1"
+ENV GOOS=windows
+ENV GOARCH=386
+ENV GOPATH=/go
+ENV CGO_ENABLED=1
+
+ENV CC=i686-w64-mingw32-gcc
+ENV CXX=i686-w64-mingw32-g++
+ENV PATH="/go/bin:/usr/local/go/bin:${PATH}"
+ENV PKG_CONFIG_PATH=/mingw32/lib/pkgconfig
+ENV MSYS2_ARCH=i686
+
+# Install build dependencies
+RUN set -ex \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  build-essential \
+  gcc-mingw-w64-i686 \
+  git \
+  upx \
+  pkg-config \
+  zip \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install Go
+RUN set -ex \
+  && wget -P /tmp -q https://dl.google.com/go/go$GOVERSION.linux-amd64.tar.gz \
+  && tar -C /usr/local -xzf /tmp/go$GOVERSION.linux-amd64.tar.gz
+
+RUN ln -s /proc/mounts /etc/mtab
+
+# Update the keyring for signatures of new maintainers
+RUN set -ex \
+  && rm /usr/share/pacman/keyrings/* \
+  && pacman-key --init \
+  && pacman -Syu \
+  && pacman -S msys2-keyring --noconfirm \
+  && pacman-key --populate msys2 \
+  && pacman -Syu
+
+RUN pacman --noconfirm --needed -Sy mingw-w64-$MSYS2_ARCH-pkg-config
+
+# Install build dependencies
+RUN set -ex \
+  && pacman --noconfirm --needed -Sy mingw-w64-$MSYS2_ARCH-portaudio
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the Go application
+RUN go build -ldflags "-X main.buildDate=${BUILD_DATE} -X main.buildVersion=${BUILD_VERSION}" -o nomi-cli.exe ./cmd/cli
+
+# Copy the portaudio library
+ENV LIBPATH=/mingw32/bin
+RUN cp ${LIBPATH}/libportaudio.dll .
+
+RUN rm -rf /go/pkg /go/src
+
+# Create the archive
+RUN zip nomi-cli.zip nomi-cli.exe libportaudio.dll

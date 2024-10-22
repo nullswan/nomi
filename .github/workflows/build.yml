@@ -1,0 +1,105 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Windows builds always use linux/amd64 platform
+          - os: windows
+            arch: 386
+            dockerfile: ./Dockerfile.windows.386
+            artifact: nomi-cli.zip
+            platform: linux/amd64
+          - os: windows
+            arch: amd64
+            dockerfile: ./Dockerfile.windows.amd64
+            artifact: nomi-cli.zip
+            platform: linux/amd64
+          # Linux builds with specific architectures
+          # - os: linux
+          #   arch: 386
+          #   dockerfile: ./Dockerfile.linux.386
+          #   artifact: nomi-cli
+          #   platform: linux/386
+          - os: linux
+            arch: amd64
+            dockerfile: ./Dockerfile.linux.amd64
+            artifact: nomi-cli
+            platform: linux/amd64
+          - os: linux
+            arch: arm64
+            dockerfile: ./Dockerfile.linux.arm64
+            artifact: nomi-cli
+            platform: linux/arm64
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ${{ matrix.platform }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set Build Version and Date
+        run: |
+          echo "BUILD_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+
+      - name: Build with Docker
+        run: |
+          docker buildx build \
+            --platform ${{ matrix.platform }} \
+            -f ${{ matrix.dockerfile }} \
+            -t nomi-cli-${{ matrix.os }}-${{ matrix.arch }} \
+            --build-arg BUILD_VERSION=${{ env.BUILD_VERSION }} \
+            --build-arg BUILD_DATE=${{ env.BUILD_DATE }} \
+            --output type=local,dest=build \
+            .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nomi-cli-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/app/${{ matrix.artifact }}
+
+  build-darwin-arm64:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install Dependencies
+        run: bash hack/install-deps.sh
+
+      - name: Build Binary on Linux and macOS
+        shell: bash
+        env:
+          CGO_ENABLED: 1
+        run: |
+          go build \
+            -ldflags "-X main.buildDate=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+                      -X main.buildVersion=${{ github.ref_name }}" \
+            -o nomi-cli ./cmd/cli
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nomi-cli-darwin-arm64
+          path: nomi-cli

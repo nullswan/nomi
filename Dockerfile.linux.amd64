@@ -1,0 +1,63 @@
+FROM golang:1.23.1-bullseye AS base-amd64-linux
+
+LABEL os=linux
+LABEL arch=amd64
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  pkg-config:amd64 \
+  portaudio19-dev:amd64
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  xcb:amd64 \
+  libxcb-xkb-dev:amd64 \
+  x11-xkb-utils:amd64 \
+  libx11-xcb-dev:amd64 \
+  libxkbcommon-x11-dev:amd64 \
+  libxkbcommon-dev:amd64 \
+  gcc:amd64 libc6-dev:amd64 \
+  libx11-dev:amd64 xorg-dev:amd64 libxtst-dev:amd64 \
+  xsel:amd64 xclip:amd64 \
+  libpng++-dev:amd64 && \
+  apt-get clean
+
+FROM base-amd64-linux AS builder-amd64-linux
+
+ENV GOOS=linux
+ENV GOARCH=amd64
+ENV CGO_ENABLED=1
+ENV CC=gcc
+
+WORKDIR /app
+
+# Copy go.mod and go.sum
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+RUN go build \
+  -ldflags "-X main.buildDate=${BUILD_DATE} -X main.buildVersion=${BUILD_VERSION}" \
+  -o nomi-cli ./cmd/cli
+
+# Final stage
+FROM alpine:latest
+
+# Install runtime dependencies
+RUN apk add --no-cache libstdc++ portaudio
+
+# Set work directory
+WORKDIR /app
+
+ARG TARGETOS
+ARG TARGETARCH
+
+# Copy binary from builder
+COPY --from=builder-amd64-linux /app/nomi-cli /app/nomi-cli
+
+# Entry point
+CMD ["./nomi-cli"]
