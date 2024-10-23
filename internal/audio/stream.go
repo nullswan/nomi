@@ -95,7 +95,7 @@ func NewInputStream(
 
 	stream, err := portaudio.OpenStream(
 		streamParams,
-		func(in []float32, out []float32) {
+		func(in []float32, _ []float32) {
 			callback(in)
 		},
 	)

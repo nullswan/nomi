@@ -3,7 +3,6 @@ package term
 import (
 	"errors"
 	"fmt"
-
 	"io"
 	"strings"
 

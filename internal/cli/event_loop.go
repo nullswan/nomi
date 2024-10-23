@@ -32,7 +32,6 @@ func EventLoop(
 	textToTextBackend baseprovider.TextToTextProvider,
 	processInputFunc ProcessInputFuncT,
 ) {
-
 	audioRunning := false
 
 	defer func() {
