@@ -1,9 +1,5 @@
 # Nomi - A Multi-Modal AI Runtime
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/5984c6d7-0d10-4325-af74-a69a87ff0eff" alt="Nomi, the interactive layer for AI">
-</p>
-
 > **Note:** This project is still being developed and isn't ready for full use yet, but we are working hard to make it stable and reliable.
 >
 > We welcome any feedback, suggestions, or contributions. Thank you for trying Nomi!
