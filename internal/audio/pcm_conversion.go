@@ -2,7 +2,7 @@ package audio
 
 // Float32ToPCM converts a slice of float32 samples to PCM byte data (int16)
 func Float32ToPCM(float32Buffer []float32) ([]byte, error) {
-	var pcmBuffer []byte
+	pcmBuffer := make([]byte, 0, len(float32Buffer)*2)
 	for _, sample := range float32Buffer {
 		// Clipping
 		if sample > 1.0 {
