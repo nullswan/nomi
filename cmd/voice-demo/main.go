@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -17,6 +18,22 @@ func main() {
 	// Initialize logger
 	logger := logger.Init()
 
+	// Parse language flag
+	langFlag := flag.String("lang", "", "Language code (e.g., en, zh, de)")
+	energyFlag := flag.Float64("energy", 0.01, "Energy threshold")
+
+	flag.Parse()
+
+	var lang transcription.STTLang
+	var err error
+	if *langFlag != "" {
+		lang, err = transcription.LoadLangFromValue(*langFlag)
+		if err != nil {
+			logger.Error("Invalid language code", "error", err)
+			return
+		}
+	}
+
 	oaiKey := os.Getenv("OPENAI_API_KEY")
 	if oaiKey == "" {
 		logger.Error("OPENAI_API_KEY is not set")
@@ -31,7 +48,7 @@ func main() {
 	defer portaudio.Terminate()
 
 	audioOpts := &audio.AudioOptions{}
-	audioOpts, err := audio.ComputeAudioOptions(audioOpts)
+	audioOpts, err = audio.ComputeAudioOptions(audioOpts)
 	if err != nil {
 		logger.
 			With("error", err).
@@ -40,7 +57,11 @@ func main() {
 	}
 
 	callback := func(text string, isProcessing bool) {
-		fmt.Println("Transcribed Text:", text, isProcessing)
+		if isProcessing {
+			fmt.Println(text)
+		} else {
+			fmt.Println(">>> ", text)
+		}
 	}
 
 	bufferManagerPrimary := transcription.NewBufferManager(audioOpts)
@@ -58,7 +79,13 @@ func main() {
 		logger,
 	)
 	tsHandler.SetEnableDumping(true)
-	tsHandler.SetEnableFixing(true)
+
+	// Set language if provided
+	if *langFlag != "" {
+		tsHandler.WithLanguage(lang)
+	} else {
+		logger.Info("No language code provided, using none")
+	}
 
 	ts := transcription.NewTranscriptionServer(
 		bufferManagerPrimary,
@@ -74,7 +101,7 @@ func main() {
 	// Initialize VAD
 	vad := audio.NewVAD(
 		audio.VADConfig{
-			EnergyThreshold: 0.005,                  // Adjust based on testing
+			EnergyThreshold: *energyFlag,
 			FlushInterval:   310 * time.Millisecond, // Ideally, should fit the min buffer duration
 			SilenceDuration: 500 * time.Millisecond, // Detect end of speech
 			PauseDuration:   300 * time.Millisecond, // Detect pause within speech
@@ -89,9 +116,6 @@ func main() {
 
 				bufferManagerPrimary.Flush()
 				bufferManagerSecondary.Flush()
-
-				final := textReconcilier.GetCombinedText()
-				fmt.Println("Final Text:", final)
 			},
 			OnFlush: func(buffer []float32) {
 				logger.With("buf_sz", len(buffer)).
@@ -140,6 +164,8 @@ func main() {
 		logger.Error("Failed to start input stream", "error", err)
 		return
 	}
+
+	fmt.Println("Ready to receive audio input")
 
 	// Handle Ctrl+C to stop
 	sigChan := make(chan os.Signal, 1)
