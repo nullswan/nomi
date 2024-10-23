@@ -169,11 +169,9 @@ func (v *VAD) handleAudioBuffer(buffer []float32, energy float64) {
 
 		v.resetSilenceTimer()
 		v.resetPauseTimer()
-	} else {
-		if v.isSpeaking {
-			// Start or reset the pause timer
-			v.resetPauseTimer()
-		}
+	} else if v.isSpeaking {
+		// Start or reset the pause timer
+		v.resetPauseTimer()
 	}
 }
 
