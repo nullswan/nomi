@@ -62,5 +62,5 @@ func printHelp() {
 	fmt.Println("  /exit        Exit the application")
 	fmt.Println()
 	fmt.Println("Use triple quotes (\"\"\") to enter multi-line text.")
-	fmt.Println("Press CMD to record a voice message.")
+	fmt.Println("Press [OPTION] to record a voice message.")
 }
