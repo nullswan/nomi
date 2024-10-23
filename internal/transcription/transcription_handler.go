@@ -34,7 +34,7 @@ func (m *TranscriptionHandlerMetrics) AddError() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.errors += 1
+	m.errors++
 }
 
 func (m *TranscriptionHandlerMetrics) GetTranscriptions() int {
@@ -62,7 +62,6 @@ type TranscriptionHandler struct {
 	logger         *logger.Logger
 	client         *openai.Client
 	contextTimeout time.Duration
-	enableFixing   bool
 	enableDumping  bool
 
 	sampleRate     int
