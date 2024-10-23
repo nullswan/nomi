@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 
@@ -83,7 +84,14 @@ func main() {
 
 		if cfg.DevMode {
 			go func() {
-				if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+				ln, err := net.Listen("tcp", "localhost:0")
+				if err != nil {
+					fmt.Printf("Error starting pprof server: %v\n", err)
+					os.Exit(1)
+				}
+				port := ln.Addr().(*net.TCPAddr).Port
+				fmt.Printf("pprof server started on localhost:%d\n", port)
+				if err := http.Serve(ln, nil); err != nil {
 					fmt.Printf("Error starting pprof server: %v\n", err)
 					os.Exit(1)
 				}

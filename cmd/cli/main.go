@@ -31,7 +31,7 @@ var (
 
 const (
 	// TODO(nullswan): Should be configurable
-	cmdKeyCode = 55
+	cmdKeyCode = 58
 )
 
 var rootCmd = &cobra.Command{
