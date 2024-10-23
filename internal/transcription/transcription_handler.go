@@ -69,6 +69,7 @@ type TranscriptionHandler struct {
 	channels       int
 	bytesPerSample int
 	bitsPerSample  int
+	language       string
 
 	metrics TranscriptionHandlerMetrics
 }
@@ -86,15 +87,12 @@ func NewTranscriptionHandler(
 		channels:       audioOpts.Channels,
 		bytesPerSample: audioOpts.BytesPerSample,
 		bitsPerSample:  audioOpts.BitsPerSample,
+		language:       "",
 	}
 }
 
 func (th *TranscriptionHandler) SetContextTimeout(duration time.Duration) {
 	th.contextTimeout = duration
-}
-
-func (th *TranscriptionHandler) SetEnableFixing(enabled bool) {
-	th.enableFixing = enabled
 }
 
 func (th *TranscriptionHandler) SetEnableDumping(enabled bool) {
@@ -123,6 +121,7 @@ func (th *TranscriptionHandler) Transcribe(
 		Model:    openai.Whisper1,
 		Reader:   bytes.NewReader(wavData),
 		FilePath: "audio.wav", // This is meaningless for OpenAI as we turn the audio data into a reader
+		Language: th.language,
 	}
 
 	startedAt := time.Now()
@@ -165,4 +164,9 @@ func (th *TranscriptionHandler) Transcribe(
 // GetMetrics returns the transcription handler metrics.
 func (th *TranscriptionHandler) GetMetrics() *TranscriptionHandlerMetrics {
 	return &th.metrics
+}
+
+// WithLanguage sets the language for the transcription handler.
+func (th *TranscriptionHandler) WithLanguage(language STTLang) {
+	th.language = language.ToString()
 }
