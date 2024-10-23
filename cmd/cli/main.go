@@ -139,6 +139,7 @@ func runApp(_ *cobra.Command, _ []string) {
 				}
 			},
 			cmdKeyCode,
+			cfg.Input.Voice.Language,
 		)
 		if err != nil {
 			fmt.Printf("Error initializing voice: %v\n", err)

@@ -6,6 +6,7 @@ import (
 	"github.com/nullswan/nomi/internal/config"
 	prompts "github.com/nullswan/nomi/internal/prompt"
 	"github.com/nullswan/nomi/internal/term"
+	"github.com/nullswan/nomi/internal/transcription"
 )
 
 // Setup handles the configuration setup
@@ -24,11 +25,24 @@ func Setup() error {
 		cfg.Input.Voice.Enabled,
 	)
 
+	if cfg.Input.Voice.Enabled {
+		validateVoiceInput := func(value string) error {
+			_, err := transcription.LoadLangFromValue(value)
+			return err
+		}
+		cfg.Input.Voice.Language = term.PromptForString(
+			"Voice input language (e.g. en, zh, de)",
+			cfg.Input.Voice.Language,
+			validateVoiceInput,
+		)
+	}
+
 	cfg.Output.Sqlite.Enabled = true
 	if cfg.Output.Sqlite.Enabled {
 		cfg.Output.Sqlite.Path = term.PromptForString(
 			"Path for the SQLite database",
 			cfg.Output.Sqlite.Path,
+			nil,
 		)
 	}
 
@@ -36,7 +50,7 @@ func Setup() error {
 		return fmt.Errorf("error saving configuration: %w", err)
 	}
 
-	var doInstallDefaultPrompts bool
+	doInstallDefaultPrompts := true
 	doInstallDefaultPrompts = term.PromptForBool(
 		"Install default prompts ? [Recommended]",
 		doInstallDefaultPrompts,

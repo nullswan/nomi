@@ -135,6 +135,7 @@ var interpreterCmd = &cobra.Command{
 					}
 				},
 				cmdKeyCode,
+				cfg.Input.Voice.Language,
 			)
 			if err != nil {
 				fmt.Printf("Error initializing voice: %v\n", err)

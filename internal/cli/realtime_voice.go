@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/gordonklaus/portaudio"
 	"github.com/nullswan/nomi/internal/audio"
@@ -12,36 +11,15 @@ import (
 	"github.com/nullswan/nomi/internal/transcription"
 )
 
-// TODO(nullswan): These values should be configurable + auto-tuned
-const (
-	primaryBufferMinBufferDuration = 500 * time.Millisecond
-	primaryBufferOverlapDuration   = 100 * time.Millisecond
-
-	secondaryBufferMinBufferDuration = 2 * time.Second
-	secondaryBufferOverlapDuration   = 400 * time.Millisecond
-
-	vadEnergyThreshold = 0.005
-	vadFlushInterval   = 310 * time.Millisecond
-	vadSilenceDuration = 500 * time.Millisecond
-	vadPauseDuration   = 300 * time.Millisecond
-)
-
 // InitTranscriptionServer initializes the Transcription Server with predefined buffer settings.
 func InitTranscriptionServer(
 	oaiKey string,
 	audioOpts *audio.AudioOptions,
 	log *logger.Logger,
 	callback transcription.TranscriptionServerCallbackT,
+	language string,
 ) (*transcription.TranscriptionServer, error) {
-	bufferManagerPrimary := transcription.NewBufferManager(audioOpts)
-	bufferManagerPrimary.SetMinBufferDuration(primaryBufferMinBufferDuration)
-	bufferManagerPrimary.SetOverlapDuration(primaryBufferOverlapDuration)
-
-	bufferManagerSecondary := transcription.NewBufferManager(audioOpts)
-	bufferManagerSecondary.SetMinBufferDuration(
-		secondaryBufferMinBufferDuration,
-	)
-	bufferManagerSecondary.SetOverlapDuration(secondaryBufferOverlapDuration)
+	bufferManagerPrimary := transcription.NewSimpleBufferManager(audioOpts)
 
 	textReconciler := transcription.NewTextReconciler(log)
 	tsHandler := transcription.NewTranscriptionHandler(
@@ -49,11 +27,17 @@ func InitTranscriptionServer(
 		audioOpts,
 		log,
 	)
-	tsHandler.SetEnableFixing(true)
+	if language != "" {
+		lang, err := transcription.LoadLangFromValue(language)
+		if err != nil {
+			return nil, fmt.Errorf("invalid language code: %w", err)
+		}
+		tsHandler.WithLanguage(lang)
+	}
 
 	return transcription.NewTranscriptionServer(
 		bufferManagerPrimary,
-		bufferManagerSecondary,
+		nil,
 		tsHandler,
 		textReconciler,
 		log,
@@ -61,53 +45,12 @@ func InitTranscriptionServer(
 	), nil
 }
 
-// InitVAD initializes the Voice Activity Detection with predefined configurations.
-func InitVAD(
-	ts *transcription.TranscriptionServer,
-	log *logger.Logger,
-) *audio.VAD {
-	vad := audio.NewVAD(
-		audio.VADConfig{
-			EnergyThreshold: vadEnergyThreshold,
-			FlushInterval:   vadFlushInterval,
-			SilenceDuration: vadSilenceDuration,
-			PauseDuration:   vadPauseDuration,
-		},
-		audio.VADCallbacks{
-			OnSpeechStart: func() {
-				log.Debug("VAD: Speech started")
-			},
-			OnSpeechEnd: func() {
-				log.Debug("VAD: Speech ended")
-				ts.FlushBuffers()
-			},
-			OnFlush: func(buffer []float32) {
-				log.With("buf_sz", len(buffer)).Debug("VAD: Buffer flushed")
-
-				data, err := audio.Float32ToPCM(buffer)
-				if err != nil {
-					log.With("error", err).
-						Error("Failed to convert float32 to PCM")
-					return
-				}
-
-				ts.AddAudio(data)
-			},
-			OnPause: func() {
-				log.Debug("VAD: Speech paused")
-				ts.FlushPrimaryBuffer()
-			},
-		},
-		log,
-	)
-	return vad
-}
-
 func InitVoice(
 	cfg *config.Config,
 	log *logger.Logger,
 	handleTranscription func(text string, isProcessing bool),
 	cmdKeyCode uint16,
+	language string,
 ) (*audio.AudioStream, <-chan struct{}, <-chan struct{}, error) {
 	if !cfg.Input.Voice.Enabled {
 		return nil, nil, nil, nil
@@ -138,6 +81,7 @@ func InitVoice(
 		audioOpts,
 		log,
 		handleTranscription,
+		language,
 	)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf(
@@ -147,14 +91,18 @@ func InitVoice(
 	}
 	ts.Start()
 
-	vad := InitVAD(ts, log)
-	vad.Start()
-
 	inputStream, err := audio.NewInputStream(
 		log,
 		audioOpts,
 		func(buffer []float32) {
-			vad.Feed(buffer)
+			data, err := audio.Float32ToPCM(buffer)
+			if err != nil {
+				log.With("error", err).
+					Error("Failed to convert float32 to PCM")
+				return
+			}
+
+			ts.AddAudio(data)
 		},
 	)
 	if err != nil {
@@ -164,6 +112,6 @@ func InitVoice(
 		)
 	}
 
-	audioStartCh, audioEndCh := SetupKeyHooks(cmdKeyCode)
+	audioStartCh, audioEndCh := SetupKeyHooks(cmdKeyCode, ts)
 	return inputStream, audioStartCh, audioEndCh, nil
 }
