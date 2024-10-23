@@ -134,7 +134,7 @@ func runApp(_ *cobra.Command, _ []string) {
 			logger,
 			func(text string, isProcessing bool) {
 				if !isProcessing {
-					fmt.Println(text)
+					fmt.Println(">>>", text)
 					voiceInputCh <- text
 				}
 			},

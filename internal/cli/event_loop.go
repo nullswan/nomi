@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/charmbracelet/glamour"
 	"github.com/nullswan/nomi/internal/audio"
@@ -33,6 +34,7 @@ func EventLoop(
 	processInputFunc ProcessInputFuncT,
 ) {
 	audioRunning := false
+	spinner := term.NewSpinner(1*time.Second, ">>> ")
 
 	defer func() {
 		if audioRunning {
@@ -101,21 +103,23 @@ func EventLoop(
 			}
 			fmt.Printf("Error reading input: %v\n", err)
 		case <-audioStartCh:
-			// TODO(nullswan): Add graphical feedback for audio recording.
 			if !audioRunning {
 				audioRunning = true
 				err := inputStream.Start()
 				if err != nil {
 					log.With("error", err).Error("Failed to start input stream")
+				} else {
+					spinner.Start()
 				}
 			}
 		case <-audioEndCh:
-			// TODO(nullswan): Add graphical feedback for audio recording.
 			if audioRunning {
 				audioRunning = false
 				err := inputStream.Stop()
 				if err != nil {
 					log.With("error", err).Error("Failed to stop input stream")
+				} else {
+					spinner.Stop()
 				}
 			}
 		}

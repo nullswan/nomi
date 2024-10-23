@@ -131,7 +131,7 @@ var interpreterCmd = &cobra.Command{
 				log,
 				func(text string, isProcessing bool) {
 					if !isProcessing {
-						fmt.Printf("%s\n\n", text)
+						fmt.Println(">>>", text)
 						voiceInputCh <- text
 					}
 				},
