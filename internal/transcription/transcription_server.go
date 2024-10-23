@@ -1,6 +1,7 @@
 package transcription
 
 import (
+	"fmt"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -14,8 +15,8 @@ type TranscriptionServer struct {
 	logger *slog.Logger
 
 	transcriptionHandler   *TranscriptionHandler
-	bufferManagerPrimary   *BufferManager
-	bufferManagerSecondary *BufferManager
+	bufferManagerPrimary   BufferManager
+	bufferManagerSecondary BufferManager
 	textReconciler         *TextReconciler
 	callback               TranscriptionServerCallbackT
 	wg                     sync.WaitGroup
@@ -25,8 +26,8 @@ type TranscriptionServer struct {
 
 // NewTranscriptionServer initializes the TranscriptionServer with configurable options.
 func NewTranscriptionServer(
-	bufferManagerPrimary *BufferManager,
-	bufferManagerSecondary *BufferManager,
+	bufferManagerPrimary BufferManager,
+	bufferManagerSecondary BufferManager,
 	handler *TranscriptionHandler,
 	reconciler *TextReconciler,
 	logger *logger.Logger,
@@ -45,20 +46,30 @@ func NewTranscriptionServer(
 	}
 }
 
-func (ts *TranscriptionServer) Start() {
+func (ts *TranscriptionServer) Start() error {
 	ts.wg.Add(2)
+	if ts.bufferManagerPrimary == nil {
+		return fmt.Errorf("primary buffer manager is nil")
+	}
+
 	go ts.processLoop(ts.bufferManagerPrimary, "primary")
-	go ts.processLoop(ts.bufferManagerSecondary, "secondary")
+	if ts.bufferManagerSecondary != nil {
+		go ts.processLoop(ts.bufferManagerSecondary, "secondary")
+	}
+
+	return nil
 }
 
 // AddAudio adds incoming audio data to the buffer manager.
 func (ts *TranscriptionServer) AddAudio(audio []byte) {
 	ts.bufferManagerPrimary.AddAudio(audio)
-	ts.bufferManagerSecondary.AddAudio(audio)
+	if ts.bufferManagerSecondary != nil {
+		ts.bufferManagerSecondary.AddAudio(audio)
+	}
 }
 
 // processLoop continuously listens for buffer flush signals to initiate transcription.
-func (ts *TranscriptionServer) processLoop(bm *BufferManager, caller string) {
+func (ts *TranscriptionServer) processLoop(bm BufferManager, caller string) {
 	defer ts.wg.Done()
 	for {
 		audioChunk, ok := bm.GetAudio()
@@ -113,24 +124,29 @@ func (ts *TranscriptionServer) processLoop(bm *BufferManager, caller string) {
 // Close gracefully shuts down the TranscriptionServer.
 func (ts *TranscriptionServer) Close() {
 	ts.bufferManagerPrimary.Close()
-	ts.bufferManagerSecondary.Close()
+	if ts.bufferManagerSecondary != nil {
+		ts.bufferManagerSecondary.Close()
+	}
 	ts.wg.Wait()
 }
 
 // Reset clears the buffer managers and text reconciler.
 func (ts *TranscriptionServer) Reset() {
 	ts.bufferManagerPrimary.Reset()
-	ts.bufferManagerSecondary.Reset()
+	if ts.bufferManagerSecondary != nil {
+		ts.bufferManagerSecondary.Reset()
+	}
 
 	ts.textReconciler.Reset()
-
 	// TODO(nullswan): Cancel the context of the transcription handler
 }
 
 // FlushBuffers flushes the buffer managers.
 func (ts *TranscriptionServer) FlushBuffers() {
 	ts.bufferManagerPrimary.Flush()
-	ts.bufferManagerSecondary.Flush()
+	if ts.bufferManagerSecondary != nil {
+		ts.bufferManagerSecondary.Flush()
+	}
 }
 
 // GetFinalText returns the final transcribed text.
@@ -138,15 +154,17 @@ func (ts *TranscriptionServer) GetFinalText() string {
 	return ts.textReconciler.GetCombinedText()
 }
 
-// FlushPrimaryBuffer flushes the primary buffer manager.
-func (ts *TranscriptionServer) FlushPrimaryBuffer() {
-	ts.bufferManagerPrimary.Flush()
-}
-
 // IsDone checks if the server is done processing
 func (ts *TranscriptionServer) IsDone() bool {
-	return atomic.LoadInt32(&ts.active) == 0 &&
-		ts.bufferManagerPrimary.IsEmpty() &&
+	if atomic.LoadInt32(&ts.active) != 0 {
+		return false
+	}
+
+	if !ts.bufferManagerPrimary.IsEmpty() {
+		return false
+	}
+
+	return ts.bufferManagerSecondary == nil ||
 		ts.bufferManagerSecondary.IsEmpty()
 }
 
