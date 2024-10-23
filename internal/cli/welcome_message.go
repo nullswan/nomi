@@ -76,15 +76,6 @@ func WithInstruction(instr string) WelcomeOption {
 	}
 }
 
-func WithVoiceInstructions() WelcomeOption {
-	return func(c *WelcomeConfig) {
-		c.Instructions = append(
-			c.Instructions,
-			"Hold  [CMD] to record audio.",
-		)
-	}
-}
-
 func NewWelcomeConfig(
 	conversation Conversation,
 	opts ...WelcomeOption,
@@ -94,7 +85,6 @@ func NewWelcomeConfig(
 		Provider:        []providers.AIProvider{},
 		ModelProviders:  []ModelProvider{},
 		AdditionalLines: []string{},
-		Instructions:    []string{},
 	}
 	for _, opt := range opts {
 		opt(&config)

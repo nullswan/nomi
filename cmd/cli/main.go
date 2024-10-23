@@ -147,8 +147,11 @@ func runApp(_ *cobra.Command, _ []string) {
 		}
 		defer inputStream.Close()
 
-		// Apply voice-specific welcome instructions
-		cli.WithVoiceInstructions()(&welcomeConfig)
+		cli.WithAdditionalLine(
+			fmt.Sprintf("  Voice language: %s", cfg.Input.Voice.Language),
+		)(
+			&welcomeConfig,
+		)
 	}
 
 	// Display Welcome Message

@@ -148,7 +148,14 @@ var interpreterCmd = &cobra.Command{
 				defer portaudio.Terminate()
 			}
 
-			cli.WithVoiceInstructions()(&welcomeConfig)
+			cli.WithAdditionalLine(
+				fmt.Sprintf(
+					"  Voice language: %s",
+					cfg.Input.Voice.Language,
+				),
+			)(
+				&welcomeConfig,
+			)
 		}
 
 		oaiKey := os.Getenv("OPENAI_API_KEY")
