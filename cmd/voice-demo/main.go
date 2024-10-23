@@ -65,7 +65,9 @@ func main() {
 	}
 
 	bufferManagerPrimary := transcription.NewBufferManager(audioOpts)
-	bufferManagerPrimary.SetMinBufferDuration(500 * time.Millisecond)
+	bufferManagerPrimary.SetMinBufferDuration(
+		500 * time.Millisecond,
+	)
 	bufferManagerPrimary.SetOverlapDuration(100 * time.Millisecond)
 
 	bufferManagerSecondary := transcription.NewBufferManager(audioOpts)
@@ -95,7 +97,13 @@ func main() {
 		logger,
 		callback,
 	)
-	ts.Start()
+	err = ts.Start()
+	if err != nil {
+		logger.
+			With("error", err).
+			Error("Failed to start transcription server")
+		return
+	}
 	defer ts.Close()
 
 	// Initialize VAD
