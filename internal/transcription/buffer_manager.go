@@ -176,15 +176,18 @@ type simpleBufferManager struct {
 	channels   int
 	mu         sync.Mutex
 	flushChan  chan AudioChunk
+
+	minBufferDuration time.Duration
 }
 
 func NewSimpleBufferManager(
 	audioOpts *audio.AudioOptions,
 ) *simpleBufferManager {
 	return &simpleBufferManager{
-		flushChan:  make(chan AudioChunk, flushChanSz),
-		sampleRate: int(audioOpts.SampleRate),
-		channels:   audioOpts.Channels,
+		flushChan:         make(chan AudioChunk, flushChanSz),
+		sampleRate:        int(audioOpts.SampleRate),
+		channels:          audioOpts.Channels,
+		minBufferDuration: 0,
 	}
 }
 
@@ -204,6 +207,12 @@ func (sbm *simpleBufferManager) Flush() {
 	}
 
 	duration := sbm.computeDuration(len(sbm.buffer))
+	if duration < sbm.minBufferDuration {
+		// Drop the buffer if it's too short
+		sbm.buffer = sbm.buffer[:0]
+		return
+	}
+
 	chunk := AudioChunk{
 		Data:          append([]byte{}, sbm.buffer...),
 		StartDuration: 0,
@@ -258,4 +267,11 @@ func (sbm *simpleBufferManager) IsEmpty() bool {
 	defer sbm.mu.Unlock()
 
 	return len(sbm.buffer) == 0
+}
+
+func (sbn *simpleBufferManager) SetMinBufferDuration(duration time.Duration) {
+	sbn.mu.Lock()
+	defer sbn.mu.Unlock()
+
+	sbn.minBufferDuration = duration
 }

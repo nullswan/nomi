@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gordonklaus/portaudio"
 	"github.com/nullswan/nomi/internal/audio"
@@ -21,6 +22,7 @@ func InitTranscriptionServer(
 	language string,
 ) (*transcription.TranscriptionServer, error) {
 	bufferManagerPrimary := transcription.NewSimpleBufferManager(audioOpts)
+	bufferManagerPrimary.SetMinBufferDuration(1 * time.Second)
 
 	textReconciler := transcription.NewTextReconciler(log)
 	tsHandler := transcription.NewTranscriptionHandler(
