@@ -17,8 +17,8 @@ func PromptForBool(label string, defaultVal bool) bool {
 		Label:        label,
 		Items:        items,
 		CursorPos:    defaultIndex,
-		HideHelp:     true,
-		HideSelected: true,
+		HideHelp:     false,
+		HideSelected: false,
 	}
 	_, result, err := prompt.Run()
 	if err != nil {
@@ -28,10 +28,16 @@ func PromptForBool(label string, defaultVal bool) bool {
 	return result == "Yes"
 }
 
-func PromptForString(label string, defaultVal string) string {
+func PromptForString(
+	label string,
+	defaultVal string,
+	validate func(string) error,
+) string {
 	prompt := promptui.Prompt{
-		Label:   label,
-		Default: defaultVal,
+		Label:       label,
+		Default:     defaultVal,
+		Validate:    validate,
+		HideEntered: false,
 	}
 	result, err := prompt.Run()
 	if err != nil {
