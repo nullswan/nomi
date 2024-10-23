@@ -9,7 +9,7 @@ type Config struct {
 
 // Manage the input sources
 type InputConfig struct {
-	Voice EnabledConfig `yaml:"voice" json:"voice"`
+	Voice VoiceConfig `yaml:"voice" json:"voice"`
 	// TODO(nullswan): Differentiate between real-time voice and alway-on voice
 	// TODO(nullswan): Add video input
 	// TODO(nullswan): Add image input
@@ -19,8 +19,9 @@ type OutputConfig struct {
 	Sqlite OutputDetailConfig `yaml:"sqlite" json:"sqlite"`
 }
 
-type EnabledConfig struct {
-	Enabled bool `yaml:"enabled" json:"enabled"`
+type VoiceConfig struct {
+	Enabled  bool   `yaml:"enabled"  json:"enabled"`
+	Language string `yaml:"language" json:"language"`
 }
 
 type OutputDetailConfig struct {

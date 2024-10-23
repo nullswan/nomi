@@ -74,7 +74,10 @@ func DefaultConfig() Config {
 	return Config{
 		DevMode: false,
 		Input: InputConfig{
-			Voice: EnabledConfig{Enabled: false},
+			Voice: VoiceConfig{
+				Enabled:  false,
+				Language: "",
+			},
 		},
 		Output: OutputConfig{
 			Sqlite: OutputDetailConfig{
