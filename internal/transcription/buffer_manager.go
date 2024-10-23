@@ -9,16 +9,25 @@ import (
 
 const flushChanSz = 100
 
-// AudioChunk represents a chunk of audio data with a timestamp.
 type AudioChunk struct {
 	Data          []byte
 	StartDuration time.Duration
 	EndDuration   time.Duration
 }
 
-// BufferManager manages audio buffering and flushing based on minimum buffer duration.
-// It handles overlapping buffers to ensure continuity between chunks.
-type BufferManager struct {
+// BufferManager defines the methods for buffer managers.
+type BufferManager interface {
+	AddAudio(audioData []byte)
+	GetAudio() (AudioChunk, bool)
+
+	IsEmpty() bool
+
+	Flush()
+	Reset()
+	Close()
+}
+
+type bufferManager struct {
 	buffer            []byte
 	overlapDuration   time.Duration
 	minBufferDuration time.Duration
@@ -34,40 +43,31 @@ type BufferManager struct {
 	baseOffset time.Duration
 }
 
-// NewBufferManager creates a new BufferManager instance.
-func NewBufferManager(audioOpts *audio.AudioOptions) *BufferManager {
-	bm := &BufferManager{
-		flushChan: make(
-			chan AudioChunk,
-			flushChanSz,
-		),
+func NewBufferManager(audioOpts *audio.AudioOptions) *bufferManager {
+	return &bufferManager{
+		flushChan:      make(chan AudioChunk, flushChanSz),
 		sampleRate:     int(audioOpts.SampleRate),
 		channels:       audioOpts.Channels,
 		bytesPerSample: audioOpts.BytesPerSample,
 		bitsPerSample:  audioOpts.BitsPerSample,
 		baseOffset:     0,
 	}
-	return bm
 }
 
-// SetMinBufferDuration sets the minimum buffer duration before flushing.
-func (bm *BufferManager) SetMinBufferDuration(duration time.Duration) {
+func (bm *bufferManager) SetMinBufferDuration(duration time.Duration) {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 	bm.minBufferDuration = duration
 }
 
-// SetOverlapDuration sets the duration of audio overlap between chunks.
-func (bm *BufferManager) SetOverlapDuration(duration time.Duration) {
+func (bm *bufferManager) SetOverlapDuration(duration time.Duration) {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 	bm.overlapDuration = duration
 	bm.overlapBytes = bm.computeBytes(duration)
 }
 
-// AddAudio appends audio data to the buffer and flushes if the minimum duration is met.
-// It also provides a manual Flush capability.
-func (bm *BufferManager) AddAudio(audioData []byte) {
+func (bm *bufferManager) AddAudio(audioData []byte) {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
@@ -79,17 +79,14 @@ func (bm *BufferManager) AddAudio(audioData []byte) {
 	}
 }
 
-// Flush forces the buffer to flush its current data.
-func (bm *BufferManager) Flush() {
+func (bm *bufferManager) Flush() {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
 	bm.flushBuffer(0)
 }
 
-// [#unsafe] flushBuffer handles the flushing logic to prevent code duplication.
-// It assumes that bm.mu is already locked.
-func (bm *BufferManager) flushBuffer(bufferDuration time.Duration) {
+func (bm *bufferManager) flushBuffer(bufferDuration time.Duration) {
 	if len(bm.buffer) == 0 {
 		return
 	}
@@ -98,7 +95,6 @@ func (bm *BufferManager) flushBuffer(bufferDuration time.Duration) {
 	if bufferDuration > 0 {
 		duration = bufferDuration
 	} else {
-		// This is the case when we're manually flushing the buffer
 		duration = bm.computeDuration(len(bm.buffer))
 	}
 
@@ -113,7 +109,6 @@ func (bm *BufferManager) flushBuffer(bufferDuration time.Duration) {
 
 	select {
 	case bm.flushChan <- chunk:
-		// Retain overlap duration if buffer is not empty
 		if bm.overlapBytes < len(bm.buffer) {
 			bm.buffer = bm.buffer[len(bm.buffer)-bm.overlapBytes:]
 			bm.baseOffset = end - bm.overlapDuration
@@ -122,12 +117,10 @@ func (bm *BufferManager) flushBuffer(bufferDuration time.Duration) {
 			bm.baseOffset = end
 		}
 	default:
-		// Flush channel is full; skip flushing to avoid blocking
 	}
 }
 
-// computeDuration calculates the duration of the buffered audio.
-func (bm *BufferManager) computeDuration(bufferLength int) time.Duration {
+func (bm *bufferManager) computeDuration(bufferLength int) time.Duration {
 	if bm.sampleRate == 0 || bm.channels == 0 || bm.bytesPerSample == 0 {
 		return 0
 	}
@@ -140,8 +133,7 @@ func (bm *BufferManager) computeDuration(bufferLength int) time.Duration {
 	)
 }
 
-// computeBytes calculates the number of bytes for a given duration.
-func (bm *BufferManager) computeBytes(duration time.Duration) int {
+func (bm *bufferManager) computeBytes(duration time.Duration) int {
 	if bm.sampleRate == 0 || bm.channels == 0 || bm.bytesPerSample == 0 {
 		return 0
 	}
@@ -150,15 +142,12 @@ func (bm *BufferManager) computeBytes(duration time.Duration) int {
 	return int(duration.Seconds() * float64(bytesPerSecond))
 }
 
-// GetAudio retrieves the next audio chunk from the flush channel.
-func (bm *BufferManager) GetAudio() (AudioChunk, bool) {
+func (bm *bufferManager) GetAudio() (AudioChunk, bool) {
 	audio, ok := <-bm.flushChan
 	return audio, ok
 }
 
-// Reset resets the BufferManager's baseOffset and clears the buffer.
-// It should be called when a new speech session starts.
-func (bm *BufferManager) Reset() {
+func (bm *bufferManager) Reset() {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
@@ -166,20 +155,107 @@ func (bm *BufferManager) Reset() {
 	bm.buffer = bm.buffer[:0]
 }
 
-// Close gracefully shuts down the BufferManager by flushing remaining data and closing channels.
-func (bm *BufferManager) Close() {
+func (bm *bufferManager) Close() {
 	bm.mu.Lock()
-	// Flush remaining buffer if it exists
 	bm.flushBuffer(0)
 	bm.mu.Unlock()
 
 	close(bm.flushChan)
 }
 
-// IsEmpty returns true if the buffer is empty.
-func (bm *BufferManager) IsEmpty() bool {
+func (bm *bufferManager) IsEmpty() bool {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
 	return len(bm.buffer) <= bm.overlapBytes
+}
+
+type simpleBufferManager struct {
+	buffer     []byte
+	sampleRate int
+	channels   int
+	mu         sync.Mutex
+	flushChan  chan AudioChunk
+}
+
+func NewSimpleBufferManager(
+	audioOpts *audio.AudioOptions,
+) *simpleBufferManager {
+	return &simpleBufferManager{
+		flushChan:  make(chan AudioChunk, flushChanSz),
+		sampleRate: int(audioOpts.SampleRate),
+		channels:   audioOpts.Channels,
+	}
+}
+
+func (sbm *simpleBufferManager) AddAudio(audioData []byte) {
+	sbm.mu.Lock()
+	defer sbm.mu.Unlock()
+
+	sbm.buffer = append(sbm.buffer, audioData...)
+}
+
+func (sbm *simpleBufferManager) Flush() {
+	sbm.mu.Lock()
+	defer sbm.mu.Unlock()
+
+	if len(sbm.buffer) == 0 {
+		return
+	}
+
+	duration := sbm.computeDuration(len(sbm.buffer))
+	chunk := AudioChunk{
+		Data:          append([]byte{}, sbm.buffer...),
+		StartDuration: 0,
+		EndDuration:   duration,
+	}
+
+	select {
+	case sbm.flushChan <- chunk:
+		sbm.buffer = sbm.buffer[:0]
+	default:
+	}
+}
+
+func (sbm *simpleBufferManager) computeDuration(
+	bufferLength int,
+) time.Duration {
+	if sbm.sampleRate == 0 || sbm.channels == 0 {
+		return 0
+	}
+
+	bytesPerSecond := sbm.sampleRate * sbm.channels * 2 // assuming 16 bits per sample
+	return time.Duration(
+		bufferLength,
+	) * time.Second / time.Duration(
+		bytesPerSecond,
+	)
+}
+
+func (sbm *simpleBufferManager) GetAudio() (AudioChunk, bool) {
+	audio, ok := <-sbm.flushChan
+	return audio, ok
+}
+
+func (sbm *simpleBufferManager) Reset() {
+	sbm.mu.Lock()
+	defer sbm.mu.Unlock()
+
+	sbm.buffer = sbm.buffer[:0]
+}
+
+func (sbm *simpleBufferManager) Close() {
+	sbm.mu.Lock()
+	if len(sbm.buffer) > 0 {
+		sbm.Flush()
+	}
+	sbm.mu.Unlock()
+	close(sbm.flushChan)
+}
+
+func (sbm *simpleBufferManager) IsEmpty() bool {
+	sbm.mu.Lock()
+	defer sbm.mu.Unlock()
+
+	return len(sbm.buffer) == 0
 }
