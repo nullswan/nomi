@@ -1,7 +1,7 @@
 package transcription
 
 import (
-	"fmt"
+	"errors"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -49,7 +49,7 @@ func NewTranscriptionServer(
 func (ts *TranscriptionServer) Start() error {
 	ts.wg.Add(2)
 	if ts.bufferManagerPrimary == nil {
-		return fmt.Errorf("primary buffer manager is nil")
+		return errors.New("primary buffer manager is nil")
 	}
 
 	go ts.processLoop(ts.bufferManagerPrimary, "primary")

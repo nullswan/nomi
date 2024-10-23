@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -73,7 +74,7 @@ func InitVoice(
 
 	oaiKey := os.Getenv("OPENAI_API_KEY")
 	if oaiKey == "" {
-		return nil, nil, nil, fmt.Errorf("OPENAI_API_KEY is not set")
+		return nil, nil, nil, errors.New("OPENAI_API_KEY is not set")
 	}
 
 	ts, err := InitTranscriptionServer(
@@ -89,7 +90,13 @@ func InitVoice(
 			err,
 		)
 	}
-	ts.Start()
+	err = ts.Start()
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf(
+			"failed to start transcription server: %w",
+			err,
+		)
+	}
 
 	inputStream, err := audio.NewInputStream(
 		log,

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -373,7 +374,7 @@ func storeCodePrompt(
 		select {
 		case cmpl, ok := <-outCh:
 			if !ok {
-				return "", fmt.Errorf("error generating completion")
+				return "", errors.New("error generating completion")
 			}
 
 			if !completion.IsTombStone(cmpl) {
@@ -437,7 +438,7 @@ func getSuggestionFromBlocks(
 		select {
 		case cmpl, ok := <-outCh:
 			if !ok {
-				return nil, fmt.Errorf("error generating completion")
+				return nil, errors.New("error generating completion")
 			}
 
 			if !completion.IsTombStone(cmpl) {

@@ -21,7 +21,7 @@ const binaryName = "nomi"
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Automatically update the application",
-	Run: func(_ *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Println("Checking for updates...")
 
 		latestVersion, downloadURL, err := getLatestRelease()

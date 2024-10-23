@@ -57,13 +57,13 @@ func AddWAVHeader(
 	}
 
 	// ByteRate = SampleRate * NumChannels * BitsPerSample/8
-	byteRate := sampleRate * channels * bitsPerSample / 8
+	byteRate := sampleRate * channels * bitsPerSample / 8 // nolint:gomnd
 	if err := binary.Write(&buf, binary.LittleEndian, uint32(byteRate)); err != nil {
 		return nil, fmt.Errorf("error writing ByteRate: %w", err)
 	}
 
 	// BlockAlign = NumChannels * BitsPerSample/8
-	blockAlign := channels * bitsPerSample / 8
+	blockAlign := channels * bitsPerSample / 8 // nolint:gomnd
 	if err := binary.Write(&buf, binary.LittleEndian, uint16(blockAlign)); err != nil {
 		return nil, fmt.Errorf("error writing BlockAlign: %w", err)
 	}
