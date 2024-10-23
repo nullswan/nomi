@@ -135,6 +135,10 @@ func (r *sqliteRepository) LoadConversation(
 	}
 	defer rows.Close()
 
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over rows: %w", err)
+	}
+
 	var messages []Message
 	for rows.Next() {
 		var msg Message
@@ -201,6 +205,10 @@ func (r *sqliteRepository) GetConversations() ([]Conversation, error) {
 		return nil, fmt.Errorf("error getting conversations: %w", err)
 	}
 	defer rows.Close()
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over rows: %w", err)
+	}
 
 	var convos []Conversation
 	for rows.Next() {
