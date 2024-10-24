@@ -106,7 +106,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/tags/*'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: [build, build-darwin-arm64]
     steps:
       - name: Download Artifacts
