@@ -145,6 +145,9 @@ jobs:
           name: nomi-cli-darwin-arm64
           path: artifacts/darwin-arm64
 
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Generate Release Notes
         id: notes
         run: |
