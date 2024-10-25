@@ -1,6 +1,12 @@
 package copywriter
 
-import baseprovider "github.com/nullswan/nomi/internal/providers/base"
+import (
+	"context"
+
+	"github.com/nullswan/nomi/internal/chat"
+	baseprovider "github.com/nullswan/nomi/internal/providers/base"
+	"github.com/nullswan/nomi/internal/tools"
+)
 
 // TODO(nullswan): Add Memory, Storage, Tools
 // TODO(nullswan): Generate multiple content examples
@@ -75,6 +81,12 @@ type exportAgent struct {
 	systemPrompt string
 }
 
-func OnStart() {}
-func OnLoop()  {}
-func OnEnd()   {}
+func OnStart(
+	ctx context.Context,
+	selectors tools.Selector,
+	logger tools.Logger,
+	inputArea tools.InputArea,
+	textToTextBackend tools.TextToTextBackend,
+	conversation chat.Conversation,
+) {
+}
