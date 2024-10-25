@@ -8,8 +8,8 @@ import (
 	baseprovider "github.com/nullswan/nomi/internal/providers/base"
 )
 
-// InitProviders initializes the text-to-text provider.
-func InitProviders(
+// InitTextProviders initializes the text-to-text provider.
+func InitTextProviders(
 	logger *logger.Logger,
 	targetModel string,
 	reasoning bool,
@@ -45,3 +45,24 @@ func InitProviders(
 
 	return textToTextBackend, nil
 }
+
+// InitJSONProviders initializes the text-to-json provider.
+func InitJSONProviders(
+	logger *logger.Logger,
+	targetModel string,
+) (baseprovider.TextToJSONProvider, error) {
+	provider := providers.CheckProvider()
+
+	backend, err := providers.LoadTextToJSONProvider(
+		provider,
+		targetModel,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error loading text-to-text provider: %w",
+			err,
+		)
+	}
+
+	return backend, nil
+
