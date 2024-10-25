@@ -3,6 +3,7 @@ package tools
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -34,7 +35,7 @@ func (c *bashConsole) Exec(
 		if exitError, ok := err.(*exec.ExitError); ok {
 			exitCode = exitError.ExitCode()
 		} else {
-			return ExecResult{}, err
+			return ExecResult{}, fmt.Errorf("failed to run command: %w", err)
 		}
 	}
 	return ExecResult{
