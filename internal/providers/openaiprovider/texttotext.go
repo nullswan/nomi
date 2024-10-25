@@ -14,7 +14,7 @@ import (
 
 const (
 	OpenAITextToTextDefaultModel     = openai.GPT4o
-	OpenAITextToTextDefaultModelFast = openai.GPT4oMini
+	OpenAITextToTextDefaultModelFast = openai.GPT4o
 )
 
 type TextToTextProvider struct {
