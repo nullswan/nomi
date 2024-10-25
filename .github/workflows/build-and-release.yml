@@ -16,28 +16,28 @@ jobs:
           # Windows builds always use linux/amd64 platform
           - os: windows
             arch: 386
-            dockerfile: ./Dockerfile.windows.386
+            dockerfile: ./docker/Dockerfile.windows.386
             artifact: nomi-cli.zip
             platform: linux/amd64
           - os: windows
             arch: amd64
-            dockerfile: ./Dockerfile.windows.amd64
+            dockerfile: ./docker/Dockerfile.windows.amd64
             artifact: nomi-cli.zip
             platform: linux/amd64
           # Linux builds with specific architectures
           - os: linux
             arch: 386
-            dockerfile: ./Dockerfile.linux.386
+            dockerfile: ./docker/Dockerfile.linux.386
             artifact: nomi-cli
             platform: linux/amd64
           - os: linux
             arch: amd64
-            dockerfile: ./Dockerfile.linux.amd64
+            dockerfile: ./docker/Dockerfile.linux.amd64
             artifact: nomi-cli
             platform: linux/amd64
           - os: linux
             arch: arm64
-            dockerfile: ./Dockerfile.linux.arm64
+            dockerfile: ./docker/Dockerfile.linux.arm64
             artifact: nomi-cli
             platform: linux/arm64
     steps:
