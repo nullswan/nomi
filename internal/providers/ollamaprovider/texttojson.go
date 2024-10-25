@@ -16,7 +16,7 @@ import (
 )
 
 const (
- OLamaTextToJSONDefaultModel = "llama3.1:latest"
+ OLamaTextToJSONDefaultModel     = "llama3.1:latest"
  OLamaTextToJSONDefaultModelFast = "llama3.2:latest"
 )
 
@@ -45,7 +45,7 @@ func NewTextToJSONProvider(
  config.model = OLamaTextToJSONDefaultModelFast
  }
 
- // TODO:nullswan): Mutualize start code
+ // TODO(nullswan): Mutualize start code
  p := &TextToJSONProvider{
  config: config,
  client: api.NewClient(
