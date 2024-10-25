@@ -36,6 +36,60 @@ const (
 	MultilineTemplate
 )
 
+func readInput(rl *readline.Instance) (string, error) {
+	var sb strings.Builder
+	var multiline MultilineState
+
+	for {
+		line, err := rl.Readline()
+		switch {
+		case errors.Is(err, io.EOF):
+			fmt.Println()
+			return "", ErrInputKilled
+		case errors.Is(err, readline.ErrInterrupt):
+			if line == "" {
+				fmt.Println("\nUse CTRL+D or /exit to exit.")
+			}
+			rl.Prompt.UseAlt = false
+			sb.Reset()
+			continue
+		case err != nil:
+			return "", fmt.Errorf("error reading input: %w", err)
+		}
+
+		switch {
+		case multiline != MultilineNone:
+			before, ok := strings.CutSuffix(line, `"""`)
+			sb.WriteString(before)
+			if !ok {
+				fmt.Fprintln(&sb)
+				continue
+			}
+			multiline = MultilineNone
+			rl.Prompt.UseAlt = false
+		case strings.HasPrefix(line, `"""`):
+			line := strings.TrimPrefix(line, `"""`)
+			line, ok := strings.CutSuffix(line, `"""`)
+			sb.WriteString(line)
+			if !ok {
+				fmt.Fprintln(&sb)
+				multiline = MultilinePrompt
+				rl.Prompt.UseAlt = true
+			}
+			continue
+		case rl.Pasting:
+			fmt.Fprintln(&sb, line)
+			continue
+		default:
+			sb.WriteString(line)
+		}
+
+		if sb.Len() > 0 && multiline == MultilineNone {
+			return sb.String(), nil
+		}
+	}
+}
+
 func ReadInput(
 	inputCh chan<- string,
 	inputErrCh chan<- error,
@@ -70,70 +124,31 @@ func ReadInput(
 	fmt.Print(readline.StartBracketedPaste)
 	defer fmt.Printf(readline.EndBracketedPaste)
 
-	var sb strings.Builder
-	var multiline MultilineState
-
 	for {
-		line, err := rl.Readline()
-		switch {
-		case errors.Is(err, io.EOF):
-			fmt.Println()
-			inputErrCh <- ErrInputKilled
-			return
-		case errors.Is(err, readline.ErrInterrupt):
-			if line == "" {
-				fmt.Println("\nUse CTRL+D or /exit to exit.")
-			}
-
-			rl.Prompt.UseAlt = false
-			sb.Reset()
-
-			continue
-		case err != nil:
-			inputErrCh <- fmt.Errorf("error reading input: %w", err)
+		input, err := readInput(rl)
+		if err != nil {
+			inputErrCh <- err
 			return
 		}
+		inputCh <- input
 
-		switch {
-		case multiline != MultilineNone:
-			// check if there's a multiline terminating string
-			before, ok := strings.CutSuffix(line, `"""`)
-			sb.WriteString(before)
-			if !ok {
-				fmt.Fprintln(&sb)
-				continue
-			}
-
-			multiline = MultilineNone
-			rl.Prompt.UseAlt = false
-		case strings.HasPrefix(line, `"""`):
-			line := strings.TrimPrefix(line, `"""`)
-			line, ok := strings.CutSuffix(line, `"""`)
-			sb.WriteString(line)
-			if !ok {
-				// no multiline terminating string; need more input
-				fmt.Fprintln(&sb)
-				multiline = MultilinePrompt
-				rl.Prompt.UseAlt = true
-			}
-			continue
-		case rl.Pasting:
-			fmt.Fprintln(&sb, line)
-			continue
-		default:
-			sb.WriteString(line)
-		}
-
-		if sb.Len() > 0 && multiline == MultilineNone {
-			inputCh <- sb.String()
-			sb.Reset()
-		}
-
-		// Wait for the readyCh before reading the next line
-		_, ok := <-readyCh
+		// Wait for the readyCh before reading the next input
+		_, ok = <-readyCh
 		if !ok {
 			inputErrCh <- ErrInputInterrupted
 			return
 		}
 	}
+}
+
+func ReadInputOnce() (string, error) {
+	rl, err := InitReadline()
+	if err != nil {
+		return "", fmt.Errorf("%w: %v", ErrReadlineInit, err)
+	}
+
+	fmt.Print(readline.StartBracketedPaste)
+	defer fmt.Printf(readline.EndBracketedPaste)
+
+	return readInput(rl)
 }
