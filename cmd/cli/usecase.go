@@ -40,7 +40,9 @@ var usecaseCmd = &cobra.Command{
 
 		console := tools.NewBashConsole()
 		selector := tools.NewSelector()
-		toolsLogger := tools.NewLogger()
+		toolsLogger := tools.NewLogger(
+			cfg.DevMode,
+		)
 
 		// Initialize Providers
 		logger := logger.Init()
@@ -83,7 +85,8 @@ var usecaseCmd = &cobra.Command{
 				conversation,
 			)
 		default:
-			panic("usecase not found")
+			fmt.Println("usecase not found")
+			return
 		}
 
 		if err != nil {
