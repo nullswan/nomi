@@ -57,7 +57,7 @@ var interpreterCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		codeGenerationBackend, err := cli.InitProviders(
+		codeGenerationBackend, err := cli.InitTextProviders(
 			log,
 			"",
 			interpreterAskPrompt.Preferences.Reasoning,
@@ -68,7 +68,7 @@ var interpreterCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		codeInferenceBackend, err := cli.InitProviders(
+		codeInferenceBackend, err := cli.InitTextProviders(
 			log,
 			"",
 			false,
