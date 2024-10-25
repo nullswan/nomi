@@ -70,7 +70,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	}
 
 	// Initialize Providers
-	textToTextBackend, err := cli.InitProviders(
+	textToTextBackend, err := cli.InitTextProviders(
 		logger,
 		targetModel,
 		selectedPrompt.Preferences.Reasoning,
