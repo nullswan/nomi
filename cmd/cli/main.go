@@ -148,7 +148,7 @@ func runApp(_ *cobra.Command, _ []string) {
 		defer inputStream.Close()
 
 		cli.WithAdditionalLine(
-			fmt.Sprintf("  Voice language: %s", cfg.Input.Voice.Language),
+			"  Voice language: " + cfg.Input.Voice.Language,
 		)(
 			&welcomeConfig,
 		)
