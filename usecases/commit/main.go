@@ -17,6 +17,10 @@ import (
 const agentFilePrompt = `
 Create a commit plan in JSON format for staging changes and creating commits using Git, returning an array of files, adhering to provided guidelines.
 
+## Important Note
+
+You won't be able to commit the same file twice.
+
 ## JSON Structure
 
 The commit plan should be represented as a JSON object containing a list of actions. Each action includes both a list of modified 'files' and a 'commitMessage':
@@ -26,27 +30,25 @@ The commit plan should be represented as a JSON object containing a list of acti
 ### Steps
 
 1. **Analyze the Git Diff:**
-   - Group related changes into features or fixes.
-   - Determine necessity for multiple commits for unrelated changes.
+- Group related changes into features or fixes.
+- Determine necessity for multiple commits for unrelated changes.
 
 2. **Prepare Staging Commands:**
-   - Identify files affected by the diff for atomic, feature-specific commits.
+- Identify files affected by the diff for atomic, feature-specific commits.
 
 3. **Generate Commit Messages:**
-   - Maintain present tense with an appropriate prefix and scope.
-   - Exclude meaningless component names (e.g., "internal") from commit titles.
-   - Preserve only significant component names.
-   - Keep messages concise, within 75 characters for titles.
+- Maintain present tense with an appropriate prefix and scope.
+- Exclude meaningless component names (e.g., "internal") from commit titles.
+- Preserve only significant component names.
+- Keep messages concise, within 75 characters for titles.
 
 ## Commit Message Specifications
-
 - **Tense:** Present
 - **Prefixes:** 'feat:', 'fix:', 'docs:', 'style:', 'refactor:', 'perf:', 'test:', 'chore:', 'ci:'
 - **Scope:** Specify affected significant component/module in parentheses.
 - **No Body:** Keep it concise unless additional description is necessary.
 
 ### Additional Guidelines
-
 - Group related changes for the same feature in a single commit.
 - Use multiple commits for unrelated changes.
 - Ensure messages are clear, concise, and specific.
