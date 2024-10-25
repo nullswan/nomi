@@ -47,6 +47,12 @@ func main() {
 	promptCmd.AddCommand(promptEditCmd)
 	// #endregion
 
+	// #region Use case commands
+	rootCmd.AddCommand(usecaseCmd)
+	// usecaseCmd.AddCommand(usecaseListCmd)
+	// usecaseCmd.AddCommand(usecaseAddCmd)
+	// #endregion
+
 	// Attach flags to rootCmd only, so they are not inherited by subcommands
 	rootCmd.Flags().
 		StringVarP(&startPrompt, "prompt", "p", "", "Specify a prompt")
