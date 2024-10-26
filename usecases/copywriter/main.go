@@ -2,91 +2,107 @@ package copywriter
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/nullswan/nomi/internal/chat"
-	baseprovider "github.com/nullswan/nomi/internal/providers/base"
 	"github.com/nullswan/nomi/internal/tools"
 )
 
+// TODO(nullswan): Pull preferences / Profiles / Previous projects
 // TODO(nullswan): Add Memory, Storage, Tools
 // TODO(nullswan): Generate multiple content examples
-
-// Pull preferences
-// Ask Goal
-// Ask and retrieve inputs
-// Define headline
-// Define/Gather ideas
-// Define Content Plan
-// Define tone & style
-// Redact
-// Export
-
-// This agent is responsible for defining the goals of the content
-// Capabilities include: Define goals, Gather goals
-type goalsAgent struct {
-	textBackend  *baseprovider.TextToTextProvider
-	systemPrompt string
-}
-
-func NewGoalsAgent() *goalsAgent {
-	return &goalsAgent{
-		systemPrompt: "",
-	}
-}
-
-// This agent is responsible for defining the content ideas
-// Capabilities include: Define ideas, Gather ideas
-type ideasAgent struct {
-	textBackend  *baseprovider.TextToTextProvider
-	systemPrompt string
-}
-
-// This agent is responsible for defining the headline of the content
-// Capabilities include: Define headline
-// Uses: goalsAgent, ideasAgent
-type headlineAgent struct {
-	textBackend  *baseprovider.TextToTextProvider
-	systemPrompt string
-}
-
-// This agent is responsible for defining the content plan
-// Capabilities include: Define content plan, highlight key points
-// Uses: goalsAgent, ideasAgent, headlineAgent
-type contentPlanAgent struct {
-	textBackend  *baseprovider.TextToTextProvider
-	systemPrompt string
-}
-
-// This agent is responsible for defining the tone and style of the content
-// Capabilities include: Define tone, Define style
-// Uses: goalsAgent, headlineAgent
-type toneStyleAgent struct {
-	textBackend  *baseprovider.TextToTextProvider
-	systemPrompt string
-}
-
-// This agent is responsible for redacting the content
-// Capabilities include: Redact, Edit, Proofread
-// Uses: contentPlanAgent, toneStyleAgent
-type redactAgent struct {
-	textBackend  *baseprovider.TextToTextProvider
-	systemPrompt string
-}
-
-// This agent is responsible for exporting the final content
-// Capabilities include: Export to file, export to different formats
-type exportAgent struct {
-	textBackend  *baseprovider.TextToTextProvider
-	toolBackend  *baseprovider.TextToTextProvider
-	systemPrompt string
-}
+// TODO(nullswan): Add ref check agent
 
 func OnStart(
 	ctx context.Context,
-	selectors tools.Selector,
+	selector tools.Selector,
 	logger tools.Logger,
 	inputArea tools.InputArea,
-	textToTextBackend tools.TextToTextBackend,
-	conversation chat.Conversation,
-) {
+	textToJSONBackend tools.TextToJSONBackend,
+	conversation chat.Conversation, // TOOD(nullswan): Should be like a project
+) error {
+	project := fmt.Sprintf(
+		"project-copywriting-%s",
+		time.Now().Format("2006-01-02"),
+	)
+
+	goalsAgent := NewGoalsAgent(
+		textToJSONBackend,
+		inputArea,
+		logger,
+		selector,
+	)
+	ideasAgent := NewIdeasAgent(
+		logger,
+		textToJSONBackend,
+		goalsAgent,
+		inputArea,
+	)
+	headlineAgent := NewHeadlineAgent(
+		logger,
+		textToJSONBackend,
+		selector,
+		inputArea,
+		goalsAgent,
+		ideasAgent,
+	)
+	contentPlanAgent := NewOutlineAgent(
+		logger,
+		textToJSONBackend,
+		selector,
+		inputArea,
+		goalsAgent,
+		ideasAgent,
+		headlineAgent,
+	)
+	exportAgent := NewExportAgent(
+		logger,
+		project,
+	)
+	redactAgent := NewRedactAgent(
+		goalsAgent,
+		ideasAgent,
+		headlineAgent,
+		contentPlanAgent,
+		exportAgent,
+		logger,
+		inputArea,
+		textToJSONBackend,
+		selector,
+	)
+
+	err := goalsAgent.OnStart(ctx, conversation)
+	if err != nil {
+		return fmt.Errorf("error starting goals agent: %w", err)
+	}
+	conversation = conversation.Reset()
+
+	err = ideasAgent.OnStart(ctx, conversation)
+	if err != nil {
+		return fmt.Errorf("error starting ideas agent: %w", err)
+	}
+	conversation = conversation.Reset()
+
+	err = headlineAgent.OnStart(ctx, conversation)
+	if err != nil {
+		return fmt.Errorf("error starting headline agent: %w", err)
+	}
+
+	conversation = conversation.Reset()
+	err = contentPlanAgent.OnStart(ctx, conversation)
+	if err != nil {
+		return fmt.Errorf("error starting content plan agent: %w", err)
+	}
+
+	conversation = conversation.Reset()
+	err = redactAgent.OnStart(
+		ctx,
+		conversation,
+	)
+	if err != nil {
+		return fmt.Errorf("error starting redact agent: %w", err)
+	}
+
+	return nil
 }

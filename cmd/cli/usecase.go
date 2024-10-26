@@ -12,6 +12,7 @@ import (
 	"github.com/nullswan/nomi/internal/logger"
 	"github.com/nullswan/nomi/internal/tools"
 	"github.com/nullswan/nomi/usecases/commit"
+	"github.com/nullswan/nomi/usecases/copywriter"
 	"github.com/spf13/cobra"
 )
 
@@ -82,6 +83,15 @@ var usecaseCmd = &cobra.Command{
 				toolsLogger,
 				ttjBackend,
 				inputArea,
+				conversation,
+			)
+		case "copywriter":
+			err = copywriter.OnStart(
+				ctx,
+				selector,
+				toolsLogger,
+				inputArea,
+				ttjBackend,
 				conversation,
 			)
 		default:
