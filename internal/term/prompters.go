@@ -46,3 +46,23 @@ func PromptForString(
 	}
 	return result
 }
+
+func PromptSelectString(
+	label string,
+	items []string,
+) string {
+	prompt := promptui.Select{
+		Label:        label,
+		Items:        items,
+		CursorPos:    0,
+		HideHelp:     false,
+		HideSelected: false,
+	}
+	_, result, err := prompt.Run()
+	if err != nil {
+
+		fmt.Printf("Prompt failed: %v\n", err)
+		os.Exit(1)
+	}
+	return result
+}
