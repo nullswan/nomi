@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	prompts "github.com/nullswan/nomi/internal/prompt"
 )
 
@@ -35,6 +36,15 @@ func (c *stackedConversation) AddMessage(message Message) {
 	err := c.repo.SaveConversation(c)
 	if err != nil {
 		fmt.Println(err)
+	}
+}
+
+func (c *stackedConversation) RemoveMessage(id uuid.UUID) {
+	for i, message := range c.messages {
+		if message.ID == id {
+			c.messages = append(c.messages[:i], c.messages[i+1:]...)
+			break
+		}
 	}
 }
 
