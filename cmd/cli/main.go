@@ -29,11 +29,6 @@ var (
 	targetModel         string
 )
 
-const (
-	// TODO(nullswan): Should be configurable
-	cmdKeyCode = 58
-)
-
 var rootCmd = &cobra.Command{
 	Use:   "nomi [flags] [arguments]",
 	Short: "AI runtime, multi-modal, supporting action & private data. ",
@@ -138,7 +133,7 @@ func runApp(_ *cobra.Command, _ []string) {
 					voiceInputCh <- text
 				}
 			},
-			cmdKeyCode,
+			cfg.Input.Voice.KeyCode,
 			cfg.Input.Voice.Language,
 		)
 		if err != nil {

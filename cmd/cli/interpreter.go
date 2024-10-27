@@ -135,7 +135,7 @@ var interpreterCmd = &cobra.Command{
 						voiceInputCh <- text
 					}
 				},
-				cmdKeyCode,
+				cfg.Input.Voice.KeyCode,
 				cfg.Input.Voice.Language,
 			)
 			if err != nil {
