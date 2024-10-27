@@ -1,9 +1,10 @@
 package config
 
 type Config struct {
-	Input   InputConfig  `yaml:"input"    json:"input"`
-	Output  OutputConfig `yaml:"output"   json:"output"`
-	DevMode bool         `yaml:"dev_mode" json:"dev_mode"`
+	Input     InputConfig  `yaml:"input"      json:"input"`
+	Output    OutputConfig `yaml:"output"     json:"output"`
+	DevMode   bool         `yaml:"dev_mode"   json:"dev_mode"`
+	PlaySound bool         `yaml:"play_sound" json:"play_sound"`
 	// TODO(nullswan): Add memory configuration
 }
 

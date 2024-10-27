@@ -44,6 +44,11 @@ func Setup() error {
 		)
 	}
 
+	cfg.PlaySound = term.PromptForBool(
+		"Play sound on completion",
+		false,
+	)
+
 	cfg.Output.Sqlite.Enabled = true
 	if cfg.Output.Sqlite.Enabled {
 		cfg.Output.Sqlite.Path = term.PromptForString(
