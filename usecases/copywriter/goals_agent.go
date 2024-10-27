@@ -63,7 +63,7 @@ The output should be formatted as JSON in the following structure:
 // Capabilities include: Define goals, Gather goals
 type goalsAgent struct {
 	textToJSONBackend tools.TextToJSONBackend
-	inputArea         tools.InputArea
+	inputHandler      tools.InputHandler
 	logger            tools.Logger
 	selector          tools.Selector
 
@@ -72,13 +72,13 @@ type goalsAgent struct {
 
 func NewGoalsAgent(
 	textToJSONBackend tools.TextToJSONBackend,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 	logger tools.Logger,
 	selector tools.Selector,
 ) *goalsAgent {
 	return &goalsAgent{
 		textToJSONBackend: textToJSONBackend,
-		inputArea:         inputArea,
+		inputHandler:      inputHandler,
 		selector:          selector,
 		logger:            logger,
 	}
@@ -133,7 +133,7 @@ func (g *goalsAgent) OnStart(
 			}
 
 			fmt.Println("Next question: ", goalResp.Question)
-			response, err := g.inputArea.Read(">>> ")
+			response, err := g.inputHandler.Read(ctx, ">>> ")
 			if err != nil {
 				return fmt.Errorf("error getting input: %w", err)
 			}

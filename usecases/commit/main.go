@@ -18,7 +18,7 @@ func OnStart(
 	selector tools.Selector,
 	logger tools.Logger,
 	textToJSON tools.TextToJSONBackend,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 	conversation chat.Conversation,
 ) error {
 	logger.Info("Starting commit usecase")
@@ -58,7 +58,6 @@ func OnStart(
 		chat.NewMessage(chat.Role(chat.RoleUser), buffer),
 	)
 
-	// logger.Debug("Stash diff: " + buffer)
 	if buffer == "" {
 		logger.Info("No changes to commit")
 		return nil
@@ -97,7 +96,7 @@ func OnStart(
 				"Do you want to commit these changes?",
 				true,
 			) {
-				newInstructions, err := inputArea.Read(">>> ")
+				newInstructions, err := inputHandler.Read(ctx, ">>> ")
 				if err != nil {
 					return fmt.Errorf(
 						"failed to read new instructions: %w",

@@ -10,6 +10,7 @@ import (
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
 	"github.com/nullswan/nomi/internal/logger"
+	"github.com/nullswan/nomi/internal/term"
 	"github.com/nullswan/nomi/internal/tools"
 	"github.com/nullswan/nomi/usecases/browser"
 	"github.com/nullswan/nomi/usecases/commit"
@@ -58,7 +59,39 @@ var usecaseCmd = &cobra.Command{
 		defer chatRepo.Close()
 
 		conversation := chat.NewStackedConversation(chatRepo)
-		inputArea := tools.NewInputArea()
+
+		readyCh := make(chan struct{})
+		inputCh := make(chan string)
+		inputErrCh := make(chan error)
+
+		go term.ReadInput(inputCh, inputErrCh, readyCh)
+		inputHandler := tools.NewInputHandler(
+			logger,
+			readyCh,
+			inputCh,
+			inputErrCh,
+		)
+
+		if cfg.Input.Voice.Enabled {
+			voiceInputCh := make(chan string)
+			voiceInput, err := tools.NewVoiceInput(
+				cfg,
+				logger,
+				voiceInputCh,
+			)
+			if err != nil {
+				fmt.Printf("Error initializing voice input: %v\n", err)
+				return
+			}
+			defer voiceInput.Close()
+
+			inputHandler.WithVoiceInput(
+				voiceInputCh,
+				voiceInput.GetAudioStartCh(),
+				voiceInput.GetAudioEndCh(),
+				voiceInput.GetInputStream(),
+			)
+		}
 
 		textToJSONBackend, err := cli.InitJSONProviders(
 			logger,
@@ -83,7 +116,7 @@ var usecaseCmd = &cobra.Command{
 				selector,
 				toolsLogger,
 				ttjBackend,
-				inputArea,
+				inputHandler,
 				conversation,
 			)
 		case "copywriter":
@@ -91,7 +124,7 @@ var usecaseCmd = &cobra.Command{
 				ctx,
 				selector,
 				toolsLogger,
-				inputArea,
+				inputHandler,
 				ttjBackend,
 				conversation,
 			)
@@ -100,7 +133,7 @@ var usecaseCmd = &cobra.Command{
 				ctx,
 				selector,
 				toolsLogger,
-				inputArea,
+				inputHandler,
 				ttjBackend,
 				conversation,
 			)

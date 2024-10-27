@@ -70,7 +70,7 @@ Eco-friendly packaging for beauty product line, consumer awareness.
 // Capabilities include: Define ideas, Gather ideas
 type ideasAgent struct {
 	logger            tools.Logger
-	inputArea         tools.InputArea
+	inputHandler      tools.InputHandler
 	textToJSONBackend tools.TextToJSONBackend
 
 	storage string
@@ -82,13 +82,13 @@ func NewIdeasAgent(
 	logger tools.Logger,
 	textToJSONBackend tools.TextToJSONBackend,
 	goalsAgent *goalsAgent,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 ) *ideasAgent {
 	return &ideasAgent{
 		textToJSONBackend: textToJSONBackend,
 		logger:            logger,
 		goalsAgent:        goalsAgent,
-		inputArea:         inputArea,
+		inputHandler:      inputHandler,
 	}
 }
 
@@ -116,7 +116,7 @@ func (i *ideasAgent) OnStart(
 		case <-ctx.Done():
 			return fmt.Errorf("context cancelled")
 		default:
-			idea, err := i.inputArea.Read(">>> ")
+			idea, err := i.inputHandler.Read(ctx, ">>> ")
 			if err != nil {
 				return fmt.Errorf("error reading input: %w", err)
 			}
@@ -180,7 +180,7 @@ func (i *ideasAgent) OnStart(
 			}
 
 			fmt.Println("Next question: ", ideaResp.Question)
-			response, err := i.inputArea.Read(">>> ")
+			response, err := i.inputHandler.Read(ctx, ">>> ")
 			if err != nil {
 				return fmt.Errorf("error getting input: %w", err)
 			}

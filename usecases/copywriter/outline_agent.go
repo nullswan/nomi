@@ -84,7 +84,7 @@ type outlineAgent struct {
 	logger            tools.Logger
 	textToJSONBackend tools.TextToJSONBackend
 	selector          tools.Selector
-	inputArea         tools.InputArea
+	inputHandler      tools.InputHandler
 
 	storage outlinePlan
 
@@ -97,7 +97,7 @@ func NewOutlineAgent(
 	logger tools.Logger,
 	textToJSONBackend tools.TextToJSONBackend,
 	selector tools.Selector,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 	goalsAgent *goalsAgent,
 	ideasAgent *ideasAgent,
 	headlineAgent *headlineAgent,
@@ -106,7 +106,7 @@ func NewOutlineAgent(
 		logger:            logger,
 		textToJSONBackend: textToJSONBackend,
 		selector:          selector,
-		inputArea:         inputArea,
+		inputHandler:      inputHandler,
 		goalsAgent:        goalsAgent,
 		ideasAgent:        ideasAgent,
 		headlineAgent:     headlineAgent,
@@ -195,7 +195,7 @@ func (c *outlineAgent) OnStart(
 				"Is the outline plan satisfactory?",
 				true,
 			) {
-				newInstructions, err := c.inputArea.Read(">>> ")
+				newInstructions, err := c.inputHandler.Read(ctx, ">>> ")
 				if err != nil {
 					return fmt.Errorf("error reading new instructions: %w", err)
 				}

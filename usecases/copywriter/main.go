@@ -18,7 +18,7 @@ func OnStart(
 	ctx context.Context,
 	selector tools.Selector,
 	logger tools.Logger,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 	textToJSONBackend tools.TextToJSONBackend,
 	conversation chat.Conversation, // TOOD(nullswan): Should be like a project
 ) error {
@@ -29,7 +29,7 @@ func OnStart(
 
 	goalsAgent := NewGoalsAgent(
 		textToJSONBackend,
-		inputArea,
+		inputHandler,
 		logger,
 		selector,
 	)
@@ -37,13 +37,13 @@ func OnStart(
 		logger,
 		textToJSONBackend,
 		goalsAgent,
-		inputArea,
+		inputHandler,
 	)
 	headlineAgent := NewHeadlineAgent(
 		logger,
 		textToJSONBackend,
 		selector,
-		inputArea,
+		inputHandler,
 		goalsAgent,
 		ideasAgent,
 	)
@@ -51,7 +51,7 @@ func OnStart(
 		logger,
 		textToJSONBackend,
 		selector,
-		inputArea,
+		inputHandler,
 		goalsAgent,
 		ideasAgent,
 		headlineAgent,
@@ -67,7 +67,7 @@ func OnStart(
 		contentPlanAgent,
 		exportAgent,
 		logger,
-		inputArea,
+		inputHandler,
 		textToJSONBackend,
 		selector,
 	)

@@ -62,7 +62,7 @@ Output:
 // Uses: contentPlanAgent, toneStyleAgent
 type redactAgent struct {
 	logger            tools.Logger
-	inputArea         tools.InputArea
+	inputHandler      tools.InputHandler
 	textToJSONBackend tools.TextToJSONBackend
 	selector          tools.Selector
 
@@ -80,13 +80,13 @@ func NewRedactAgent(
 	outlineAgent *outlineAgent,
 	exportAgent *exportAgent,
 	logger tools.Logger,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 	textToJSONBackend tools.TextToJSONBackend,
 	selector tools.Selector,
 ) *redactAgent {
 	return &redactAgent{
 		logger:            logger,
-		inputArea:         inputArea,
+		inputHandler:      inputHandler,
 		exportAgent:       exportAgent,
 		outlineAgent:      outlineAgent,
 		headlineAgent:     headlineAgent,
@@ -193,7 +193,7 @@ func (r *redactAgent) OnStart(
 				return nil
 			}
 
-			resp, err = r.inputArea.Read(">>> ")
+			resp, err = r.inputHandler.Read(ctx, ">>> ")
 			if err != nil {
 				return fmt.Errorf("error getting input: %w", err)
 			}

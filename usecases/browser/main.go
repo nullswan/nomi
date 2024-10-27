@@ -18,6 +18,7 @@ import (
 
 // TODO(nullswan): Ability to export as memory and load from memory
 // TODO(nullswan): Amplify and rework that prompt
+// TODO(nullswan): Leverage bounding boxes for better element selection and shorter prompts
 const browserPrompt = `
 Extract and define a precise list of steps in JSON to achieve the user's goal using Playwright. Request user clarification if the goal is ambiguous.
 
@@ -198,6 +199,19 @@ Ensure all steps and interactions are accurately represented using specified act
   "done": false
 }
 
+**Example 8: Handle Press**
+{
+	"steps": [
+		{
+			"actionType": "press",
+			"press": {
+				"key": "Enter"
+			}
+		}
+	],
+	"done": false
+}
+
 # Notes
 
 - Adjust steps based on runtime information and page content.
@@ -217,7 +231,7 @@ func OnStart(
 	ctx context.Context,
 	selector tools.Selector,
 	logger tools.Logger,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 	ttjBackend tools.TextToJSONBackend,
 	conversation chat.Conversation,
 ) error {
@@ -228,7 +242,7 @@ func OnStart(
 		),
 	)
 
-	firstGoal, err := inputArea.Read(">>> ")
+	firstGoal, err := inputHandler.Read(ctx, ">>> ")
 	if err != nil {
 		return fmt.Errorf("could not read input: %w", err)
 	}
@@ -307,11 +321,12 @@ func OnStart(
 			fmt.Printf("Steps: %+v\n", stepsRespData)
 
 			if err = executeSteps(
+				ctx,
 				page,
 				stepsRespData.Steps,
 				conversation,
 				logger,
-				inputArea,
+				inputHandler,
 			); err != nil {
 				consecutiveErrors++
 				conversation.AddMessage(
@@ -336,7 +351,7 @@ func OnStart(
 					return nil
 				}
 
-				nextInstruction, err := inputArea.Read(">>> ")
+				nextInstruction, err := inputHandler.Read(ctx, ">>> ")
 				if err != nil {
 					return fmt.Errorf("could not read input: %w", err)
 				}
@@ -353,15 +368,16 @@ func OnStart(
 }
 
 func executeSteps(
+	ctx context.Context,
 	page playwright.Page,
 	steps []step,
 	conversation chat.Conversation,
 	logger tools.Logger,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 ) error {
 	for _, step := range steps {
 		logger.Debug("Executing step: " + string(step.Action))
-		err := executeStep(page, step, conversation, logger, inputArea)
+		err := executeStep(ctx, page, step, conversation, logger, inputHandler)
 		if err != nil {
 			return fmt.Errorf("could not execute step: %w", err)
 		}
@@ -383,11 +399,12 @@ func executeSteps(
 }
 
 func executeStep(
+	ctx context.Context,
 	page playwright.Page,
 	step step,
 	conversation chat.Conversation,
 	logger tools.Logger,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 ) error {
 	switch step.Action {
 	case ActionNavigate:
@@ -479,9 +496,14 @@ func executeStep(
 
 			return nil
 		}
+	case ActionPress:
+		err := page.Keyboard().Press(step.Press.Key)
+		if err != nil {
+			return fmt.Errorf("could not press key: %w", err)
+		}
 	case ActionQuestion:
 		logger.Info(step.Question.Question)
-		content, err := inputArea.Read(">>> ")
+		content, err := inputHandler.Read(ctx, ">>> ")
 		if err != nil {
 			return fmt.Errorf("could not read input: %w", err)
 		}

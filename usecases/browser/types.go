@@ -8,6 +8,7 @@ const (
 	ActionNavigate    actionType = "navigate"
 	ActionClick       actionType = "click"
 	ActionFill        actionType = "fill"
+	ActionPress       actionType = "press"
 	ActionExtract     actionType = "extract"
 	ActionScroll      actionType = "scroll"
 	ActionWait        actionType = "wait"
@@ -50,6 +51,7 @@ type step struct {
 	Scroll     *scrollStep     `json:"scroll,omitempty"`
 	Wait       *waitStep       `json:"wait,omitempty"`
 	Screenshot *screenshotStep `json:"screenshot,omitempty"`
+	Press      *pressStep      `json:"press,omitempty"`
 }
 
 type questionStep struct {
@@ -85,4 +87,8 @@ type waitStep struct {
 
 type screenshotStep struct {
 	Path string `json:"screenshot_path"`
+}
+
+type pressStep struct {
+	Key string `json:"key"`
 }

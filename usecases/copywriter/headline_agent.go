@@ -69,7 +69,7 @@ type headlineAgent struct {
 	logger            tools.Logger
 	textToJSONBackend tools.TextToJSONBackend
 	selector          tools.Selector
-	inputArea         tools.InputArea
+	inputHandler      tools.InputHandler
 
 	storage string
 
@@ -81,7 +81,7 @@ func NewHeadlineAgent(
 	logger tools.Logger,
 	textToJSONBackend tools.TextToJSONBackend,
 	selector tools.Selector,
-	inputArea tools.InputArea,
+	inputHandler tools.InputHandler,
 	goalsAgent *goalsAgent,
 	ideasAgent *ideasAgent,
 ) *headlineAgent {
@@ -89,7 +89,7 @@ func NewHeadlineAgent(
 		logger:            logger,
 		textToJSONBackend: textToJSONBackend,
 		selector:          selector,
-		inputArea:         inputArea,
+		inputHandler:      inputHandler,
 		goalsAgent:        goalsAgent,
 		ideasAgent:        ideasAgent,
 	}
@@ -152,7 +152,7 @@ func (h *headlineAgent) OnStart(
 			)
 
 			if ret == NoneOfTheAboveChoice {
-				response, err := h.inputArea.Read(">>> ")
+				response, err := h.inputHandler.Read(ctx, ">>> ")
 				if err != nil {
 					return fmt.Errorf("error getting input: %w", err)
 				}
