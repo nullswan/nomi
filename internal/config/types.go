@@ -22,6 +22,7 @@ type OutputConfig struct {
 type VoiceConfig struct {
 	Enabled  bool   `yaml:"enabled"  json:"enabled"`
 	Language string `yaml:"language" json:"language"`
+	KeyCode  uint16 `yaml:"keyCode"  json:"keyCode"`
 }
 
 type OutputDetailConfig struct {
