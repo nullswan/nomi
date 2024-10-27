@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/manifoldco/promptui"
+	hook "github.com/robotn/gohook"
 )
 
 func PromptForBool(label string, defaultVal bool) bool {
@@ -65,4 +66,31 @@ func PromptSelectString(
 		os.Exit(1)
 	}
 	return result
+}
+
+func PromptForKey(label string) uint16 {
+	fmt.Println(label)
+	s := hook.Start()
+
+	var keyCode uint16
+	for e := range s {
+		if e.Kind == hook.KeyDown || e.Kind == hook.KeyHold {
+			keyCode = e.Rawcode
+			break
+		}
+	}
+
+	confirmed := PromptForBool(
+		fmt.Sprintf(
+			"Confirm key code %d?",
+			keyCode,
+		),
+		false,
+	)
+	if confirmed {
+		hook.End()
+		return keyCode
+	}
+	hook.End()
+	return PromptForKey(label)
 }
