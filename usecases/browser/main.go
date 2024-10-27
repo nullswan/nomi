@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +16,8 @@ import (
 	playwright "github.com/playwright-community/playwright-go"
 )
 
+// TODO(nullswan): Ability to export as memory and load from memory
+// TODO(nullswan): Amplify and rework that prompt
 const browserPrompt = `
 Extract and define a precise list of steps in JSON to achieve the user's goal using Playwright. Request user clarification if the goal is ambiguous.
 
@@ -61,14 +65,20 @@ Ensure all steps and interactions are accurately represented using specified act
       "actionType": "page_request",
       "page_request": {}
     },
-    {
+  ],
+  "done": false
+}
+
+{
+	"steps": [
+		{
       "actionType": "navigate",
       "navigate": {
         "url": "http://example.com"
       }
-    }
+		}
   ],
-  "done": false
+	"done": false
 }
 
 **Example 3: Fill a Form and Click a Button**
@@ -140,6 +150,16 @@ Ensure all steps and interactions are accurately represented using specified act
         "url": "http://example.com"
       }
     },
+		{
+      "actionType": "page_request",
+      "page_request": {}
+    },
+	],
+	"done": false
+}
+
+{
+ "steps": [
     {
       "actionType": "fill",
       "fill": {
@@ -189,7 +209,8 @@ Ensure all steps and interactions are accurately represented using specified act
 - Before every extract, fill or click action, you MUST include a page_request action to ensure you have the latest page content but this is the only action you will take in that chain, you will NOT include any other actions in the same response, the extract, fill or click action, will be pushed to the next response.
 - Steps that includes selectors should be preceded by a page_request to ensure you know which selectors are available.
 - Do not exceed three steps in any single response.
-- If you don't know where to find the URL, you can go on google.com and search for the website you are looking for, then copy the URL from the search results.
+- If you don't know where to find the URL, you can go on https://google.com/search?q={your search} and search for the website you are looking for, then copy the URL from the search results.
+- If there is alert or popup, you MUST provide a step to handle it before proceeding with other steps. Element that can hide are preferences elements, like cookie consent, login, etc. For example, on the google search page, you will be asked to accept cookies, you must provide a step to accept the cookies before proceeding with other steps.
 `
 
 func OnStart(
@@ -258,6 +279,7 @@ func OnStart(
 		return fmt.Errorf("could not create page: %w", err)
 	}
 
+	var consecutiveErrors int
 	for {
 		select {
 		case <-ctx.Done():
@@ -291,8 +313,22 @@ func OnStart(
 				logger,
 				inputArea,
 			); err != nil {
-				return fmt.Errorf("could not execute steps: %w", err)
+				consecutiveErrors++
+				conversation.AddMessage(
+					chat.NewMessage(
+						chat.Role(chat.RoleAssistant),
+						"Error: "+err.Error(),
+					),
+				)
+
+				if consecutiveErrors >= 3 {
+					logger.Error("Too many consecutive errors")
+					return fmt.Errorf("too many consecutive errors: %w", err)
+				}
+				continue
 			}
+
+			consecutiveErrors = 0
 
 			if stepsRespData.Done {
 				logger.Info("No steps left, continue?")
@@ -324,15 +360,15 @@ func executeSteps(
 	inputArea tools.InputArea,
 ) error {
 	for _, step := range steps {
-		logger.Debug("Executing step" + string(step.Action))
+		logger.Debug("Executing step: " + string(step.Action))
 		err := executeStep(page, step, conversation, logger, inputArea)
 		if err != nil {
 			return fmt.Errorf("could not execute step: %w", err)
 		}
 
-		logger.Debug("Waiting for load state")
 		if step.Action == ActionClick || step.Action == ActionFill ||
 			step.Action == ActionNavigate {
+			logger.Debug("Waiting for load state")
 			err = page.WaitForLoadState(playwright.PageWaitForLoadStateOptions{
 				State: playwright.LoadStateDomcontentloaded,
 			})
@@ -363,7 +399,10 @@ func executeStep(
 		}
 	case ActionClick:
 		if step.Click != nil {
-			err := page.Click(step.Click.Selector)
+			err := page.Click(step.Click.Selector, playwright.PageClickOptions{
+				Button:  playwright.MouseButtonLeft,
+				Timeout: playwright.Float(float64(1000)),
+			})
 			if err != nil {
 				return fmt.Errorf("could not click on selector: %w", err)
 			}
@@ -456,19 +495,25 @@ func executeStep(
 
 		return nil
 	case ActionPageRequest:
-		content, err := page.Content()
+		// fetch only interesting content
+		elements, err := fetchContent(page)
 		if err != nil {
 			return fmt.Errorf("could not retrieve page content: %w", err)
 		}
 
-		// remove previous page content requests to optimize token usage
-		for i := len(conversation.GetMessages()) - 1; i >= 0; i-- {
-			message := conversation.GetMessages()[i]
-			if message.Role != chat.RoleAssistant {
+		// Remove previous page content requests to optimize token usage
+		for _, msg := range conversation.GetMessages() {
+			if msg.Role != chat.RoleAssistant {
 				break
 			}
-			logger.Debug("Removed message: " + message.ID.String())
-			conversation.RemoveMessage(message.ID)
+
+			logger.Debug("Removed message: " + msg.ID.String())
+			conversation.RemoveMessage(msg.ID)
+		}
+
+		content := ""
+		for i, el := range elements {
+			content += fmt.Sprintf("Element %d: %s\n", i+1, el.String())
 		}
 
 		conversation.AddMessage(
@@ -484,4 +529,246 @@ func executeStep(
 	}
 
 	return nil
+}
+
+type ElementInfo struct {
+	Selector    string `json:"selector"`
+	IsVisible   bool   `json:"is_visible"`
+	IsClickable bool   `json:"is_clickable"`
+	IsInputable bool   `json:"is_inputable"`
+	Text        string `json:"text"`
+}
+
+func (e ElementInfo) String() string {
+	return fmt.Sprintf(
+		"Selector: %s, Visible: %t, Clickable: %t, Inputable: %t, Text: %s",
+		e.Selector,
+		e.IsVisible,
+		e.IsClickable,
+		e.IsInputable,
+		e.Text,
+	)
+}
+
+func fetchContent(page playwright.Page) ([]ElementInfo, error) {
+	elements, err := page.QuerySelectorAll("body *")
+	if err != nil {
+		return nil, err
+	}
+
+	processedTexts := make(map[string]ElementInfo)
+	var result []ElementInfo
+
+	for _, el := range elements {
+		tagName, err := el.Evaluate("el => el.tagName.toLowerCase()")
+		if err != nil || tagName == "" {
+			continue
+		}
+
+		tagNameStr, ok := tagName.(string)
+		if !ok {
+			continue
+		}
+		tagNameStr = strings.ToLower(tagNameStr)
+
+		if tagNameStr == "style" || tagNameStr == "script" {
+			continue
+		}
+
+		visible, err := el.IsVisible()
+		if err != nil {
+			continue
+		}
+
+		textContent, err := el.TextContent()
+		if err != nil {
+			textContent = ""
+		}
+		cleanedText := cleanText(strings.TrimSpace(textContent))
+		isClickable := false
+		if tagNameStr == "a" {
+			href, _ := el.GetAttribute("href")
+			if href != "" {
+				isClickable = true
+			}
+		}
+		if tagNameStr == "button" {
+			isClickable = true
+		}
+		onclick, _ := el.GetAttribute("onclick")
+		if onclick != "" {
+			isClickable = true
+		}
+		role, _ := el.GetAttribute("role")
+		if strings.ToLower(role) == "button" {
+			isClickable = true
+		}
+
+		isInputable := false
+		if tagNameStr == "input" || tagNameStr == "textarea" ||
+			tagNameStr == "select" {
+			isInputable = true
+		}
+
+		if cleanedText == "" && !isClickable && !isInputable {
+			continue
+		}
+
+		selector, err := generateSelector(el)
+		if err != nil {
+			continue
+		}
+
+		if existingElem, exists := processedTexts[cleanedText]; exists {
+			if (!existingElem.IsClickable || !existingElem.IsVisible) &&
+				(isClickable && visible) {
+				processedTexts[cleanedText] = ElementInfo{
+					Selector:    selector,
+					IsVisible:   visible,
+					IsClickable: isClickable,
+					IsInputable: isInputable,
+					Text:        cleanedText,
+				}
+			}
+			continue
+		}
+
+		elementInfo := ElementInfo{
+			Selector:    selector,
+			IsVisible:   visible,
+			IsClickable: isClickable,
+			IsInputable: isInputable,
+			Text:        cleanedText,
+		}
+
+		processedTexts[cleanedText] = elementInfo
+	}
+
+	for _, elem := range processedTexts {
+		result = append(result, elem)
+	}
+
+	for i, elem := range result {
+		log.Printf(
+			"Element %d: Selector=%s, Visible=%t, Clickable=%t, Inputable=%t, Text=%s",
+			i+1,
+			elem.Selector,
+			elem.IsVisible,
+			elem.IsClickable,
+			elem.IsInputable,
+			elem.Text,
+		)
+	}
+
+	return result, nil
+}
+
+func cleanText(text string) string {
+	cssRegex := regexp.MustCompile(`\.?[\w-]+\s*\{[^}]*\}`)
+	text = cssRegex.ReplaceAllString(text, "")
+
+	jsFunctionRegex := regexp.MustCompile(
+		`\b(function|return|var|const|let|if|for|while|else|ajax|new|class)\b`,
+	)
+	text = jsFunctionRegex.ReplaceAllString(text, "")
+
+	jsCodeRegex := regexp.MustCompile(`\([^)]*\)\s*\{[^}]*\}`)
+	text = jsCodeRegex.ReplaceAllString(text, "")
+
+	htmlTagRegex := regexp.MustCompile(`<.*?>`)
+	text = htmlTagRegex.ReplaceAllString(text, "")
+
+	whitespaceRegex := regexp.MustCompile(`\s+`)
+	text = whitespaceRegex.ReplaceAllString(text, " ")
+
+	// Remove embedded JavaScript snippets and encoded styles
+	embeddedJSRegex := regexp.MustCompile(
+		`\(\s*function\s*\(\)\s*\{[^}]*\}\s*\)\s*\(\s*\);`,
+	)
+	text = embeddedJSRegex.ReplaceAllString(text, "")
+
+	// Remove data URIs and encoded SVGs
+	dataURICodeRegex := regexp.MustCompile(
+		`data:image\/[^;]+;base64,[A-Za-z0-9+/=]+`,
+	)
+	text = dataURICodeRegex.ReplaceAllString(text, "")
+
+	// Remove any JavaScript events or attributes left
+	jsAttributesRegex := regexp.MustCompile(`\[(?:on\w+|data-\w+)="[^"]*"\]`)
+	text = jsAttributesRegex.ReplaceAllString(text, "")
+
+	return strings.TrimSpace(text)
+}
+
+func generateSelector(element playwright.ElementHandle) (string, error) {
+	id, err := element.GetAttribute("id")
+	if err == nil && id != "" {
+		return "#" + id, nil
+	}
+
+	var selectorParts []string
+	currentElement := element
+
+	for currentElement != nil {
+		tagName, err := currentElement.Evaluate(
+			"el => el.tagName.toLowerCase()",
+		)
+		if err != nil || tagName == "" {
+			break
+		}
+		tagNameStr, ok := tagName.(string)
+		if !ok {
+			break
+		}
+
+		classes, err := currentElement.GetAttribute("class")
+		classSelector := ""
+		if err == nil && classes != "" {
+			classList := strings.Fields(classes)
+			var escapedClasses []string
+			for _, class := range classList {
+				escapedClass := regexp.QuoteMeta(class)
+				escapedClasses = append(escapedClasses, "."+escapedClass)
+			}
+			classSelector = strings.Join(escapedClasses, "")
+		}
+
+		tagWithClass := tagNameStr + classSelector
+
+		index, err := currentElement.Evaluate(`el => {
+			const siblings = Array.from(el.parentElement.children).filter(e => e.tagName.toLowerCase() === el.tagName.toLowerCase());
+			return siblings.indexOf(el) + 1;
+		}`)
+		if err != nil {
+			break
+		}
+
+		indexInt := 1
+		if idx, ok := index.(float64); ok {
+			indexInt = int(idx)
+		}
+
+		tagWithClass = tagWithClass + ":nth-of-type(" + strconv.Itoa(
+			indexInt,
+		) + ")"
+
+		selectorParts = append([]string{tagWithClass}, selectorParts...)
+
+		parentHandle, err := currentElement.Evaluate(
+			"el => el.parentElement",
+		)
+		if err != nil || parentHandle == nil {
+			break
+		}
+
+		parentElement, ok := parentHandle.(playwright.ElementHandle)
+		if !ok {
+			break
+		}
+
+		currentElement = parentElement
+	}
+
+	fullSelector := strings.Join(selectorParts, " > ")
+	return fullSelector, nil
 }
