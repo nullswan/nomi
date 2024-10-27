@@ -28,12 +28,19 @@ func Setup() error {
 	if cfg.Input.Voice.Enabled {
 		validateVoiceInput := func(value string) error {
 			_, err := transcription.LoadLangFromValue(value)
-			return fmt.Errorf("invalid language code: %w", err)
+			if err != nil {
+				return fmt.Errorf("invalid language code: %w", err)
+			}
+			return nil
 		}
 		cfg.Input.Voice.Language = term.PromptForString(
 			"Voice input language (e.g. en, zh, de)",
 			cfg.Input.Voice.Language,
 			validateVoiceInput,
+		)
+
+		cfg.Input.Voice.KeyCode = term.PromptForKey(
+			"Key code to start voice input [Recommended: Option key]",
 		)
 	}
 
