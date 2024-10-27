@@ -30,8 +30,7 @@ func NewExportAgent(
 }
 
 func (e *exportAgent) ExportToFile(content string) error {
-	directory := exportDirectory + e.project
-	fileName := directory + "/" + time.Now().Format("2006-01-02") + ".txt"
+	fileName := e.project + time.Now().Format("2006-01-02") + ".txt"
 
 	file, err := os.Create(fileName)
 	if err != nil {
