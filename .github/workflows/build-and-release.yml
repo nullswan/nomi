@@ -148,21 +148,30 @@ jobs:
           name: nomi-cli-darwin-arm64
           path: artifacts/darwin-arm64
 
+      - name: Move Artifacts
+        run: |
+          mv artifacts/darwin-arm64/nomi-cli artifacts/darwin-arm64/nomi-cli-darwin-arm64
+          mv artifacts/linux-arm64/nomi-cli artifacts/linux-arm64/nomi-cli-linux-arm64
+          mv artifacts/linux-386/nomi-cli artifacts/linux-386/nomi-cli-linux-386
+          mv artifacts/linux-amd64/nomi-cli artifacts/linux-amd64/nomi-cli-linux-amd64
+          mv artifacts/windows-386/nomi-cli.zip artifacts/windows-386/nomi-cli-windows-386.zip
+          mv artifacts/windows-amd64/nomi-cli.zip artifacts/windows-amd64/nomi-cli-windows-amd64.zip
+
       - name: Generate Release Notes
         id: notes
         run: |
           echo "## Release Notes" > release_notes.md
-          git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:'- %s' >> release_notes.md
+          git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:'- %s' >> ${{ github.workspace }}-release_notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/windows-amd64/nomi-cli.zip
-            artifacts/windows-386/nomi-cli.zip
-            artifacts/linux-amd64/nomi-cli
-            artifacts/linux-386/nomi-cli
-            artifacts/linux-arm64/nomi-cli
-            artifacts/darwin-arm64/nomi-cli
-          body_path: release_notes.md
+            artifacts/windows-amd64/nomi-cli-windows-amd64.zip
+            artifacts/windows-386/nomi-cli-windows-386.zip
+            artifacts/linux-amd64/nomi-cli-linux-amd64
+            artifacts/linux-386/nomi-cli-linux-386
+            artifacts/linux-arm64/nomi-cli-linux-arm64
+            artifacts/darwin-arm64/nomi-cli-darwin-arm64
+          body_path: ${{ github.workspace }}-release_notes.md
           token: ${{ secrets.GITHUB_TOKEN }}
