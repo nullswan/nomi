@@ -11,7 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const ErrLocalWhisperNotSupported = "OPENAI_API_KEY is not set, voice input will be disabled -- local whisper will be supported soon!"
+const (
+	ErrLocalSTTNotSupported  = "OPENAI_API_KEY is not set, voice input will be disabled -- local whisper will be supported soon!"
+	ErrLocalTTSSNotSupported = "OPENAI_API_KEY is not set, speech output will be disabled -- local TTS will be supported soon!"
+)
 
 func main() {
 	// #region Config commands
@@ -81,11 +84,19 @@ func main() {
 		}
 
 		oaiKey := os.Getenv("OPENAI_API_KEY")
-		if oaiKey == "" && cfg.Input.Voice.Enabled {
-			fmt.Println(
-				ErrLocalWhisperNotSupported,
-			)
-			cfg.Input.Voice.Enabled = false
+		if oaiKey == "" {
+			if cfg.Input.Voice.Enabled {
+				fmt.Println(
+					ErrLocalSTTNotSupported,
+				)
+				cfg.Input.Voice.Enabled = false
+			}
+			if cfg.Output.Speech.Enabled {
+				fmt.Println(
+					ErrLocalTTSSNotSupported,
+				)
+				cfg.Output.Speech.Enabled = false
+			}
 		}
 
 		if cfg.DevMode {
