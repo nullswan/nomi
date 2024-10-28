@@ -12,9 +12,9 @@ set DOWNLOAD_URL=https://github.com/%REPO%/releases/download/%LATEST_RELEASE%/no
 
 rem Download and extract
 echo Downloading !DOWNLOAD_URL!...
-curl -L -o nomi-cli.zip !DOWNLOAD_URL!
+curl -L -o --progress-bar nomi-cli.zip !DOWNLOAD_URL!
 PowerShell -Command "Expand-Archive -Path nomi-cli.zip -DestinationPath ."
-move nomi-cli.exe C:\Program Files\nomi-cli\
+move nomi-cli.exe C:\Program Files\nomi\nomi.exe
 
 rem Clean up
 del nomi-cli.zip
