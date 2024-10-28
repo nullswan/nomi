@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/tools"
@@ -105,6 +106,22 @@ func OnStart(
 				}
 			}
 
+			if duplicatedFiles := fileDuplicates(plan.CommitPlan); len(
+				duplicatedFiles,
+			) > 0 {
+				logger.Info("Duplicate files found in commit plan")
+				conversation.AddMessage(
+					chat.NewMessage(
+						chat.RoleSystem,
+						"Duplicate files found in commit plan: "+strings.Join(
+							duplicatedFiles,
+							", ",
+						),
+					),
+				)
+				continue
+			}
+
 			if !selector.SelectBool(
 				"Do you want to commit these changes?",
 				true,
@@ -174,4 +191,20 @@ func OnStart(
 			return nil
 		}
 	}
+}
+
+func fileDuplicates(plan []fileAction) []string {
+	var files []string
+	seen := make(map[string]struct{})
+
+	for _, p := range plan {
+		for _, f := range p.Files {
+			if _, ok := seen[f]; ok {
+				files = append(files, f)
+			}
+			seen[f] = struct{}{}
+		}
+	}
+
+	return files
 }
