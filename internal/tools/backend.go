@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -96,15 +97,14 @@ func (t TextToJSONBackend) Do(
 		select {
 		case cmpl, ok := <-outCh:
 			if !ok {
-				return "", fmt.Errorf("completion channel closed")
+				return "", errors.New("completion channel closed")
 			}
 			if !completion.IsTombStone(cmpl) {
 				continue
 			}
 
-			content := strings.Replace(cmpl.Content(), "```json", "", -1)
-			content = strings.Replace(content, "```", "", -1)
-			return content, nil
+			content := strings.ReplaceAll(cmpl.Content(), "```json", "")
+			return strings.ReplaceAll(content, "```", ""), nil
 		}
 	}
 }
