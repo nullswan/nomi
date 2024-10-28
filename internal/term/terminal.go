@@ -4,11 +4,8 @@ package term
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"os"
-
-	"github.com/ollama/ollama/readline"
 )
 
 type Terminal struct {
@@ -20,17 +17,11 @@ type Terminal struct {
 }
 
 func NewTerminal() (*Terminal, error) {
-	fd := os.Stdin.Fd()
-	termios, err := readline.SetRawMode(fd)
-	if err != nil {
-		return nil, fmt.Errorf("failed to set raw mode: %w", err)
-	}
-
 	t := &Terminal{
 		outchan: make(chan rune),
 		done:    make(chan struct{}),
 		rawmode: false,
-		termios: termios,
+		termios: nil,
 		reader:  bufio.NewReader(os.Stdin),
 	}
 
@@ -51,9 +42,6 @@ func (t *Terminal) Read() (rune, error) {
 func (t *Terminal) Close() error {
 	close(t.outchan)
 	close(t.done)
-	if t.rawmode {
-		readline.UnsetRawMode(os.Stdin.Fd(), t.termios)
-	}
 	return nil
 }
 
