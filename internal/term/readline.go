@@ -15,16 +15,28 @@ var (
 	ErrReadlineInit     = errors.New("error initializing readline")
 )
 
-func InitReadline() (*readline.Instance, error) {
-	rl, err := readline.New(readline.Prompt{
+func InitReadline() (*Instance, error) {
+	prompt := Prompt{
 		Prompt:      ">>> ",
 		AltPrompt:   "...  ",
 		Placeholder: "Send a message (/help for help)",
-	})
+	}
+
+	term, err := NewTerminal()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrReadlineInit, err)
 	}
-	return rl, nil
+
+	history, err := readline.NewHistory()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrReadlineInit, err)
+	}
+
+	return &Instance{
+		Prompt:   &prompt,
+		Terminal: term,
+		History:  history,
+	}, nil
 }
 
 type MultilineState int
@@ -36,17 +48,19 @@ const (
 	MultilineTemplate
 )
 
-func readInput(rl *readline.Instance) (string, error) {
+func readInput(rl *Instance) (string, error) {
 	var sb strings.Builder
 	var multiline MultilineState
 
 	for {
 		line, err := rl.Readline()
 		switch {
+		case errors.Is(err, io.EOF) && rl.Closed():
+			return "", nil
 		case errors.Is(err, io.EOF):
 			fmt.Println()
 			return "", ErrInputKilled
-		case errors.Is(err, readline.ErrInterrupt):
+		case errors.Is(err, ErrInputInterrupted):
 			if line == "" {
 				fmt.Println("\nUse CTRL+D or /exit to exit.")
 			}
@@ -93,9 +107,10 @@ func readInput(rl *readline.Instance) (string, error) {
 func ReadInput(
 	inputCh chan<- string,
 	inputErrCh chan<- error,
-	readyCh chan struct{},
+	readyCh <-chan struct{},
 ) {
-	defer close(readyCh)
+	defer close(inputCh)
+	defer close(inputErrCh)
 
 	// Wait the readyCh once before starting the loop
 	_, ok := <-readyCh
@@ -121,8 +136,10 @@ func ReadInput(
 		return
 	}
 
-	fmt.Print(readline.StartBracketedPaste)
-	defer fmt.Printf(readline.EndBracketedPaste)
+	defer rl.Close()
+
+	fmt.Print(StartBracketedPaste)
+	defer fmt.Printf(EndBracketedPaste)
 
 	for {
 		input, err := readInput(rl)
@@ -141,14 +158,9 @@ func ReadInput(
 	}
 }
 
-func ReadInputOnce() (string, error) {
-	rl, err := InitReadline()
-	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrReadlineInit, err)
-	}
-
-	fmt.Print(readline.StartBracketedPaste)
-	defer fmt.Printf(readline.EndBracketedPaste)
+func ReadInputOnce(rl *Instance) (string, error) {
+	fmt.Print(StartBracketedPaste)
+	defer fmt.Printf(EndBracketedPaste)
 
 	return readInput(rl)
 }
