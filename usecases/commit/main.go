@@ -135,6 +135,7 @@ func OnStart(
 				cmd = tools.NewCommand(
 					"git",
 					"commit",
+					"--no-verify",
 					"--message",
 					a.CommitMessage,
 				)
