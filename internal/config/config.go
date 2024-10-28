@@ -76,14 +76,19 @@ func DefaultConfig() Config {
 		Input: InputConfig{
 			Voice: VoiceConfig{
 				Enabled:  false,
-				Language: "",
+				Language: "en",
+				KeyCode:  58,
 			},
 		},
 		Output: OutputConfig{
-			Sqlite: OutputDetailConfig{
+			Sqlite: SqliteConfig{
 				Enabled: true,
 				Path:    filepath.Join(convDir, "sqlite.db"),
 			},
+			Speech: SpeechConfig{
+				Enabled: false,
+			},
 		},
+		PlaySound: false,
 	}
 }

@@ -17,7 +17,8 @@ type InputConfig struct {
 }
 
 type OutputConfig struct {
-	Sqlite OutputDetailConfig `yaml:"sqlite" json:"sqlite"`
+	Sqlite SqliteConfig `yaml:"sqlite" json:"sqlite"`
+	Speech SpeechConfig `yaml:"speech" json:"speech"`
 }
 
 type VoiceConfig struct {
@@ -26,7 +27,11 @@ type VoiceConfig struct {
 	KeyCode  uint16 `yaml:"keyCode"  json:"keyCode"`
 }
 
-type OutputDetailConfig struct {
+type SqliteConfig struct {
 	Enabled bool   `yaml:"enabled" json:"enabled"`
 	Path    string `yaml:"path"    json:"path"`
+}
+
+type SpeechConfig struct {
+	Enabled bool `yaml:"enabled" json:"enabled"`
 }

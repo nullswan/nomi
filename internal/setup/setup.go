@@ -44,6 +44,11 @@ func Setup() error {
 		)
 	}
 
+	cfg.Output.Speech.Enabled = term.PromptForBool(
+		"Enable speech output",
+		cfg.Output.Speech.Enabled,
+	)
+
 	cfg.PlaySound = term.PromptForBool(
 		"Play sound on completion",
 		false,
