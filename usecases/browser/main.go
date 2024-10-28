@@ -2,14 +2,13 @@ package browser
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-
-	"encoding/json"
 
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/tools"
@@ -398,6 +397,11 @@ func executeSteps(
 	return nil
 }
 
+const (
+	fillTimeout  = 1000
+	clickTimeout = 1000
+)
+
 func executeStep(
 	ctx context.Context,
 	page playwright.Page,
@@ -418,7 +422,7 @@ func executeStep(
 		if step.Click != nil {
 			err := page.Click(step.Click.Selector, playwright.PageClickOptions{
 				Button:  playwright.MouseButtonLeft,
-				Timeout: playwright.Float(float64(1000)),
+				Timeout: playwright.Float(float64(clickTimeout)),
 			})
 			if err != nil {
 				return fmt.Errorf("could not click on selector: %w", err)
@@ -428,7 +432,13 @@ func executeStep(
 		}
 	case ActionFill:
 		if step.Fill != nil {
-			err := page.Fill(step.Fill.Selector, step.Fill.FillValue)
+			err := page.Fill(
+				step.Fill.Selector,
+				step.Fill.FillValue,
+				playwright.PageFillOptions{
+					Timeout: playwright.Float(float64(fillTimeout)),
+				},
+			)
 			if err != nil {
 				return fmt.Errorf("could not fill selector: %w", err)
 			}
@@ -438,13 +448,13 @@ func executeStep(
 		if step.Extract != nil {
 			elements, err := page.QuerySelectorAll(step.Extract.Selector)
 			if err != nil {
-				return err
+				return fmt.Errorf("could not query selector: %w", err)
 			}
 
 			for _, el := range elements {
 				text, err := el.TextContent()
 				if err != nil {
-					return err
+					return fmt.Errorf("could not extract text: %w", err)
 				}
 				log.Println("Extracted Text:", text)
 			}
@@ -466,7 +476,7 @@ func executeStep(
 				return nil
 			}
 			_, err := page.Evaluate(scrollScript, step.Scroll.Amount)
-			return err
+			return fmt.Errorf("could not scroll: %w", err)
 		}
 	case ActionWait:
 		if step.Wait != nil {
@@ -510,7 +520,7 @@ func executeStep(
 
 		conversation.AddMessage(
 			chat.NewMessage(
-				chat.Role(chat.RoleUser),
+				chat.RoleUser,
 				content,
 			),
 		)
@@ -575,7 +585,7 @@ func (e ElementInfo) String() string {
 func fetchContent(page playwright.Page) ([]ElementInfo, error) {
 	elements, err := page.QuerySelectorAll("body *")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not query selector: %w", err)
 	}
 
 	processedTexts := make(map[string]ElementInfo)
@@ -602,10 +612,23 @@ func fetchContent(page playwright.Page) ([]ElementInfo, error) {
 			continue
 		}
 
+		// For now, we only care about visible elements
+		if !visible {
+			continue
+		}
+
 		textContent, err := el.TextContent()
 		if err != nil {
 			textContent = ""
 		}
+
+		if textContent == "" {
+			inputValue, err := el.InputValue()
+			if err == nil && inputValue != "" {
+				textContent = inputValue
+			}
+		}
+
 		cleanedText := cleanText(strings.TrimSpace(textContent))
 		isClickable := false
 		if tagNameStr == "a" {
@@ -614,7 +637,7 @@ func fetchContent(page playwright.Page) ([]ElementInfo, error) {
 				isClickable = true
 			}
 		}
-		if tagNameStr == "button" {
+		if tagNameStr == "button" || tagNameStr == "input" {
 			isClickable = true
 		}
 		onclick, _ := el.GetAttribute("onclick")
