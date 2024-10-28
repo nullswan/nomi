@@ -12,16 +12,33 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/nullswan/nomi/internal/config"
 )
 
+const ollamaServerTimeout = 5 * time.Second
+
 func ollamaServerIsRunning() bool {
-	defaultURL := "http://localhost:11434"
-	req := defaultURL + "/health"
-	resp, err := http.Get(req)
+	defaultURL := "http://localhost:11434/health"
+	client := &http.Client{}
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		ollamaServerTimeout,
+	)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, defaultURL, nil)
+	if err != nil {
+		return false
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+
 	defer resp.Body.Close()
-	return err == nil
+	return resp.StatusCode == http.StatusOK
 }
 
 func tryStartOllama() (*exec.Cmd, error) {
