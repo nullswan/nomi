@@ -14,6 +14,10 @@
   - [Linux & MacOS](#linux--macos)
   - [Windows](#windows)
   - [Compile from Source](#compile-from-source)
+- [Enable Providers](#enable-providers)
+  - [Ollama](#ollama)
+  - [OpenAI](#openai)
+  - [OpenRouter](#openrouter)
 - [Roadmap](#roadmap)
 - [License](#license)
 - [Aknowledgments](#acknowledgments)
@@ -66,30 +70,61 @@ List your installed use cases using the `nomi usecases list` or `nomi u list` co
 - **MacOS**: ARM64
 - **Windows**: x86_64, i686
 
-#### Linux & MacOS
+### Linux & MacOS
 
 ```shell
-# Review the script before running it.
-curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/install.sh | bash
 ```
 
-#### Windows
+### Windows
 
 > **Note:** Windows support is experimental. Please report any issues you encounter.
 
 ```shell
-# Review the script before running it.
-curl -sSL https://raw.githubusercontent.com/nullswan/nomi/main/install.bat | cmd
+curl -sSL https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/install.bat | cmd
 ```
 
-#### Compile from Source
+### Compile from Source
 
 ```shell
 git clone https://github.com/nullswan/nomi.git
 cd nomi
-# Please, review the script before running it, you never know what's in there.
 ./hack/install-deps.sh
 make build
+```
+
+## Enable Providers
+
+We recommend using Ollama is you are concerned about privacy. OpenAI if you are not concerned about privacy and pricing but rather want high performance and have decent internet connection. OpenRouter if you want to switch between providers easily and maintain an efficiency balance.
+
+### Ollama
+
+You can install Ollama from [https://ollama.com/download](https://ollama.com/download) or it will be automatically installed with Nomi.
+
+For now, we support text LLM through Ollama. Voice and other features are coming soon.
+
+### OpenAI
+
+Every feature supports OpenAI. You can enable it by setting the `OPENAI_API_KEY` environment variable and launch Nomi.
+
+You can create an API key from the [OpenAI dashboard](https://platform.openai.com/api-keys).
+
+```shell
+export OPENAI_API_KEY="your-api-key"
+```
+
+### OpenRouter
+
+OpenRouter is a multi provider API. We recommend using it for ease of provider switching.
+
+For now, we support text LLM through OpenRouter. Voice and other features are coming soon.
+
+You can enable it by setting the `OPENROUTER_API_KEY` environment variable and launch Nomi.
+
+You can create an API key from the [OpenRouter dashboard](https://openrouter.ai/settings/keys).
+
+```shell
+export OPENROUTER_API_KEY="your-api-key"
 ```
 
 ## Roadmap
