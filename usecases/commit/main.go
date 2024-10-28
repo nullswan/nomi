@@ -52,10 +52,16 @@ func OnStart(
 	}
 
 	conversation.AddMessage(
-		chat.NewMessage(chat.Role(chat.RoleSystem), agentFilePrompt),
+		chat.NewMessage(
+			chat.RoleSystem,
+			agentFilePrompt,
+		),
 	)
 	conversation.AddMessage(
-		chat.NewMessage(chat.Role(chat.RoleUser), buffer),
+		chat.NewMessage(
+			chat.RoleUser,
+			buffer,
+		),
 	)
 
 	if buffer == "" {
@@ -75,7 +81,10 @@ func OnStart(
 			}
 
 			conversation.AddMessage(
-				chat.NewMessage(chat.Role(chat.RoleAssistant), resp),
+				chat.NewMessage(
+					chat.RoleAssistant,
+					resp,
+				),
 			)
 			logger.Debug("Raw Commit plan: " + resp)
 
@@ -87,9 +96,13 @@ func OnStart(
 				)
 			}
 
-			logger.Println("Commit Plan:")
+			logger.Println("Commit Plan 📝")
+			logger.Println("------------")
 			for _, a := range plan.CommitPlan {
-				logger.Println("\t" + a.CommitMessage)
+				logger.Println(a.CommitMessage)
+				for _, f := range a.Files {
+					logger.Println("  - " + f)
+				}
 			}
 
 			if !selector.SelectBool(
@@ -106,7 +119,7 @@ func OnStart(
 
 				conversation.AddMessage(
 					chat.NewMessage(
-						chat.Role(chat.RoleUser),
+						chat.RoleUser,
 						newInstructions,
 					),
 				)
@@ -155,7 +168,7 @@ func OnStart(
 					)
 				}
 
-				logger.Info("Committed " + a.CommitMessage)
+				logger.Println("🚀 Committed " + a.CommitMessage)
 			}
 
 			return nil
