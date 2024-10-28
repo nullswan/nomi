@@ -1,0 +1,33 @@
+{
+  "editor.rulers": [
+    80,
+    120
+  ],
+  "go.lintTool": "golangci-lint",
+  "go.useLanguageServer": true,
+  "go.lintFlags": [
+    "--fast",
+    "--fix"
+  ],
+  "go.testTimeout": "180s",
+  "go.testFlags": [
+    "-v"
+  ],
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[go][python]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[proto]": {
+    "editor.defaultFormatter": "bufbuild.vscode-buf"
+  },
+}
