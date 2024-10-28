@@ -10,7 +10,6 @@ import (
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
 	"github.com/nullswan/nomi/internal/logger"
-	"github.com/nullswan/nomi/internal/term"
 	"github.com/nullswan/nomi/internal/tools"
 	"github.com/nullswan/nomi/usecases/browser"
 	"github.com/nullswan/nomi/usecases/commit"
@@ -60,16 +59,8 @@ var usecaseCmd = &cobra.Command{
 
 		conversation := chat.NewStackedConversation(chatRepo)
 
-		readyCh := make(chan struct{})
-		inputCh := make(chan string)
-		inputErrCh := make(chan error)
-
-		go term.ReadInput(inputCh, inputErrCh, readyCh)
 		inputHandler := tools.NewInputHandler(
 			logger,
-			readyCh,
-			inputCh,
-			inputErrCh,
 		)
 
 		if cfg.Input.Voice.Enabled {
@@ -138,7 +129,7 @@ var usecaseCmd = &cobra.Command{
 				conversation,
 			)
 		default:
-			fmt.Println("usecase not found")
+			fmt.Println("usecase " + usecaseID + " not found")
 			return
 		}
 
@@ -152,11 +143,17 @@ var usecaseListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all usecases",
 	Run: func(_ *cobra.Command, _ []string) {
+		fmt.Println("Available usecases:")
+		fmt.Println("commit - Quickly commit changes to git")
+		fmt.Println("copywriter - Generate copywriting documents")
+		fmt.Println("browser - Browse the web with LLM")
 	},
 }
 
 var usecaseAddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a new usecase",
-	Run:   func(_ *cobra.Command, _ []string) {},
+	Run: func(_ *cobra.Command, _ []string) {
+		fmt.Println("Not implemented")
+	},
 }
