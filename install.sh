@@ -40,7 +40,7 @@ mv nomi-cli ~/.local/bin/nomi
 chmod +x ~/.local/bin/nomi
 rm -f nomi-cli
 
-read -p "Do you want to add ~/.local/bin to your PATH? (y/n): " response
+read -p "Do you want to add ~/.local/bin to your PATH? (y/n): " response < /dev/tty
 if [[ "$response" =~ ^[Yy]$ ]]; then
     for rc in ~/.bashrc ~/.zshrc; do
         if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$rc"; then
