@@ -157,6 +157,10 @@ jobs:
           mv artifacts/windows-386/nomi-cli.zip artifacts/windows-386/nomi-cli-windows-386.zip
           mv artifacts/windows-amd64/nomi-cli.zip artifacts/windows-amd64/nomi-cli-windows-amd64.zip
 
+      - uses: release-drafter/release-drafter@v5
+        with:
+          config-name: default
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -168,4 +172,4 @@ jobs:
             artifacts/linux-arm64/nomi-cli-linux-arm64
             artifacts/darwin-arm64/nomi-cli-darwin-arm64
           token: ${{ secrets.GITHUB_TOKEN }}
-          generate_release_notes: true
+          generate_release_notes: false
