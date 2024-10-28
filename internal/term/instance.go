@@ -1,0 +1,214 @@
+package term
+
+// From: https://github.com/ollama/ollama/blob/main/readline/readline.go
+
+import (
+	"fmt"
+	"io"
+	"os"
+
+	"github.com/ollama/ollama/readline"
+)
+
+type Instance struct {
+	Prompt   *Prompt
+	Terminal *Terminal
+	History  *readline.History
+	Pasting  bool
+}
+
+func (i *Instance) Readline() (string, error) { // nolint:gocyclo
+	if !i.Terminal.rawmode {
+		fd := os.Stdin.Fd()
+		termios, err := readline.SetRawMode(fd)
+		if err != nil {
+			return "", fmt.Errorf("failed to set raw mode: %w", err)
+		}
+		i.Terminal.rawmode = true
+		i.Terminal.termios = termios
+	}
+
+	prompt := i.Prompt.prompt()
+	if i.Pasting {
+		// force alt prompt when pasting
+		prompt = i.Prompt.AltPrompt
+	}
+	fmt.Print(prompt)
+
+	defer func() {
+		fd := os.Stdin.Fd()
+		//nolint:errcheck
+		readline.UnsetRawMode(fd, i.Terminal.termios)
+		i.Terminal.rawmode = false
+	}()
+
+	buf, _ := NewBuffer(i.Prompt)
+
+	var esc bool
+	var escex bool
+	var metaDel bool
+
+	var currentLineBuf []rune
+
+	for {
+		// don't show placeholder when pasting unless we're in multiline mode
+		showPlaceholder := !i.Pasting || i.Prompt.UseAlt
+		if buf.IsEmpty() && showPlaceholder {
+			ph := i.Prompt.placeholder()
+			fmt.Print(
+				ColorGrey + ph + CursorLeftN(
+					len(ph),
+				) + ColorDefault,
+			)
+		}
+
+		r, err := i.Terminal.Read()
+
+		if buf.IsEmpty() {
+			fmt.Print(ClearToEOL)
+		}
+
+		if err != nil {
+			return "", io.EOF
+		}
+
+		if escex {
+			escex = false
+
+			switch r {
+			case KeyUp:
+				if i.History.Pos > 0 {
+					if i.History.Pos == i.History.Size() {
+						currentLineBuf = []rune(buf.String())
+					}
+					buf.Replace(i.History.Prev())
+				}
+			case KeyDown:
+				if i.History.Pos < i.History.Size() {
+					buf.Replace(i.History.Next())
+					if i.History.Pos == i.History.Size() {
+						buf.Replace(currentLineBuf)
+					}
+				}
+			case KeyLeft:
+				buf.MoveLeft()
+			case KeyRight:
+				buf.MoveRight()
+			case CharBracketedPaste:
+				var code string
+				for range 3 {
+					r, err = i.Terminal.Read()
+					if err != nil {
+						return "", io.EOF
+					}
+
+					code += string(r)
+				}
+				if code == CharBracketedPasteStart {
+					i.Pasting = true
+				} else if code == CharBracketedPasteEnd {
+					i.Pasting = false
+				}
+			case KeyDel:
+				if buf.DisplaySize() > 0 {
+					buf.Delete()
+				}
+				metaDel = true
+			case MetaStart:
+				buf.MoveToStart()
+			case MetaEnd:
+				buf.MoveToEnd()
+			default:
+				// skip any keys we don't know about
+				continue
+			}
+			continue
+		} else if esc {
+			esc = false
+
+			switch r {
+			case 'b':
+				buf.MoveLeftWord()
+			case 'f':
+				buf.MoveRightWord()
+			case CharBackspace:
+				buf.DeleteWord()
+			case CharEscapeEx:
+				escex = true
+			}
+			continue
+		}
+
+		switch r {
+		case CharNull:
+			continue
+		case CharEsc:
+			esc = true
+		case CharInterrupt:
+			return "", readline.ErrInterrupt
+		case CharLineStart:
+			buf.MoveToStart()
+		case CharLineEnd:
+			buf.MoveToEnd()
+		case CharBackward:
+			buf.MoveLeft()
+		case CharForward:
+			buf.MoveRight()
+		case CharBackspace, CharCtrlH:
+			buf.Remove()
+		case CharTab:
+			// todo: convert back to real tabs
+			for range 8 {
+				buf.Add(' ')
+			}
+		case CharDelete:
+			if buf.DisplaySize() > 0 {
+				buf.Delete()
+			} else {
+				return "", io.EOF
+			}
+		case CharKill:
+			buf.DeleteRemaining()
+		case CharCtrlU:
+			buf.DeleteBefore()
+		case CharCtrlL:
+			buf.ClearScreen()
+		case CharCtrlW:
+			buf.DeleteWord()
+		case CharEnter, CharCtrlJ:
+			output := buf.String()
+			if output != "" {
+				i.History.Add([]rune(output))
+			}
+			buf.MoveToEnd()
+			fmt.Println()
+
+			return output, nil
+		default:
+			if metaDel {
+				metaDel = false
+				continue
+			}
+			if r >= CharSpace || r == CharEnter ||
+				r == CharCtrlJ {
+				buf.Add(r)
+			}
+		}
+	}
+}
+
+func (i *Instance) HistoryEnable() {
+	i.History.Enabled = true
+}
+
+func (i *Instance) HistoryDisable() {
+	i.History.Enabled = false
+}
+
+func (i *Instance) Close() {
+	i.Terminal.Close()
+}
+
+func (i *Instance) Closed() bool {
+	return i.Terminal.Closed()
+}
