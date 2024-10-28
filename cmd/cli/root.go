@@ -52,7 +52,7 @@ func main() {
 
 	// #region Use case commands
 	rootCmd.AddCommand(usecaseCmd)
-	// usecaseCmd.AddCommand(usecaseListCmd)
+	usecaseCmd.AddCommand(usecaseListCmd)
 	// usecaseCmd.AddCommand(usecaseAddCmd)
 	// #endregion
 
