@@ -32,8 +32,23 @@ DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_RELEASE/nomi-cl
 
 # Download
 echo "Downloading $DOWNLOAD_URL..."
-curl -L -o nomi-cli $DOWNLOAD_URL
-chmod +x nomi-cli
-mv nomi-cli /usr/local/bin/
+curl --location --progress-bar --output nomi-cli $DOWNLOAD_URL
 
-echo "nomi-cli installed successfully!"
+echo "Installing nomi..."
+mkdir -p ~/.local/bin
+mv nomi-cli ~/.local/bin/nomi
+chmod +x ~/.local/bin/nomi
+rm -f nomi-cli
+
+read -p "Do you want to add ~/.local/bin to your PATH? (y/n): " response
+if [[ "$response" =~ ^[Yy]$ ]]; then
+    for rc in ~/.bashrc ~/.zshrc; do
+        if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$rc"; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$rc"
+            echo "Added to $rc"
+        fi
+    done
+    echo "PATH updated. Please restart your terminal or run 'source ~/.bashrc' or 'source ~/.zshrc'."
+fi
+
+echo "nomi installed successfully!"
