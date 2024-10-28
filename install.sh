@@ -8,26 +8,32 @@ LATEST_RELEASE=$(curl -s https://api.github.com/repos/$REPO/releases/latest | jq
 PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 ARCHITECTURE="$(uname -m)"
 
-case "$ARCHITECTURE" in
-  x86_64) ARCH="amd64" ;;
-  arm64) ARCH="arm64" ;;
-  i386) ARCH="386" ;;
-  arm) ARCH="arm" ;;
-  ppc64le) ARCH="ppc64le" ;;
-  *) echo "Unsupported architecture: $ARCHITECTURE"; exit 1 ;;
+case "${PLATFORM}-${ARCHITECTURE}" in
+  darwin-arm64)
+    ARCH="arm64"
+    ;;
+  linux-386)
+    ARCH="386"
+    ;;
+  linux-amd64)
+    ARCH="amd64"
+    ;;
+  linux-arm64)
+    ARCH="arm64"
+    ;;
+  *)
+    echo "Unsupported platform or architecture: ${PLATFORM}-${ARCHITECTURE}"
+    exit 1
+    ;;
 esac
 
 # Construct the download URL
-DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_RELEASE/nomi-cli_${LATEST_RELEASE}_${PLATFORM}_${ARCH}.tar.gz"
+DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_RELEASE/nomi-cli-${PLATFORM}-${ARCH}"
 
-# Download and extract
+# Download
 echo "Downloading $DOWNLOAD_URL..."
-curl -L -o nomi-cli.tar.gz $DOWNLOAD_URL
-tar -xzf nomi-cli.tar.gz
+curl -L -o nomi-cli $DOWNLOAD_URL
 chmod +x nomi-cli
 mv nomi-cli /usr/local/bin/
-
-# Clean up
-rm nomi-cli.tar.gz
 
 echo "nomi-cli installed successfully!"
