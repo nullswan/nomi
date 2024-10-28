@@ -18,7 +18,7 @@ all: build
 .PHONY: build-dev
 build-dev:
 	@echo "Building..."
-	@go build -o dist/ ./...
+	@go build -ldflags="-X main.buildDate=$$(date -u +'%Y-%m-%dT%H:%M:%SZ') -X main.buildVersion=$$(git rev-parse --short HEAD)-dev" -o dist/ ./...
 	@echo "Done!"
 
 .PHONY: dev
