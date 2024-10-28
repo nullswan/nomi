@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -24,10 +25,6 @@ type InputHandler interface {
 type inputHandler struct {
 	logger *slog.Logger
 
-	readyCh    chan struct{}
-	inputCh    chan string
-	inputErrCh chan error
-
 	voiceInputCh chan string
 	audioStartCh <-chan struct{}
 	audioEndCh   <-chan struct{}
@@ -37,15 +34,9 @@ type inputHandler struct {
 
 func NewInputHandler(
 	logger *slog.Logger,
-	readyCh chan struct{},
-	inputCh chan string,
-	inputErrCh chan error,
 ) InputHandler {
 	return &inputHandler{
 		logger:       logger,
-		readyCh:      readyCh,
-		inputCh:      inputCh,
-		inputErrCh:   inputErrCh,
 		voiceInputCh: nil,
 		audioStartCh: nil,
 		audioEndCh:   nil,
@@ -69,29 +60,55 @@ func (i *inputHandler) Read(
 	ctx context.Context,
 	defaultValue string,
 ) (string, error) {
-	select {
-	case i.readyCh <- struct{}{}:
-	default:
+	rl, err := term.InitReadline()
+	if err != nil {
+		return "", fmt.Errorf("error initializing readline: %w", err)
 	}
+
+	inputErrCh := make(chan error)
+	inputCh := make(chan string)
+
+	go func() {
+		ret, err := term.ReadInputOnce(rl)
+		if err != nil {
+			if rl.Closed() {
+				return
+			}
+
+			select {
+			case inputErrCh <- err:
+			case <-ctx.Done():
+			}
+
+			return
+		}
+
+		select {
+		case inputCh <- ret:
+		case <-ctx.Done():
+			return
+		}
+	}()
 
 	audioRunning := false
 	spinner := term.NewSpinner(1*time.Second, ">>> ")
 
 	defer func() {
 		if audioRunning {
-			i.inputStream.Stop()
+			i.inputStream.Stop() // nolint:errcheck
 		}
+		rl.Close()
 	}()
 
 	for {
 		select {
 		case <-ctx.Done():
-			return "", fmt.Errorf("context canceled")
+			return "", errors.New("context canceled")
 		case line := <-i.voiceInputCh:
 			return line, nil
-		case line := <-i.inputCh:
+		case line := <-inputCh:
 			return line, nil
-		case err := <-i.inputErrCh:
+		case err := <-inputErrCh:
 			return "", fmt.Errorf("error reading input: %w", err)
 		case <-i.audioStartCh:
 			if !audioRunning {
