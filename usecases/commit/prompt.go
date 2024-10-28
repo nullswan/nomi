@@ -1,66 +1,83 @@
 package commit
 
 const agentFilePrompt = `
-Create a commit plan in JSON format for staging changes and creating commits using Git, returning an array of files, adhering to provided guidelines.
+Your task is to analyze Git diff data and create a structured commit plan following specific commit message guidelines.
 
-## Important Note
+You will work through the following steps to accomplish this task:
 
-You won't be able to commit the same file twice.
-But when a file have been moved, you will commit both the old and new file.
-
-## JSON Structure
-
-The commit plan should be represented as a JSON object containing a list of actions. Each action includes both a list of modified 'files' and a 'commitMessage':
-
-- **Action**: Contains the array of files changed and the commit message.
-
-### Steps
+# Steps
 
 1. **Analyze the Git Diff:**
-- Group related changes into features or fixes.
-- Determine necessity for multiple commits for unrelated changes.
+   - Group related changes into either features or fixes.
+   - Decide if multiple commits are necessary for unrelated changes.
 
 2. **Prepare Staging Commands:**
-- Identify files affected by the diff for atomic, feature-specific commits.
+   - Identify the affected files for each atomic, feature-specific commit.
+   - Ensure no file is committed more than once unless it has been moved.
 
 3. **Generate Commit Messages:**
-- Maintain present tense with an appropriate prefix and scope.
-- Make sure to include at least one significant component and module in the scope.
-- Keep messages concise, within 75 characters for titles.
+   - Use present tense with the appropriate prefixes such as 'feat:', 'fix:', 'docs:', 'style:', 'refactor:', 'perf:', 'test:', 'chore:', 'ci:'.
+   - Include the scope by specifying relevant modules or directories.
+   - Ensure each message is concise and under 75 characters.
 
-## Commit Message Specifications
-- **Tense:** Present
-- **Prefixes:** 'feat:', 'fix:', 'docs:', 'style:', 'refactor:', 'perf:', 'test:', 'chore:', 'ci:'
-- **Scope:** Specify affected module and component in parentheses, **including relevant directories or submodules (e.g., 'internal/term', 'usecases/commit', 'services/api')**.
-- **No Body:** Keep it concise unless additional description is necessary.
+4. **Assemble the Commit Plan:**
+   - Present the commit plan as a JSON object, listing each action with its affected files and corresponding commit message.
 
-### Additional Guidelines
-- Group related changes for the same feature in a single commit.
-- Use multiple commits for unrelated changes.
-- Ensure messages are clear, concise, and specific.
-- Maintain consistent scoping based on file paths, components and modules.
+5. **Review and Finalize:**
+   - Verify that the commit plan adheres to all guidelines for clarity, consistency, and detail.
+   - For moved files, include their old and new paths in separate commits.
 
-## Output Format
+# Output Format
 
-Provide the commit plan in a plain JSON format containing the necessary actions with both 'files' and 'commitMessage' details.
+- The output should be a JSON-formatted commit plan.
+- Each commit action in the plan must include the list of affected files and the corresponding commit message.
 
-## Example Commit Plan
+# Examples
 
+**Commit Plan Example:**
 {
   "commitPlan": [
     {
-      "files": ["cmd/cli/main.go"],
-      "commitMessage": "feat(cmd/cli): add time import"
+      "files": ["src/components/Button.js", "src/styles/button.css"],
+      "commitMessage": "feat(components): add Button component with styling"
     },
     {
-      "files": ["internal/prompts/templates.go"],
-      "commitMessage": "docs(internal/prompts): add new templates for prompts"
+      "files": ["docs/README.md"],
+      "commitMessage": "docs: update README with setup instructions"
+    },
+    {
+      "files": ["src/utils/helpers.js"],
+      "commitMessage": "refactor(utils): improve helper functions"
+    },
+    {
+      "files": ["src/oldPath/file.js"],
+      "commitMessage": "chore(files): remove deprecated file location"
+    },
+    {
+      "files": ["src/newPath/file.js"],
+      "commitMessage": "chore(files): add file to new location"
+    }
+  ]
+}
+
+**Moved File Example:**
+{
+  "commitPlan": [
+    {
+      "files": ["src/oldPath/file.js"],
+      "commitMessage": "chore(files): remove deprecated file location"
+    },
+    {
+      "files": ["src/newPath/file.js"],
+      "commitMessage": "chore(files): add file to new location"
     }
   ]
 }
 
 # Notes
 
-- Ensure each action accurately reflects the set of files related to a specific change or feature.
-- Make certain the commit messages follow all specified guidelines for clarity and conciseness.
+- Ensure that each commit action is unique with respect to file changes.
+- Moved files should appear as separate actions: once for removal and once for addition.
+- Adhere to the commit message guidelines by using the correct prefixes and limiting the character count.
+- You should never commit the same file more than once unless it has been moved to a new location.
 `
