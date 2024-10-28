@@ -2,6 +2,7 @@ package commit
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,15 +13,18 @@ import (
 func checkGitRepository(ctx context.Context, console tools.Console) error {
 	cmd := tools.NewCommand("git", "rev-parse", "--is-inside-work-tree")
 	result, err := console.Exec(ctx, cmd)
-	if err != nil || !result.Success() {
-		return fmt.Errorf("not a git repository")
+	if err != nil {
+		return fmt.Errorf("failed to check git repository: %w", err)
+	}
+	if !result.Success() {
+		return errors.New("not a git repository")
 	}
 	return nil
 }
 
 func stashChanges(ctx context.Context, console tools.Console) error {
 	timestamp := time.Now().Format("20060102T150405")
-	stashName := fmt.Sprintf("nomi-stash-%s", timestamp)
+	stashName := "nomi-stash-" + timestamp
 	cmd := tools.NewCommand(
 		"git",
 		"stash",
@@ -40,7 +44,7 @@ func stashChanges(ctx context.Context, console tools.Console) error {
 		if result.Output != "" {
 			return fmt.Errorf("failed to stash changes: %s", result.Output)
 		}
-		return fmt.Errorf("failed to stash changes  and received no output")
+		return errors.New("failed to stash changes  and received no output")
 	}
 
 	// Extract stash reference from the output
@@ -53,7 +57,7 @@ func stashChanges(ctx context.Context, console tools.Console) error {
 		}
 	}
 	if stashRef == "" {
-		return fmt.Errorf("unable to retrieve stash reference")
+		return errors.New("unable to retrieve stash reference")
 	}
 
 	return nil
@@ -76,7 +80,7 @@ func getStashDiff(
 		return "", fmt.Errorf("failed to show stash diff: %w", err)
 	}
 	if !result.Success() {
-		return "", fmt.Errorf("failed to show stash diff")
+		return "", errors.New("failed to show stash diff")
 	}
 	return result.Output, nil
 }
@@ -88,7 +92,7 @@ func unstashChanges(
 	cmd := tools.NewCommand("git", "stash", "apply", "stash@{0}")
 	result, err := console.Exec(ctx, cmd)
 	if err != nil || !result.Success() {
-		return fmt.Errorf("failed to unstash changes")
+		return errors.New("failed to unstash changes")
 	}
 
 	cmd = tools.NewCommand("git", "reset")
@@ -98,7 +102,7 @@ func unstashChanges(
 	}
 
 	if !result.Success() {
-		return fmt.Errorf("failed to reset changes")
+		return errors.New("failed to reset changes")
 	}
 
 	return nil
@@ -114,7 +118,7 @@ func deleteStash(
 		return fmt.Errorf("failed to delete stash: %w", err)
 	}
 	if !result.Success() {
-		return fmt.Errorf("failed to delete stash")
+		return errors.New("failed to delete stash")
 	}
 	return nil
 }
