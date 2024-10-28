@@ -4,7 +4,7 @@ set -e
 
 # Define variables
 REPO="nullswan/nomi"
-LATEST_RELEASE=$(curl -s https://api.github.com/repos/$REPO/releases/latest | jq -r .tag_name)
+LATEST_RELEASE=$(curl -s https://api.github.com/repos/nullswan/nomi/releases/latest | grep '"tag_name":' | cut -d '"' -f 4)
 PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 ARCHITECTURE="$(uname -m)"
 
@@ -46,6 +46,7 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
         if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$rc"; then
             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$rc"
             echo "Added to $rc"
+            source "$rc"
         fi
     done
     echo "PATH updated. Please restart your terminal or run 'source ~/.bashrc' or 'source ~/.zshrc'."
