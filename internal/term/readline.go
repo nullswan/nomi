@@ -55,7 +55,7 @@ func readInput(rl *Instance) (string, error) {
 	for {
 		line, err := rl.Readline()
 		switch {
-		case errors.Is(err, io.EOF) && rl.Closed():
+		case rl.Closed():
 			return "", nil
 		case errors.Is(err, io.EOF):
 			fmt.Println()
@@ -139,7 +139,7 @@ func ReadInput(
 	defer rl.Close()
 
 	fmt.Print(StartBracketedPaste)
-	defer fmt.Printf(EndBracketedPaste)
+	defer fmt.Print(EndBracketedPaste)
 
 	for {
 		input, err := readInput(rl)
@@ -160,7 +160,7 @@ func ReadInput(
 
 func ReadInputOnce(rl *Instance) (string, error) {
 	fmt.Print(StartBracketedPaste)
-	defer fmt.Printf(EndBracketedPaste)
+	defer fmt.Print(EndBracketedPaste)
 
 	return readInput(rl)
 }
