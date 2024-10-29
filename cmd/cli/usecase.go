@@ -10,6 +10,7 @@ import (
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
 	"github.com/nullswan/nomi/internal/logger"
+	"github.com/nullswan/nomi/internal/providers"
 	"github.com/nullswan/nomi/internal/tools"
 	"github.com/nullswan/nomi/usecases/browser"
 	"github.com/nullswan/nomi/usecases/commit"
@@ -99,6 +100,23 @@ var usecaseCmd = &cobra.Command{
 			logger,
 		)
 
+		var ttsBackend *tools.TextToSpeechBackend
+		if cfg.Output.Speech.Enabled {
+			ttsProvider, err := providers.LoadTextToSpeechProvider(
+				providers.OpenAIProvider,
+				"",
+			)
+			ttsBackend = tools.NewTextToSpeechBackend(
+				ttsProvider,
+				logger,
+			)
+			if err != nil {
+				fmt.Printf("Error initializing voice output: %v\n", err)
+				return
+			}
+			defer ttsProvider.Close()
+		}
+
 		switch usecaseID {
 		case "commit":
 			err = commit.OnStart(
@@ -126,6 +144,7 @@ var usecaseCmd = &cobra.Command{
 				toolsLogger,
 				inputHandler,
 				ttjBackend,
+				ttsBackend,
 				conversation,
 			)
 		default:

@@ -138,6 +138,29 @@ func LoadTextToTextReasoningProvider(
 	}
 }
 
+func LoadTextToSpeechProvider(
+	provider AIProvider,
+	model string,
+) (baseprovider.TextToSpeechProvider, error) {
+	switch provider {
+	case OpenAIProvider:
+		oaiConfig := openaiprovider.NewOAIProviderConfig(
+			os.Getenv("OPENAI_API_KEY"),
+			model,
+		)
+		p, err := openaiprovider.NewTextToSpeechProvider(
+			oaiConfig,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error creating openai provider: %w", err)
+		}
+
+		return p, nil
+	default:
+		return nil, fmt.Errorf("unsupported provider: %s", provider)
+	}
+}
+
 func LoadTextToJSONProvider(
 	provider AIProvider,
 	model string,

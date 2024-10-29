@@ -10,6 +10,7 @@ import (
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/completion"
 	baseprovider "github.com/nullswan/nomi/internal/providers/base"
+	"github.com/nullswan/nomi/internal/sound"
 )
 
 type TextToTextBackend struct {
@@ -107,4 +108,49 @@ func (t TextToJSONBackend) Do(
 			return strings.ReplaceAll(content, "```", ""), nil
 		}
 	}
+}
+
+type TextToSpeechBackend struct {
+	backend baseprovider.TextToSpeechProvider
+	logger  *slog.Logger
+}
+
+func NewTextToSpeechBackend(
+	backend baseprovider.TextToSpeechProvider,
+	logger *slog.Logger,
+) *TextToSpeechBackend {
+	return &TextToSpeechBackend{
+		backend: backend,
+		logger:  logger,
+	}
+}
+
+func (t TextToSpeechBackend) Do(
+	ctx context.Context,
+	message string,
+) ([]byte, error) {
+	buf, err := t.backend.GenerateSpeech(ctx, message)
+	if err != nil {
+		return nil, fmt.Errorf("error generating speech: %w", err)
+	}
+
+	return buf, nil
+}
+
+func (t TextToSpeechBackend) Speak(
+	ctx context.Context,
+	message string,
+) error {
+	buf, err := t.Do(ctx, message)
+	if err != nil {
+		return err
+	}
+
+	err = sound.PlayBuffer(buf)
+	if err != nil {
+		return fmt.Errorf("error playing sound: %w",
+			err)
+	}
+
+	return nil
 }

@@ -30,6 +30,7 @@ Ensure all steps and interactions are accurately represented using specified act
   - Use page_request to retrieve current page content if needed.
   - Use navigate to reach specific URLs.
   - Use click, fill, extract, etc., for different page interactions.
+	- Use question to request user data you are lacking, for example, login credentials, don't use placeholders.
   - Use scroll, wait, screenshot, etc., for navigation and testing stability.
 - **Execute Steps**: Plan up to three steps in advance, being prepared to adapt based on execution outcomes.
 - **User Feedback**: Allow user input for altering or confirming the approach after each batch of steps.
@@ -221,6 +222,7 @@ Ensure all steps and interactions are accurately represented using specified act
 - Each example demonstrates different action types to cover all possible patterns.
 - Before every extract, fill or click action, you MUST include a page_request action to ensure you have the latest page content but this is the only action you will take in that chain, you will NOT include any other actions in the same response, the extract, fill or click action, will be pushed to the next response.
 - Steps that includes selectors should be preceded by a page_request to ensure you know which selectors are available.
+- If you are about to input/fill some data but you don't have the information, for example login credentials, you MUST provide a step to ask the user for the information before proceeding with other steps.
 - Do not exceed three steps in any single response.
 - If you don't know where to find the URL, you can go on https://google.com/search?q={your search} and search for the website you are looking for, then copy the URL from the search results.
 - If there is alert or popup, you MUST provide a step to handle it before proceeding with other steps. Element that can hide are preferences elements, like cookie consent, login, etc. For example, on the google search page, you will be asked to accept cookies, you must provide a step to accept the cookies before proceeding with other steps.
@@ -232,6 +234,7 @@ func OnStart(
 	logger tools.Logger,
 	inputHandler tools.InputHandler,
 	ttjBackend tools.TextToJSONBackend,
+	ttsBackend *tools.TextToSpeechBackend,
 	conversation chat.Conversation,
 ) error {
 	conversation.AddMessage(
@@ -305,7 +308,7 @@ func OnStart(
 
 			conversation.AddMessage(
 				chat.NewMessage(
-					chat.Role(chat.RoleAssistant),
+					chat.RoleAssistant,
 					stepsResp,
 				),
 			)
@@ -326,11 +329,12 @@ func OnStart(
 				conversation,
 				logger,
 				inputHandler,
+				ttsBackend,
 			); err != nil {
 				consecutiveErrors++
 				conversation.AddMessage(
 					chat.NewMessage(
-						chat.Role(chat.RoleAssistant),
+						chat.RoleAssistant,
 						"Error: "+err.Error(),
 					),
 				)
@@ -357,7 +361,7 @@ func OnStart(
 
 				conversation.AddMessage(
 					chat.NewMessage(
-						chat.Role(chat.RoleUser),
+						chat.RoleUser,
 						nextInstruction,
 					),
 				)
@@ -373,10 +377,19 @@ func executeSteps(
 	conversation chat.Conversation,
 	logger tools.Logger,
 	inputHandler tools.InputHandler,
+	textToSpeechBackend *tools.TextToSpeechBackend,
 ) error {
 	for _, step := range steps {
 		logger.Debug("Executing step: " + string(step.Action))
-		err := executeStep(ctx, page, step, conversation, logger, inputHandler)
+		err := executeStep(
+			ctx,
+			page,
+			step,
+			conversation,
+			logger,
+			inputHandler,
+			textToSpeechBackend,
+		)
 		if err != nil {
 			return fmt.Errorf("could not execute step: %w", err)
 		}
@@ -409,6 +422,7 @@ func executeStep(
 	conversation chat.Conversation,
 	logger tools.Logger,
 	inputHandler tools.InputHandler,
+	ttsBackend *tools.TextToSpeechBackend,
 ) error {
 	switch step.Action {
 	case ActionNavigate:
@@ -513,6 +527,14 @@ func executeStep(
 		}
 	case ActionQuestion:
 		logger.Info(step.Question.Question)
+		if ttsBackend != nil {
+			go func() {
+				err := ttsBackend.Speak(ctx, step.Question.Question)
+				if err != nil {
+					logger.Error("could not speak question: " + err.Error())
+				}
+			}()
+		}
 		content, err := inputHandler.Read(ctx, ">>> ")
 		if err != nil {
 			return fmt.Errorf("could not read input: %w", err)
