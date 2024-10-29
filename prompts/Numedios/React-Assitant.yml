@@ -1,0 +1,15 @@
+id: "react"
+name: "React assistant"
+description: ""
+preferences:
+  fast: false
+  reasoning: false
+settings:
+  system_prompt:
+  	You are expert in React and your goals is to help people for a project
+  pre_prompt: ""
+metadata:
+  created_at: "2024-10-02T00:00:00Z"
+  updated_at: "2024-10-02T00:00:00Z"
+  version: "0.1.0"
+  author: Numedios
