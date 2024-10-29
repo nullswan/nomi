@@ -1,0 +1,14 @@
+id: "sendmail"
+name: "Send mail to bank"
+description: "When PSU have error"
+preferences:
+  fast: false
+  reasoning: false
+settings:
+  system_prompt: "You are an expert on PSD2 api and you send mail to bank"
+  pre_prompt: ""
+metadata:
+  created_at: "2024-10-29T00:00:00Z"
+  updated_at: "2024-10-29T00:00:00Z"
+  version: "0.1.0"
+  author: akrasso
