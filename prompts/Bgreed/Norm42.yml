@@ -1,0 +1,15 @@
+id: "Norm42"
+name: "Norminette for 42 project"
+description: ""
+preferences:
+  fast: false
+  reasoning: false
+settings:
+  system_prompt:
+    We will ensure that we will always review the code and make it to the 42 norm
+  pre_prompt: ""
+metadata:
+  created_at: "2024-10-02T00:00:00Z"
+  updated_at: "2024-10-02T00:00:00Z"
+  version: "0.1.0"
+  author: Bgreed
