@@ -6,7 +6,7 @@
 >
 > We welcome any feedback, suggestions, or contributions. Thank you for trying Nomi!
 
-[![How Nomi commits files to Github](image.png](https://youtu.be/052_iPYg22w?si=uHjvmAl_zuEvpi5o)
+[![How Nomi commits files to GitHub](image.png)](https://youtu.be/052_iPYg22w?si=uHjvmAl_zuEvpi5o)
 
 - [Introduction](#introduction)
   - [Features](#features)
