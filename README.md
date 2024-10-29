@@ -6,6 +6,8 @@
 >
 > We welcome any feedback, suggestions, or contributions. Thank you for trying Nomi!
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/052_iPYg22w?si=h1hGmW2FNNUh7E3t" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 - [Introduction](#introduction)
   - [Features](#features)
   - [Why Nomi?](#why-nomi)
