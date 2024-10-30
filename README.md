@@ -8,21 +8,21 @@
 
 https://github.com/user-attachments/assets/22586363-37f6-4168-8b4e-f8daecfcde15
 
-- [✨ Introduction](#introduction)  
-  - [🚀 Features](#features)  
-  - [🤔 Why Nomi?](#why-nomi)  
-  - [💼 Use Cases](#use-cases)  
-- [🛠️ Get Started](#get-started)  
-  - [💻 Linux & MacOS](#linux--macos)  
-  - [📟 Windows](#windows)  
-  - [🔧 Compile from Source](#compile-from-source)  
-- [🔌 Enable Providers](#enable-providers)  
-  - [🌐 Ollama](#ollama)  
-  - [🤖 OpenAI](#openai)  
-  - [🔗 OpenRouter](#openrouter)  
-- [🗺️ Roadmap](#roadmap)  
-- [📜 License](#license)  
-- [🙏 Acknowledgments](#acknowledgments)
+- [✨ Introduction](#-introduction)  
+  - [🚀 Features](#-features)  
+  - [🤔 Why Nomi?](#-why-nomi)  
+  - [💼 Use Cases](#-use-cases)  
+- [🛠️ Get Started](#-get-started)  
+  - [💻 Linux & MacOS](#-linux--macos)  
+  - [📟 Windows](#-windows)  
+  - [🔧 Compile from Source](#-compile-from-source)  
+- [🔌 Enable Providers](#-enable-providers)  
+  - [🌐 Ollama](#-ollama)  
+  - [🤖 OpenAI](#-openai)  
+  - [🔗 OpenRouter](#-openrouter)  
+- [🗺️ Roadmap](#-roadmap)  
+- [📜 License](#-license)  
+- [🙏 Acknowledgments](#-acknowledgments)
 
 
 ### 🚀 Features
