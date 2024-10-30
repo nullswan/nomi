@@ -1,18 +1,29 @@
-# Nomi - Versatile and Privacy-Focused AI Runtime
+# Nomi
 
-*Nomi aim to bridges the gap to intelligence, making it easy for everyone to harness AI and technologies. It can automates time-consuming tasks and adapts to your unique needs, putting control and ownership of data back in your hands.*
+Nomi enable people to use computer more simply.<br />
+You can ask your computer what you want it to do, and it will do it for you. It’s that simple.
+
+
+
+We believe this will become the new norm and simplify people’s lives, as it’s already simplifying ours.<br />
+To support our work, feel free to star the repo and reach us.
+
+Thank you,<br />
+Swan and Ethan.
+
 
 > **Note:** This project is under active development and isn't ready for full use yet. We're working hard to make it stable and reliable.
 >
 > We welcome any feedback, suggestions, or contributions. Thank you for trying Nomi!
 
+## 🎥 Demo
 https://github.com/user-attachments/assets/22586363-37f6-4168-8b4e-f8daecfcde15
 
-- [✨ Introduction](#-introduction)  
+- [✨ Introduction](#nomi)  
   - [🚀 Features](#-features)  
   - [🤔 Why Nomi?](#-why-nomi)  
   - [💼 Use Cases](#-use-cases)  
-- [🛠️ Get Started](#-get-started)  
+- [🛠️ Get Started](#%EF%B8%8F-get-started)  
   - [💻 Linux & MacOS](#-linux--macos)  
   - [📟 Windows](#-windows)  
   - [🔧 Compile from Source](#-compile-from-source)  
@@ -20,7 +31,7 @@ https://github.com/user-attachments/assets/22586363-37f6-4168-8b4e-f8daecfcde15
   - [🌐 Ollama](#-ollama)  
   - [🤖 OpenAI](#-openai)  
   - [🔗 OpenRouter](#-openrouter)  
-- [🗺️ Roadmap](#-roadmap)  
+- [🗺️ Roadmap](#%EF%B8%8F-roadmap)  
 - [📜 License](#-license)  
 - [🙏 Acknowledgments](#-acknowledgments)
 
