@@ -8,23 +8,24 @@
 
 https://github.com/user-attachments/assets/22586363-37f6-4168-8b4e-f8daecfcde15
 
-- [Introduction](#introduction)
-  - [Features](#features)
-  - [Why Nomi?](#why-nomi)
-  - [Use Cases](#use-cases)
-- [Get Started](#get-started)
-  - [Linux & MacOS](#linux--macos)
-  - [Windows](#windows)
-  - [Compile from Source](#compile-from-source)
-- [Enable Providers](#enable-providers)
-  - [Ollama](#ollama)
-  - [OpenAI](#openai)
-  - [OpenRouter](#openrouter)
-- [Roadmap](#roadmap)
-- [License](#license)
-- [Aknowledgments](#acknowledgments)
+- [✨ Introduction](#introduction)  
+  - [🚀 Features](#features)  
+  - [🤔 Why Nomi?](#why-nomi)  
+  - [💼 Use Cases](#use-cases)  
+- [🛠️ Get Started](#get-started)  
+  - [💻 Linux & MacOS](#linux--macos)  
+  - [📟 Windows](#windows)  
+  - [🔧 Compile from Source](#compile-from-source)  
+- [🔌 Enable Providers](#enable-providers)  
+  - [🌐 Ollama](#ollama)  
+  - [🤖 OpenAI](#openai)  
+  - [🔗 OpenRouter](#openrouter)  
+- [🗺️ Roadmap](#roadmap)  
+- [📜 License](#license)  
+- [🙏 Acknowledgments](#acknowledgments)
 
-### Features
+
+### 🚀 Features
 
 - **Versatile AI Runtime:** Lightweight and highly configurable for seamless integration.
 - **Privacy-Focused:** Maintains local archives of your data, ensuring you stay in control.
@@ -38,7 +39,7 @@ https://github.com/user-attachments/assets/22586363-37f6-4168-8b4e-f8daecfcde15
 
 Explore additional features and use cases in the [Roadmap](#roadmap) section.
 
-### Why Nomi?
+### 🤔 Why Nomi?
 
 In a world where data ownership is challenging and AI is changing how we communicate, Nomi acts as a bridge between your private data and AI capabilities. It supports both local and external providers, including OpenAI, OpenRouter, and Ollama.
 
@@ -48,7 +49,7 @@ While external providers involve sending data externally, Nomi also works with l
 
 We're building the Nomi runtime quickly, but our journey doesn't stop there. Soon, we'll expand Nomi into a full AI platform designed to bridge the gap for non-technical users. Our goal is to make advanced AI accessible and easy to use for everyone, enabling you to benefit from AI without the need for technical expertise.
 
-### Use Cases
+### 💼 Use Cases
 
 - **Personal AI Assistant**
 - **Voice-Controlled AI Interaction**
@@ -64,7 +65,7 @@ List your installed use cases using the `nomi usecases list` or `nomi u list` co
 - [Copywriting & Brainstorming Assistant](https://github.com/nullswan/nomi/tree/main/usecases/copywriter)
 - **Software Architecture Assistant** — *Coming soon!*
 
-## Get Started
+## 🛠️ Get Started
 
 ### Supported Platforms
 
@@ -72,13 +73,13 @@ List your installed use cases using the `nomi usecases list` or `nomi u list` co
 - **MacOS**: ARM64
 - **Windows**: x86_64, i686
 
-### Linux & MacOS
+### 💻 Linux & MacOS
 
 ```shell
 curl -sSL https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/install.sh | bash
 ```
 
-### Windows
+### 📟 Windows
 
 > **Note:** Windows support is experimental. Please report any issues you encounter.
 
@@ -86,7 +87,7 @@ curl -sSL https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/instal
 curl -sSL https://raw.githubusercontent.com/nullswan/nomi/refs/heads/main/install.bat | cmd
 ```
 
-### Compile from Source
+### 🔧 Compile from Source
 
 ```shell
 git clone https://github.com/nullswan/nomi.git
@@ -95,17 +96,17 @@ cd nomi
 make build
 ```
 
-## Enable Providers
+## 🔌 Enable Providers
 
 We recommend using Ollama is you are concerned about privacy. OpenAI if you are not concerned about privacy and pricing but rather want high performance and have decent internet connection. OpenRouter if you want to switch between providers easily and maintain an efficiency balance.
 
-### Ollama
+### 🌐 Ollama
 
 You can install Ollama from [https://ollama.com/download](https://ollama.com/download) or it will be automatically installed with Nomi.
 
 For now, we support text LLM through Ollama. Voice and other features are coming soon.
 
-### OpenAI
+### 🤖 OpenAI
 
 Every feature supports OpenAI. You can enable it by setting the `OPENAI_API_KEY` environment variable and launch Nomi.
 
@@ -115,7 +116,7 @@ You can create an API key from the [OpenAI dashboard](https://platform.openai.co
 export OPENAI_API_KEY="your-api-key"
 ```
 
-### OpenRouter
+### 🔗 OpenRouter
 
 OpenRouter is a multi provider API. We recommend using it for ease of provider switching.
 
@@ -129,7 +130,7 @@ You can create an API key from the [OpenRouter dashboard](https://openrouter.ai/
 export OPENROUTER_API_KEY="your-api-key"
 ```
 
-## Roadmap
+## 🗺️ Roadmap
 
 These features are planned for future updates. They may be partially or not implemented yet.
 
@@ -169,13 +170,13 @@ These features are planned for future updates. They may be partially or not impl
 - **File Management**
   - Real-time file management
 
-## License
+## 📜 License
 
 This project is licensed under the MIT License.
 
 > See the [LICENSE](LICENSE) file for details. We believe in the power and fairness of open-source software.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 Thank you to all the libraries and tools used in this project:
 
