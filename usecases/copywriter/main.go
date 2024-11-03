@@ -12,7 +12,7 @@ import (
 // TODO(nullswan): Pull preferences / Profiles / Previous projects
 // TODO(nullswan): Add Memory, Storage, Tools
 // TODO(nullswan): Generate multiple content examples
-// TODO(nullswan): Add ref check agent
+// TODO(nullswan): Add ref check/web agent
 
 func OnStart(
 	ctx context.Context,
@@ -74,25 +74,37 @@ func OnStart(
 		return fmt.Errorf("error starting goals agent: %w", err)
 	}
 
-	conversation = conversation.Reset()
+	conversation, err = conversation.Clean()
+	if err != nil {
+		return fmt.Errorf("error cleaning conversation: %w", err)
+	}
 	err = ideasAgent.OnStart(ctx, conversation)
 	if err != nil {
 		return fmt.Errorf("error starting ideas agent: %w", err)
 	}
 
-	conversation = conversation.Reset()
+	conversation, err = conversation.Clean()
+	if err != nil {
+		return fmt.Errorf("error cleaning conversation: %w", err)
+	}
 	err = headlineAgent.OnStart(ctx, conversation)
 	if err != nil {
 		return fmt.Errorf("error starting headline agent: %w", err)
 	}
 
-	conversation = conversation.Reset()
+	conversation, err = conversation.Clean()
+	if err != nil {
+		return fmt.Errorf("error cleaning conversation: %w", err)
+	}
 	err = contentPlanAgent.OnStart(ctx, conversation)
 	if err != nil {
 		return fmt.Errorf("error starting content plan agent: %w", err)
 	}
 
-	conversation = conversation.Reset()
+	conversation, err = conversation.Clean()
+	if err != nil {
+		return fmt.Errorf("error cleaning conversation: %w", err)
+	}
 	err = redactAgent.OnStart(
 		ctx,
 		conversation,
