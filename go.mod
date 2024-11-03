@@ -18,6 +18,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-runewidth v0.0.16
 	github.com/mholt/archiver/v3 v3.5.1
+	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.15.3-0.20240618155329-98d742f6907a
 	github.com/ollama/ollama v0.3.14
 	github.com/playwright-community/playwright-go v0.4702.0
