@@ -113,7 +113,7 @@ func OnStart(
 				conversation.AddMessage(
 					chat.NewMessage(
 						chat.RoleSystem,
-						"Duplicate files found in commit plan: "+strings.Join(
+						"Make sure to remove duplicates.\nFiles can only be committed once.\nDuplicate files found in commit plan:\n"+strings.Join(
 							duplicatedFiles,
 							", ",
 						),
