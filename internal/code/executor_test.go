@@ -13,7 +13,7 @@ type MockExecutor struct {
 	code   int
 }
 
-func (m *MockExecutor) Execute(code string) ExecutionResult {
+func (m *MockExecutor) Execute(_ string) ExecutionResult {
 	return ExecutionResult{
 		Stdout:   m.output,
 		Stderr:   m.err,
