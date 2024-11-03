@@ -27,7 +27,8 @@ func newExportAgent(
 }
 
 func (e *exportAgent) ExportToFile(prefix, content string) error {
-	fileName := e.project + prefix + ".txt"
+	// TODO(nullswan): Encode prefix
+	fileName := e.project + "-" + prefix + ".txt"
 
 	file, err := os.Create(fileName)
 	if err != nil {
