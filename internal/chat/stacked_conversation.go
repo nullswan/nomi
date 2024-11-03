@@ -65,8 +65,11 @@ func (c *stackedConversation) WithPrompt(prompt prompts.Prompt) {
 }
 
 // TODO(nullswan): Conversation should remain immutable
-func (c *stackedConversation) Reset() Conversation {
-	c.repo.SaveConversation(c)
+func (c *stackedConversation) Reset() (Conversation, error) {
+	err := c.repo.SaveConversation(c)
+	if err != nil {
+		return nil, fmt.Errorf("error saving conversation: %w", err)
+	}
 
 	conversation := NewStackedConversation(c.repo)
 
@@ -84,7 +87,22 @@ func (c *stackedConversation) Reset() Conversation {
 	c.id = conversation.GetID()
 	c.messages = conversation.GetMessages()
 
-	return c
+	return c, nil
+}
+
+func (c *stackedConversation) Clean() (Conversation, error) {
+	err := c.repo.SaveConversation(c)
+	if err != nil {
+		return nil, fmt.Errorf("error saving conversation: %w", err)
+	}
+
+	conversation := NewStackedConversation(c.repo)
+
+	c.createdAt = conversation.GetCreatedAt()
+	c.id = conversation.GetID()
+	c.messages = conversation.GetMessages()
+
+	return c, nil
 }
 
 func NewStackedConversation(
