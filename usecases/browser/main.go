@@ -228,6 +228,8 @@ Ensure all steps and interactions are accurately represented using specified act
 - If there is alert or popup, you MUST provide a step to handle it before proceeding with other steps. Element that can hide are preferences elements, like cookie consent, login, etc. For example, on the google search page, you will be asked to accept cookies, you must provide a step to accept the cookies before proceeding with other steps.
 `
 
+const maxErrorRetries = 3
+
 func OnStart(
 	ctx context.Context,
 	selector tools.Selector,
@@ -239,7 +241,7 @@ func OnStart(
 ) error {
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleSystem),
+			chat.RoleSystem,
 			browserPrompt,
 		),
 	)
@@ -251,7 +253,7 @@ func OnStart(
 
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
+			chat.RoleUser,
 			"User Goal:\n"+firstGoal,
 		),
 	)
@@ -320,8 +322,6 @@ func OnStart(
 				return fmt.Errorf("could not unmarshal response: %w", err)
 			}
 
-			fmt.Printf("Steps: %+v\n", stepsRespData)
-
 			if err = executeSteps(
 				ctx,
 				page,
@@ -339,9 +339,25 @@ func OnStart(
 					),
 				)
 
-				if consecutiveErrors >= 3 {
-					logger.Error("Too many consecutive errors")
-					return fmt.Errorf("too many consecutive errors: %w", err)
+				if consecutiveErrors >= maxErrorRetries {
+					if !selector.SelectBool(
+						"Too many consecutive errors, do you want to continue?",
+						true,
+					) {
+						return nil
+					}
+
+					nextInstruction, err := inputHandler.Read(ctx, ">>> ")
+					if err != nil {
+						return fmt.Errorf("could not read input: %w", err)
+					}
+
+					conversation.AddMessage(
+						chat.NewMessage(
+							chat.RoleUser,
+							nextInstruction,
+						),
+					)
 				}
 				continue
 			}
@@ -415,7 +431,7 @@ const (
 	clickTimeout = 1000
 )
 
-func executeStep(
+func executeStep( // nolint: gocyclo
 	ctx context.Context,
 	page playwright.Page,
 	step step,
@@ -836,6 +852,5 @@ func generateSelector(element playwright.ElementHandle) (string, error) {
 		currentElement = parentElement
 	}
 
-	fullSelector := strings.Join(selectorParts, " > ")
-	return fullSelector, nil
+	return strings.Join(selectorParts, " > "), nil
 }
