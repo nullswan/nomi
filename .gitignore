@@ -3,4 +3,5 @@ dist/
 dev/
 rfcs/
 *.wav
+*.cast
 nomi.log
