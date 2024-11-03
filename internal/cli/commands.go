@@ -25,7 +25,12 @@ func HandleCommands(text string, conversation chat.Conversation) string {
 		case strings.HasPrefix(line, "/help"):
 			printHelp()
 		case strings.HasPrefix(line, "/reset"):
-			conversation = conversation.Reset()
+			var err error
+			conversation, err = conversation.Reset()
+			if err != nil {
+				fmt.Println("Error resetting conversation:", err)
+				continue
+			}
 			fmt.Println("Conversation reset.")
 		case strings.HasPrefix(line, "/add"):
 			args := strings.Fields(line)
