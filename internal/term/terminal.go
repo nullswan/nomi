@@ -1,11 +1,11 @@
 package term
 
-// From: https://github.com/ollama/ollama/blob/main/readline/readline.go
-
 import (
-	"bufio"
+	"fmt"
 	"io"
 	"os"
+
+	"github.com/muesli/cancelreader"
 )
 
 type Terminal struct {
@@ -13,16 +13,20 @@ type Terminal struct {
 	done    chan struct{}
 	rawmode bool
 	termios any
-	reader  *bufio.Reader
+	reader  cancelreader.CancelReader
 }
 
 func NewTerminal() (*Terminal, error) {
+	reader, err := cancelreader.NewReader(os.Stdin)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cancelable reader: %w", err)
+	}
 	t := &Terminal{
 		outchan: make(chan rune),
 		done:    make(chan struct{}),
 		rawmode: false,
 		termios: nil,
-		reader:  bufio.NewReader(os.Stdin),
+		reader:  reader,
 	}
 
 	go t.ioloop()
@@ -40,6 +44,7 @@ func (t *Terminal) Read() (rune, error) {
 }
 
 func (t *Terminal) Close() error {
+	t.reader.Close()
 	close(t.outchan)
 	close(t.done)
 	return nil
@@ -55,8 +60,11 @@ func (t *Terminal) Closed() bool {
 }
 
 func (t *Terminal) ioloop() {
+	// This is where we recover from panics
 	defer func() {
-		recover() // nolint:errcheck
+		if rec := recover(); rec != nil {
+			fmt.Println("Recovered from panic:", rec)
+		}
 	}()
 
 	for {
@@ -64,15 +72,19 @@ func (t *Terminal) ioloop() {
 		case <-t.done:
 			return
 		default:
-			r, _, err := t.reader.ReadRune()
+			buf := make([]byte, 1)
+			n, err := t.reader.Read(buf)
 			if err != nil {
 				return
+			}
+			if n == 0 {
+				continue
 			}
 
 			select {
 			case <-t.done:
 				return
-			case t.outchan <- r:
+			case t.outchan <- rune(buf[0]):
 			}
 		}
 	}
