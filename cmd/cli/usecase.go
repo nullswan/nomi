@@ -15,6 +15,7 @@ import (
 	"github.com/nullswan/nomi/usecases/browser"
 	"github.com/nullswan/nomi/usecases/commit"
 	"github.com/nullswan/nomi/usecases/copywriter"
+	"github.com/nullswan/nomi/usecases/interpreter"
 	"github.com/spf13/cobra"
 )
 
@@ -147,6 +148,15 @@ var usecaseCmd = &cobra.Command{
 				ttsBackend,
 				conversation,
 			)
+		case "interpreter":
+			err = interpreter.OnStart(
+				ctx,
+				selector,
+				toolsLogger,
+				ttjBackend,
+				inputHandler,
+				conversation,
+			)
 		default:
 			fmt.Println("usecase " + usecaseID + " not found")
 			return
@@ -166,13 +176,6 @@ var usecaseListCmd = &cobra.Command{
 		fmt.Println("commit - Quickly commit changes to git")
 		fmt.Println("copywriter - Generate copywriting documents")
 		fmt.Println("browser - Browse the web with LLM")
-	},
-}
-
-var usecaseAddCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Add a new usecase",
-	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("Not implemented")
+		fmt.Println("console - Interact with the console")
 	},
 }
