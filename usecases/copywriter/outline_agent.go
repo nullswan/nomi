@@ -3,6 +3,7 @@ package copywriter
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/nullswan/nomi/internal/chat"
@@ -93,7 +94,7 @@ type outlineAgent struct {
 	headlineAgent *headlineAgent
 }
 
-func NewOutlineAgent(
+func newOutlineAgent(
 	logger tools.Logger,
 	textToJSONBackend tools.TextToJSONBackend,
 	selector tools.Selector,
@@ -125,51 +126,51 @@ func (o *outlineAgent) GetStorage() string {
 	return ret
 }
 
-func (c *outlineAgent) OnStart(
+func (o *outlineAgent) OnStart(
 	ctx context.Context,
 	conversation chat.Conversation,
 ) error {
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleSystem),
+			chat.RoleSystem,
 			outlineAgentPrompt,
 		),
 	)
 
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
-			"Goals:\n"+c.goalsAgent.GetStorage(),
+			chat.RoleUser,
+			"Goals:\n"+o.goalsAgent.GetStorage(),
 		),
 	)
 
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
-			"Headline:\n"+c.headlineAgent.GetStorage(),
+			chat.RoleUser,
+			"Headline:\n"+o.headlineAgent.GetStorage(),
 		),
 	)
 
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
-			"Ideas:\n"+c.ideasAgent.GetStorage(),
+			chat.RoleUser,
+			"Ideas:\n"+o.ideasAgent.GetStorage(),
 		),
 	)
 
 	for done := false; !done; {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("context cancelled")
+			return errors.New("context cancelled")
 		default:
-			resp, err := c.textToJSONBackend.Do(ctx, conversation)
+			resp, err := o.textToJSONBackend.Do(ctx, conversation)
 			if err != nil {
 				return fmt.Errorf("error generating completion: %w", err)
 			}
 
 			conversation.AddMessage(
 				chat.NewMessage(
-					chat.Role(chat.RoleAssistant),
+					chat.RoleAssistant,
 					resp,
 				),
 			)
@@ -180,7 +181,21 @@ func (c *outlineAgent) OnStart(
 			}
 
 			if len(outlineResp.TableOfContents) == 0 {
-				return fmt.Errorf("outline plan is empty")
+				o.logger.Debug("Outline response " + resp)
+				o.logger.Error("No outline plan provided")
+
+				newInstructions, err := o.inputHandler.Read(ctx, ">>> ")
+				if err != nil {
+					return fmt.Errorf("error reading new instructions: %w", err)
+				}
+
+				conversation.AddMessage(
+					chat.NewMessage(
+						chat.RoleUser,
+						newInstructions,
+					),
+				)
+				continue
 			}
 
 			fmt.Println("Outline Plan:")
@@ -191,18 +206,18 @@ func (c *outlineAgent) OnStart(
 				}
 			}
 
-			if !c.selector.SelectBool(
+			if !o.selector.SelectBool(
 				"Is the outline plan satisfactory?",
 				true,
 			) {
-				newInstructions, err := c.inputHandler.Read(ctx, ">>> ")
+				newInstructions, err := o.inputHandler.Read(ctx, ">>> ")
 				if err != nil {
 					return fmt.Errorf("error reading new instructions: %w", err)
 				}
 
 				conversation.AddMessage(
 					chat.NewMessage(
-						chat.Role(chat.RoleUser),
+						chat.RoleUser,
 						newInstructions,
 					),
 				)
@@ -210,7 +225,7 @@ func (c *outlineAgent) OnStart(
 			}
 
 			done = true
-			c.storage = outlineResp
+			o.storage = outlineResp
 		}
 	}
 

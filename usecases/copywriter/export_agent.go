@@ -3,12 +3,9 @@ package copywriter
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/nullswan/nomi/internal/tools"
 )
-
-const exportDirectory = "exports"
 
 // This agent is responsible for exporting the final content
 // Capabilities include: Export to file, export to different formats
@@ -19,7 +16,7 @@ type exportAgent struct {
 
 // TODO(nullswan): add project handling
 // TODO(nullswan): add file manager tools
-func NewExportAgent(
+func newExportAgent(
 	logger tools.Logger,
 	project string,
 ) *exportAgent {
@@ -29,8 +26,8 @@ func NewExportAgent(
 	}
 }
 
-func (e *exportAgent) ExportToFile(content string) error {
-	fileName := e.project + time.Now().Format("2006-01-02") + ".txt"
+func (e *exportAgent) ExportToFile(prefix, content string) error {
+	fileName := e.project + prefix + ".txt"
 
 	file, err := os.Create(fileName)
 	if err != nil {

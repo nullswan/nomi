@@ -3,6 +3,7 @@ package copywriter
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/nullswan/nomi/internal/chat"
@@ -70,7 +71,7 @@ type goalsAgent struct {
 	storage string
 }
 
-func NewGoalsAgent(
+func newGoalsAgent(
 	textToJSONBackend tools.TextToJSONBackend,
 	inputHandler tools.InputHandler,
 	logger tools.Logger,
@@ -90,7 +91,7 @@ func (g *goalsAgent) OnStart(
 ) error {
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleSystem),
+			chat.RoleSystem,
 			goalsAgentPrompt,
 		),
 	)
@@ -98,7 +99,7 @@ func (g *goalsAgent) OnStart(
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("context cancelled")
+			return errors.New("context cancelled")
 		default:
 			resp, err := g.textToJSONBackend.Do(ctx, conversation)
 			if err != nil {
@@ -107,7 +108,7 @@ func (g *goalsAgent) OnStart(
 
 			conversation.AddMessage(
 				chat.NewMessage(
-					chat.Role(chat.RoleAssistant),
+					chat.RoleAssistant,
 					resp,
 				),
 			)
@@ -141,7 +142,7 @@ func (g *goalsAgent) OnStart(
 			// Store the response
 			conversation.AddMessage(
 				chat.NewMessage(
-					chat.Role(chat.RoleUser),
+					chat.RoleUser,
 					response,
 				),
 			)

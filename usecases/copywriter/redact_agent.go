@@ -73,7 +73,7 @@ type redactAgent struct {
 	goalsAgent    *goalsAgent
 }
 
-func NewRedactAgent(
+func newRedactAgent(
 	goalsAgent *goalsAgent,
 	ideasAgent *ideasAgent,
 	headlineAgent *headlineAgent,
@@ -95,7 +95,6 @@ func NewRedactAgent(
 		textToJSONBackend: textToJSONBackend,
 		selector:          selector,
 	}
-
 }
 
 func (r *redactAgent) OnStart(
@@ -104,35 +103,35 @@ func (r *redactAgent) OnStart(
 ) error {
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleSystem),
+			chat.RoleSystem,
 			redactAgentPrompt,
 		),
 	)
 
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
+			chat.RoleUser,
 			"Goals:\n"+r.goalsAgent.GetStorage(),
 		),
 	)
 
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
+			chat.RoleUser,
 			"Ideas:\n"+r.ideasAgent.GetStorage(),
 		),
 	)
 
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
+			chat.RoleUser,
 			"Headline:\n"+r.headlineAgent.GetStorage(),
 		),
 	)
 
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
+			chat.RoleUser,
 			"Outline:\n"+r.outlineAgent.GetStorage(),
 		),
 	)
@@ -153,7 +152,7 @@ func (r *redactAgent) OnStart(
 
 			conversation.AddMessage(
 				chat.NewMessage(
-					chat.Role(chat.RoleAssistant),
+					chat.RoleAssistant,
 					resp,
 				),
 			)
@@ -181,7 +180,7 @@ func (r *redactAgent) OnStart(
 					r.logger.Info(
 						"Exporting " + doc.Platform + " content to file...",
 					)
-					err := r.exportAgent.ExportToFile(doc.Content)
+					err := r.exportAgent.ExportToFile(doc.Platform, doc.Content)
 					if err != nil {
 						return fmt.Errorf(
 							"error exporting content to file: %w",
@@ -200,7 +199,7 @@ func (r *redactAgent) OnStart(
 
 			conversation.AddMessage(
 				chat.NewMessage(
-					chat.Role(chat.RoleUser),
+					chat.RoleUser,
 					resp,
 				),
 			)

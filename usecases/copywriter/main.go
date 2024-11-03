@@ -22,24 +22,21 @@ func OnStart(
 	textToJSONBackend tools.TextToJSONBackend,
 	conversation chat.Conversation, // TOOD(nullswan): Should be like a project
 ) error {
-	project := fmt.Sprintf(
-		"project-copywriting-%s",
-		time.Now().Format("2006-01-02"),
-	)
+	project := "project-copywriting-" + time.Now().Format("2006-01-02")
 
-	goalsAgent := NewGoalsAgent(
+	goalsAgent := newGoalsAgent(
 		textToJSONBackend,
 		inputHandler,
 		logger,
 		selector,
 	)
-	ideasAgent := NewIdeasAgent(
+	ideasAgent := newIdeasAgent(
 		logger,
 		textToJSONBackend,
 		goalsAgent,
 		inputHandler,
 	)
-	headlineAgent := NewHeadlineAgent(
+	headlineAgent := newHeadlineAgent(
 		logger,
 		textToJSONBackend,
 		selector,
@@ -47,7 +44,7 @@ func OnStart(
 		goalsAgent,
 		ideasAgent,
 	)
-	contentPlanAgent := NewOutlineAgent(
+	contentPlanAgent := newOutlineAgent(
 		logger,
 		textToJSONBackend,
 		selector,
@@ -56,11 +53,11 @@ func OnStart(
 		ideasAgent,
 		headlineAgent,
 	)
-	exportAgent := NewExportAgent(
+	exportAgent := newExportAgent(
 		logger,
 		project,
 	)
-	redactAgent := NewRedactAgent(
+	redactAgent := newRedactAgent(
 		goalsAgent,
 		ideasAgent,
 		headlineAgent,
@@ -76,14 +73,14 @@ func OnStart(
 	if err != nil {
 		return fmt.Errorf("error starting goals agent: %w", err)
 	}
-	conversation = conversation.Reset()
 
+	conversation = conversation.Reset()
 	err = ideasAgent.OnStart(ctx, conversation)
 	if err != nil {
 		return fmt.Errorf("error starting ideas agent: %w", err)
 	}
-	conversation = conversation.Reset()
 
+	conversation = conversation.Reset()
 	err = headlineAgent.OnStart(ctx, conversation)
 	if err != nil {
 		return fmt.Errorf("error starting headline agent: %w", err)

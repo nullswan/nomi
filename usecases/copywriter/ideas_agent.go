@@ -3,6 +3,7 @@ package copywriter
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/nullswan/nomi/internal/chat"
@@ -78,7 +79,7 @@ type ideasAgent struct {
 	goalsAgent *goalsAgent
 }
 
-func NewIdeasAgent(
+func newIdeasAgent(
 	logger tools.Logger,
 	textToJSONBackend tools.TextToJSONBackend,
 	goalsAgent *goalsAgent,
@@ -102,19 +103,17 @@ func (i *ideasAgent) OnStart(
 ) error {
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleSystem),
+			chat.RoleSystem,
 			ideasAgentPrompt,
 		),
 	)
 
 	var ideas []string
-
-	// TODO(nullswan): The empty line behavior is not very manageable
-	i.logger.Info("Gathering ideas, push empty line to finish")
+	i.logger.Info("Gathering ideas, press /done to finish")
 	for done := false; !done; {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("context cancelled")
+			return errors.New("context cancelled")
 		default:
 			idea, err := i.inputHandler.Read(ctx, ">>> ")
 			if err != nil {
@@ -132,7 +131,7 @@ func (i *ideasAgent) OnStart(
 
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
+			chat.RoleUser,
 			"Goals:\n"+i.goalsAgent.GetStorage(),
 		),
 	)
@@ -140,7 +139,7 @@ func (i *ideasAgent) OnStart(
 	for n, idea := range ideas {
 		conversation.AddMessage(
 			chat.NewMessage(
-				chat.Role(chat.RoleUser),
+				chat.RoleUser,
 				fmt.Sprintf("Idea %d\n```\n%s\n```", n+1, idea),
 			),
 		)
@@ -149,7 +148,7 @@ func (i *ideasAgent) OnStart(
 	for done := false; !done; {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("context cancelled")
+			return errors.New("context cancelled")
 		default:
 			resp, err := i.textToJSONBackend.Do(ctx, conversation)
 			if err != nil {
@@ -158,7 +157,7 @@ func (i *ideasAgent) OnStart(
 
 			conversation.AddMessage(
 				chat.NewMessage(
-					chat.Role(chat.RoleAssistant),
+					chat.RoleAssistant,
 					resp,
 				),
 			)
@@ -170,7 +169,7 @@ func (i *ideasAgent) OnStart(
 
 			if ideaResp.Done {
 				if ideaResp.Result == "" {
-					return fmt.Errorf("idea result is empty")
+					return errors.New("idea result is empty")
 				}
 
 				i.storage = ideaResp.Result
@@ -188,7 +187,7 @@ func (i *ideasAgent) OnStart(
 			// Store the response
 			conversation.AddMessage(
 				chat.NewMessage(
-					chat.Role(chat.RoleUser),
+					chat.RoleUser,
 					response,
 				),
 			)

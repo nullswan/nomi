@@ -77,7 +77,7 @@ type headlineAgent struct {
 	ideasAgent *ideasAgent
 }
 
-func NewHeadlineAgent(
+func newHeadlineAgent(
 	logger tools.Logger,
 	textToJSONBackend tools.TextToJSONBackend,
 	selector tools.Selector,
@@ -103,19 +103,19 @@ func (h *headlineAgent) OnStart(
 ) error {
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleSystem),
+			chat.RoleSystem,
 			headlineAgentPrompt,
 		),
 	)
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
+			chat.RoleUser,
 			"Goals:\n"+h.goalsAgent.GetStorage(),
 		),
 	)
 	conversation.AddMessage(
 		chat.NewMessage(
-			chat.Role(chat.RoleUser),
+			chat.RoleUser,
 			"Ideas:\n"+h.ideasAgent.GetStorage(),
 		),
 	)
@@ -132,7 +132,7 @@ func (h *headlineAgent) OnStart(
 
 			conversation.AddMessage(
 				chat.NewMessage(
-					chat.Role(chat.RoleAssistant),
+					chat.RoleAssistant,
 					resp,
 				),
 			)
@@ -142,8 +142,22 @@ func (h *headlineAgent) OnStart(
 				return fmt.Errorf("error unmarshalling response: %w", err)
 			}
 
-			if headlineResp.Headlines == nil {
-				return fmt.Errorf("headline result is empty")
+			if len(headlineResp.Headlines) == 0 {
+				h.logger.Debug("Headline response " + resp)
+				h.logger.Info("No headlines were generated")
+
+				newInstructions, err := h.inputHandler.Read(ctx, ">>> ")
+				if err != nil {
+					return fmt.Errorf("error reading new instructions: %w", err)
+				}
+
+				conversation.AddMessage(
+					chat.NewMessage(
+						chat.RoleUser,
+						newInstructions,
+					),
+				)
+				continue
 			}
 
 			ret := h.selector.SelectString(
@@ -159,7 +173,7 @@ func (h *headlineAgent) OnStart(
 
 				conversation.AddMessage(
 					chat.NewMessage(
-						chat.Role(chat.RoleUser),
+						chat.RoleUser,
 						response,
 					),
 				)
