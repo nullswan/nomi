@@ -14,7 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gopxl/beep/v2 v2.1.0
 	github.com/gordonklaus/portaudio v0.0.0-20230709114228-aafa478834f5
-	github.com/jedib0t/go-pretty/v6 v6.5.9
+	github.com/jedib0t/go-pretty/v6 v6.6.1
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-runewidth v0.0.16
 	github.com/mholt/archiver/v3 v3.5.1
