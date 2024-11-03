@@ -157,7 +157,7 @@ jobs:
           mv artifacts/windows-386/nomi-cli.zip artifacts/windows-386/nomi-cli-windows-386.zip
           mv artifacts/windows-amd64/nomi-cli.zip artifacts/windows-amd64/nomi-cli-windows-amd64.zip
 
-      - uses: release-drafter/release-drafter@v5
+      - uses: release-drafter/release-drafter@v6
         with:
           config-name: default
 
