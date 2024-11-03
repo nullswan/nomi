@@ -74,6 +74,14 @@ You will work through the following steps to accomplish this task:
   ]
 }
 
+**Some patterns to consider:**
+internal/providers/base/texttoembedding.go = feat(internal/providers)
+usecases/commit/prompt.go = feat(usecases/commit)
+services/agent/agent.go = feat(services/agent)
+sdk/agent/agent.go = feat(sdk/agent)
+packages/agent/agent.go = feat(packages/agent)
+
+
 # Notes
 
 - Ensure that each commit action is unique with respect to file changes.
