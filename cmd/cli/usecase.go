@@ -24,8 +24,9 @@ var usecaseCmd = &cobra.Command{
 	Aliases: []string{"u"},
 	Short:   "Run a usecase",
 	Run: func(_ *cobra.Command, args []string) {
+		// Fallback to list command
 		if len(args) == 0 {
-			fmt.Println("You must provide a usecase")
+			usecaseListCmd.Run(nil, nil)
 			return
 		}
 
