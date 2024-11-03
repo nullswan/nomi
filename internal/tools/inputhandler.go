@@ -11,6 +11,7 @@ import (
 	"github.com/nullswan/nomi/internal/term"
 )
 
+// TODO(nullswan): Handle Command handling
 type InputHandler interface {
 	Read(ctx context.Context, defaultValue string) (string, error)
 
