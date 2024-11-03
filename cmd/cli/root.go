@@ -24,10 +24,6 @@ func main() {
 	configCmd.AddCommand(configSetupCmd)
 	// #endregion
 
-	// #region Interpreter commands
-	rootCmd.AddCommand(interpreterCmd)
-	// #endregion
-
 	// #region Conversation commands
 	rootCmd.AddCommand(conversationCmd)
 	conversationCmd.AddCommand(conversationListCmd)
