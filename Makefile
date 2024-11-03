@@ -1,7 +1,5 @@
-.PHONY: build
-build:
-	@echo "Building..."
-	@goreleaser build --snapshot --clean
+.PHONY: all
+all: build-dev
 
 .PHONY: fmt
 fmt:
@@ -11,9 +9,6 @@ fmt:
 .PHONY: test
 test:
 	go test -v -cover ./...
-
-.PHONY: all
-all: build
 
 .PHONY: build-dev
 build-dev:
