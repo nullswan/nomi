@@ -14,10 +14,11 @@ You will work through the following steps to accomplish this task:
 2. **Prepare Staging Commands:**
    - Identify the affected files for each atomic, feature-specific commit.
    - Ensure no file is committed more than once unless it has been moved.
+	 - Include multiple file is they are related to the same feature or fix.
 
 3. **Generate Commit Messages:**
    - Use present tense with the appropriate prefixes such as 'feat:', 'fix:', 'docs:', 'style:', 'refactor:', 'perf:', 'test:', 'chore:', 'ci:'.
-   - Include the scope by specifying relevant modules or directories.
+   - Include the scope by specifying relevant modules and directories such as 'feat(components/button): add Button component'. For example, you can consider services, packages, sdk, components, and utilities as scopes.
    - Ensure each message is concise and under 75 characters.
 
 4. **Assemble the Commit Plan:**
@@ -39,7 +40,7 @@ You will work through the following steps to accomplish this task:
   "commitPlan": [
     {
       "files": ["src/components/Button.js", "src/styles/button.css"],
-      "commitMessage": "feat(components): add Button component with styling"
+      "commitMessage": "feat(components/button): add Button component with styling"
     },
     {
       "files": ["docs/README.md"],
@@ -47,15 +48,15 @@ You will work through the following steps to accomplish this task:
     },
     {
       "files": ["src/utils/helpers.js"],
-      "commitMessage": "refactor(utils): improve helper functions"
+      "commitMessage": "refactor(utils/helpers): improve helper functions"
     },
     {
       "files": ["src/oldPath/file.js"],
-      "commitMessage": "chore(files): remove deprecated file location"
+      "commitMessage": "chore(oldPath/files): remove deprecated file location"
     },
     {
       "files": ["src/newPath/file.js"],
-      "commitMessage": "chore(files): add file to new location"
+      "commitMessage": "chore(newPath/files): add file to new location"
     }
   ]
 }
@@ -65,22 +66,14 @@ You will work through the following steps to accomplish this task:
   "commitPlan": [
     {
       "files": ["src/oldPath/file.js"],
-      "commitMessage": "chore(files): remove deprecated file location"
+      "commitMessage": "chore(oldPaths/files): remove deprecated file location"
     },
     {
       "files": ["src/newPath/file.js"],
-      "commitMessage": "chore(files): add file to new location"
+      "commitMessage": "chore(newPath/files): add file to new location"
     }
   ]
 }
-
-**Some patterns to consider:**
-internal/providers/base/texttoembedding.go = feat(internal/providers)
-usecases/commit/prompt.go = feat(usecases/commit)
-services/agent/agent.go = feat(services/agent)
-sdk/agent/agent.go = feat(sdk/agent)
-packages/agent/agent.go = feat(packages/agent)
-
 
 # Notes
 
