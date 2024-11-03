@@ -61,7 +61,7 @@ func (i *inputHandler) Read(
 	ctx context.Context,
 	defaultValue string,
 ) (string, error) {
-	rl, err := term.InitReadline()
+	rl, err := term.InitReadline(defaultValue)
 	if err != nil {
 		return "", fmt.Errorf("error initializing readline: %w", err)
 	}

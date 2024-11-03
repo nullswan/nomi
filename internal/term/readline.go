@@ -15,9 +15,9 @@ var (
 	ErrReadlineInit     = errors.New("error initializing readline")
 )
 
-func InitReadline() (*Instance, error) {
+func InitReadline(defaultValue string) (*Instance, error) {
 	prompt := Prompt{
-		Prompt:      ">>> ",
+		Prompt:      defaultValue,
 		AltPrompt:   "...  ",
 		Placeholder: "Send a message (/help for help)",
 	}
@@ -109,6 +109,7 @@ func ReadInput(
 	inputErrCh chan<- error,
 	readyCh <-chan struct{},
 ) {
+	const prompt = ">>> "
 	defer close(inputCh)
 	defer close(inputErrCh)
 
@@ -126,11 +127,11 @@ func ReadInput(
 	}
 
 	if pipedInput != "" {
-		fmt.Println(">>>", pipedInput)
+		fmt.Println(prompt, pipedInput)
 		inputCh <- pipedInput
 	}
 
-	rl, err := InitReadline()
+	rl, err := InitReadline(prompt)
 	if err != nil {
 		inputErrCh <- fmt.Errorf("%w: %v", ErrReadlineInit, err)
 		return
