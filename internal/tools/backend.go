@@ -46,19 +46,14 @@ func (t TextToTextBackend) Do(
 		}
 	}()
 
-	for {
-		select {
-		case cmpl, ok := <-outCh:
-			if !ok {
-				return "", fmt.Errorf("completion channel closed")
-			}
-			if !completion.IsTombStone(cmpl) {
-				continue
-			}
-
-			return cmpl.Content(), nil
+	for cmpl := range outCh {
+		if !completion.IsTombStone(cmpl) {
+			continue
 		}
+		return cmpl.Content(), nil
 	}
+
+	return "", errors.New("completion channel closed")
 }
 
 type TextToJSONBackend struct {
@@ -94,20 +89,16 @@ func (t TextToJSONBackend) Do(
 		}
 	}()
 
-	for {
-		select {
-		case cmpl, ok := <-outCh:
-			if !ok {
-				return "", errors.New("completion channel closed")
-			}
-			if !completion.IsTombStone(cmpl) {
-				continue
-			}
-
-			content := strings.ReplaceAll(cmpl.Content(), "```json", "")
-			return strings.ReplaceAll(content, "```", ""), nil
+	for cmpl := range outCh {
+		if !completion.IsTombStone(cmpl) {
+			continue
 		}
+
+		content := strings.ReplaceAll(cmpl.Content(), "```json", "")
+		return strings.ReplaceAll(content, "```", ""), nil
 	}
+
+	return "", errors.New("completion channel closed")
 }
 
 type TextToSpeechBackend struct {
