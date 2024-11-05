@@ -162,10 +162,9 @@ These features are planned for future updates. They may be partially or not impl
   - Local Whisper
   - Vision Support
   - Anthropic Support
-  - Text-to-Speech (TTS)
-  - Easy transcription command
   - Transcript memory
 - **Actions**
+  - Easy transcription command
   - Presets/Projects
   - Memory tools for scripted decisions
   - Memory tools for general decisions
