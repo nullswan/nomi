@@ -71,13 +71,15 @@ func DefaultConfig() Config {
 	// Do nothing, just create the directory if it doesn't exist
 	_ = GetPromptDirectory()
 
+	const optionCmdDefault = 58
+
 	return Config{
 		DevMode: false,
 		Input: InputConfig{
 			Voice: VoiceConfig{
 				Enabled:  false,
 				Language: "en",
-				KeyCode:  58,
+				KeyCode:  optionCmdDefault,
 			},
 		},
 		Output: OutputConfig{
