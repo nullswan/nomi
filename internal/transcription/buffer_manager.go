@@ -43,7 +43,7 @@ type bufferManager struct {
 	baseOffset time.Duration
 }
 
-func NewBufferManager(audioOpts *audio.AudioOptions) *bufferManager {
+func NewBufferManager(audioOpts *audio.StreamParameters) *bufferManager {
 	return &bufferManager{
 		flushChan:      make(chan AudioChunk, flushChanSz),
 		sampleRate:     int(audioOpts.SampleRate),
@@ -181,7 +181,7 @@ type simpleBufferManager struct {
 }
 
 func NewSimpleBufferManager(
-	audioOpts *audio.AudioOptions,
+	audioOpts *audio.StreamParameters,
 ) *simpleBufferManager {
 	return &simpleBufferManager{
 		flushChan:         make(chan AudioChunk, flushChanSz),

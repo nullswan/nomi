@@ -14,12 +14,12 @@ const (
 	minLatency         = 50 * time.Millisecond
 )
 
-type AudioStream struct {
+type StreamHandler struct {
 	stream *portaudio.Stream
 	logger *slog.Logger
 }
 
-type AudioOptions struct {
+type StreamParameters struct {
 	SampleRate      float64
 	Latency         time.Duration
 	FramesPerBuffer int
@@ -28,18 +28,33 @@ type AudioOptions struct {
 	BitsPerSample   int
 }
 
-func ComputeAudioOptions(opts *AudioOptions) (*AudioOptions, error) {
-	if opts == nil {
-		return nil, errors.New("AudioOptions cannot be nil")
-	}
-
-	// Get the default input device
-	inputDevice, err := portaudio.DefaultInputDevice()
+func ComputeDefaultAdudioOptions() (*StreamParameters, error) {
+	device, err := portaudio.DefaultInputDevice()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default input device: %w", err)
 	}
 
-	opts.SampleRate = inputDevice.DefaultSampleRate
+	opts, err := ComputeAudioOptions(device, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compute audio options: %w", err)
+	}
+
+	return opts, nil
+}
+
+func ComputeAudioOptions(
+	device *portaudio.DeviceInfo,
+	opts *StreamParameters,
+) (*StreamParameters, error) {
+	if opts == nil {
+		return nil, errors.New("AudioOptions cannot be nil")
+	}
+
+	if device == nil {
+		return nil, errors.New("DeviceInfo cannot be nil")
+	}
+
+	opts.SampleRate = device.DefaultSampleRate
 
 	if opts.Latency == 0 {
 		opts.Latency = minLatency
@@ -49,7 +64,7 @@ func ComputeAudioOptions(opts *AudioOptions) (*AudioOptions, error) {
 		opts.SampleRate * float64(opts.Latency) / float64(time.Second),
 	)
 
-	opts.Channels = 1
+	opts.Channels = device.MaxInputChannels
 	opts.BytesPerSample = 2
 	opts.BitsPerSample = 16
 
@@ -58,9 +73,9 @@ func ComputeAudioOptions(opts *AudioOptions) (*AudioOptions, error) {
 
 func NewInputStream(
 	logger *slog.Logger,
-	opts *AudioOptions,
+	opts *StreamParameters,
 	callback func([]float32),
-) (*AudioStream, error) {
+) (*StreamHandler, error) {
 	// Get the default input device
 	inputDevice, err := portaudio.DefaultInputDevice()
 	if err != nil {
@@ -68,7 +83,7 @@ func NewInputStream(
 	}
 
 	// Compute and validate options
-	opts, err = ComputeAudioOptions(opts)
+	opts, err = ComputeAudioOptions(inputDevice, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +106,7 @@ func NewInputStream(
 	streamParams := portaudio.StreamParameters{
 		Input: portaudio.StreamDeviceParameters{
 			Device:   inputDevice,
-			Channels: 1,
+			Channels: opts.Channels,
 			Latency:  opts.Latency,
 		},
 		SampleRate:      opts.SampleRate,
@@ -108,71 +123,13 @@ func NewInputStream(
 		return nil, fmt.Errorf("failed to open stream: %w", err)
 	}
 
-	return &AudioStream{
+	return &StreamHandler{
 		stream: stream,
 		logger: logger,
 	}, nil
 }
 
-func NewOutputStream(
-	logger *slog.Logger,
-	opts *AudioOptions,
-	callback func([]float32),
-) (*AudioStream, error) {
-	// Get the default input device
-	outputDevice, err := portaudio.DefaultOutputDevice()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get default input device: %w", err)
-	}
-
-	// Compute and validate options
-	opts, err = ComputeAudioOptions(opts)
-	if err != nil {
-		return nil, err
-	}
-
-	if opts.FramesPerBuffer > maxFramesPerBuffer {
-		logger.With("frames_per_buffer", opts.FramesPerBuffer).Warn(
-			fmt.Sprintf("FramesPerBuffer seems too high (> %d)", maxFramesPerBuffer),
-		)
-	}
-
-	logger = logger.With("component", "audio_stream").
-		With("device_name", outputDevice.Name)
-
-	logger.
-		With("sample_rate", opts.SampleRate).
-		With("frames_per_buffer", opts.FramesPerBuffer).
-		With("latency", opts.Latency).
-		Info("Using default input device")
-
-	streamParams := portaudio.StreamParameters{
-		Input: portaudio.StreamDeviceParameters{
-			Device:   outputDevice,
-			Channels: 1,
-			Latency:  opts.Latency,
-		},
-		SampleRate:      opts.SampleRate,
-		FramesPerBuffer: opts.FramesPerBuffer,
-	}
-
-	stream, err := portaudio.OpenStream(
-		streamParams,
-		func(in []float32, _ []float32) {
-			callback(in)
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open stream: %w", err)
-	}
-
-	return &AudioStream{
-		stream: stream,
-		logger: logger,
-	}, nil
-}
-
-func (a *AudioStream) Start() error {
+func (a *StreamHandler) Start() error {
 	a.logger.Info("Starting audio stream")
 	err := a.stream.Start()
 	if err != nil {
@@ -182,7 +139,7 @@ func (a *AudioStream) Start() error {
 	return nil
 }
 
-func (a *AudioStream) Stop() error {
+func (a *StreamHandler) Stop() error {
 	a.logger.Info("Stopping audio stream")
 	err := a.stream.Stop()
 	if err != nil {
@@ -192,12 +149,24 @@ func (a *AudioStream) Stop() error {
 	return nil
 }
 
-func (a *AudioStream) Close() error {
+func (a *StreamHandler) Close() error {
 	a.logger.Info("Closing audio stream")
 	err := a.stream.Close()
-	portaudio.Terminate()
 	if err != nil {
 		return fmt.Errorf("failed to close audio stream: %w", err)
 	}
+	err = portaudio.Terminate()
+	if err != nil {
+		return fmt.Errorf("failed to terminate PortAudio: %w", err)
+	}
 	return nil
+}
+
+func GetDevices() ([]*portaudio.DeviceInfo, error) {
+	devices, err := portaudio.Devices()
+	if err != nil {
+		return nil, fmt.Errorf("error listing devices: %v", err)
+	}
+
+	return devices, nil
 }

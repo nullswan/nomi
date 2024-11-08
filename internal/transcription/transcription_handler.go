@@ -75,7 +75,7 @@ type TranscriptionHandler struct {
 
 func NewTranscriptionHandler(
 	apiKey string,
-	audioOpts *audio.AudioOptions,
+	audioOpts *audio.StreamParameters,
 	logger *logger.Logger,
 ) *TranscriptionHandler {
 	return &TranscriptionHandler{

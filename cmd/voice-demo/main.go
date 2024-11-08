@@ -47,8 +47,16 @@ func main() {
 	}
 	defer portaudio.Terminate()
 
-	audioOpts := &audio.AudioOptions{}
-	audioOpts, err = audio.ComputeAudioOptions(audioOpts)
+	inputDevice, err := portaudio.DefaultInputDevice()
+	if err != nil {
+		logger.
+			With("error", err).
+			Error("Failed to get default input device")
+		return
+	}
+
+	audioOpts := &audio.StreamParameters{}
+	audioOpts, err = audio.ComputeAudioOptions(inputDevice, audioOpts)
 	if err != nil {
 		logger.
 			With("error", err).
