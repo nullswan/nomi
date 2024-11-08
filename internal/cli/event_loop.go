@@ -26,7 +26,7 @@ func EventLoop(
 	readyCh chan struct{},
 	voiceInputCh chan string,
 	audioStartCh, audioEndCh <-chan struct{},
-	inputStream *audio.AudioStream,
+	inputStream *audio.StreamHandler,
 	log *logger.Logger,
 	conversation chat.Conversation,
 	renderer *term.Renderer,

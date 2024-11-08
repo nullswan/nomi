@@ -82,7 +82,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	)
 	if err != nil {
 		fmt.Printf("Error creating repository: %v\n", err)
-		os.Exit(1)
+		return
 	}
 	defer repo.Close()
 
@@ -120,7 +120,7 @@ func runApp(_ *cobra.Command, _ []string) {
 	readyCh := make(chan struct{})
 	voiceInputCh := make(chan string)
 
-	var inputStream *audio.AudioStream
+	var inputStream *audio.StreamHandler
 	var audioStartCh, audioEndCh <-chan struct{}
 	if cfg.Input.Voice.Enabled {
 		// Initialize Voice using shared method

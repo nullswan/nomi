@@ -16,7 +16,7 @@ import (
 // InitTranscriptionServer initializes the Transcription Server with predefined buffer settings.
 func InitTranscriptionServer(
 	oaiKey string,
-	audioOpts *audio.AudioOptions,
+	audioOpts *audio.StreamParameters,
 	log *logger.Logger,
 	callback transcription.TranscriptionServerCallbackT,
 	language string,
@@ -54,7 +54,7 @@ func InitVoice(
 	handleTranscription func(text string, isProcessing bool),
 	cmdKeyCode uint16,
 	language string,
-) (*audio.AudioStream, <-chan struct{}, <-chan struct{}, error) {
+) (*audio.StreamHandler, <-chan struct{}, <-chan struct{}, error) {
 	if !cfg.Input.Voice.Enabled {
 		return nil, nil, nil, nil
 	}
@@ -66,7 +66,7 @@ func InitVoice(
 		)
 	}
 
-	audioOpts, err := audio.ComputeAudioOptions(&audio.AudioOptions{})
+	audioOpts, err := audio.ComputeDefaultAdudioOptions()
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf(
 			"error computing audio options: %w",

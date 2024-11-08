@@ -10,7 +10,7 @@ import (
 )
 
 type VoiceInput struct {
-	inputStream  *audio.AudioStream
+	inputStream  *audio.StreamHandler
 	audioStartCh <-chan struct{}
 	audioEndCh   <-chan struct{}
 }
@@ -43,7 +43,7 @@ func NewVoiceInput(
 	}, nil
 }
 
-func (v *VoiceInput) GetInputStream() *audio.AudioStream {
+func (v *VoiceInput) GetInputStream() *audio.StreamHandler {
 	return v.inputStream
 }
 

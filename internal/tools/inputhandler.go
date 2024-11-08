@@ -19,7 +19,7 @@ type InputHandler interface {
 		voiceInputCh chan string,
 		audioStartCh <-chan struct{},
 		audioEndCh <-chan struct{},
-		inputStream *audio.AudioStream,
+		inputStream *audio.StreamHandler,
 	)
 }
 
@@ -30,7 +30,7 @@ type inputHandler struct {
 	audioStartCh <-chan struct{}
 	audioEndCh   <-chan struct{}
 
-	inputStream *audio.AudioStream
+	inputStream *audio.StreamHandler
 }
 
 func NewInputHandler(
@@ -49,7 +49,7 @@ func (i *inputHandler) WithVoiceInput(
 	voiceInputCh chan string,
 	audioStartCh <-chan struct{},
 	audioEndCh <-chan struct{},
-	inputStream *audio.AudioStream,
+	inputStream *audio.StreamHandler,
 ) {
 	i.voiceInputCh = voiceInputCh
 	i.audioStartCh = audioStartCh
