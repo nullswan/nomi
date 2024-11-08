@@ -7,6 +7,23 @@ import (
 	"time"
 )
 
+const (
+	// defaultEnergyThreshold is the default threshold for energy to detect speech
+	defaultEnergyThreshold = 0.005
+
+	// defaultFlushInterval is the default interval for periodic buffer flushing
+	defaultFlushInterval = 310 * time.Millisecond
+
+	// defaultSilenceDuration is the default duration of continuous silence to detect end of speech
+	defaultSilenceDuration = 500 * time.Millisecond
+
+	// defaultPauseDuration is the default duration of brief silence to detect a pause within speech
+	defaultPauseDuration = 300 * time.Millisecond
+
+	// defaultBufferSize is the default size of the audio buffer
+	defaultBufferSize = 100
+)
+
 // VADConfig defines configuration options for the VAD
 type VADConfig struct {
 	EnergyThreshold float64       // Threshold for energy to detect speech
@@ -49,23 +66,23 @@ func NewVAD(
 ) *VAD {
 	// Set default values if not provided
 	if config.EnergyThreshold == 0 {
-		config.EnergyThreshold = 0.005 // Increased default threshold for better noise handling
+		config.EnergyThreshold = defaultEnergyThreshold
 	}
 	if config.FlushInterval == 0 {
-		config.FlushInterval = 310 * time.Millisecond // Default flush interval
+		config.FlushInterval = defaultFlushInterval
 	}
 	if config.SilenceDuration == 0 {
-		config.SilenceDuration = 500 * time.Millisecond // Duration to detect end of speech
+		config.SilenceDuration = defaultSilenceDuration
 	}
 	if config.PauseDuration == 0 {
-		config.PauseDuration = 300 * time.Millisecond // Duration to detect a pause within speech
+		config.PauseDuration = defaultPauseDuration
 	}
 
 	return &VAD{
 		config:    config,
 		callbacks: callbacks,
 		logger:    logger.With("component", "vad"),
-		audioChan: make(chan []float32, 100),
+		audioChan: make(chan []float32, defaultBufferSize),
 		doneChan:  make(chan struct{}),
 		buffer:    make([]float32, 0),
 	}
