@@ -66,7 +66,7 @@ func InitVoice(
 		)
 	}
 
-	audioOpts, err := audio.ComputeDefaultAdudioOptions()
+	audioOpts, err := audio.ComputeDefaultAudioOptions()
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf(
 			"error computing audio options: %w",
@@ -100,7 +100,7 @@ func InitVoice(
 		)
 	}
 
-	inputStream, err := audio.NewInputStream(
+	inputStream, err := audio.NewDefaultInputStream(
 		log,
 		audioOpts,
 		func(buffer []float32) {
