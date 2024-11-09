@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
+	"time"
 
 	"github.com/nullswan/nomi/internal/config"
 	"github.com/nullswan/nomi/internal/setup"
@@ -97,6 +99,25 @@ func main() {
 
 		if cfg.DevMode {
 			go func() {
+				mux := http.NewServeMux()
+				mux.HandleFunc("/debug/pprof/", http.HandlerFunc(pprof.Index))
+				mux.HandleFunc(
+					"/debug/pprof/cmdline",
+					http.HandlerFunc(pprof.Cmdline),
+				)
+				mux.HandleFunc(
+					"/debug/pprof/profile",
+					http.HandlerFunc(pprof.Profile),
+				)
+				mux.HandleFunc(
+					"/debug/pprof/symbol",
+					http.HandlerFunc(pprof.Symbol),
+				)
+				mux.HandleFunc(
+					"/debug/pprof/trace",
+					http.HandlerFunc(pprof.Trace),
+				)
+
 				ln, err := net.Listen("tcp", "localhost:0")
 				if err != nil {
 					fmt.Printf("Error starting pprof server: %v\n", err)
@@ -104,7 +125,15 @@ func main() {
 				}
 				port := ln.Addr().(*net.TCPAddr).Port
 				fmt.Printf("pprof server started on localhost:%d\n", port)
-				if err := http.Serve(ln, nil); err != nil {
+
+				server := &http.Server{
+					Handler:      mux,
+					ReadTimeout:  5 * time.Second,  // nolint: mnd
+					WriteTimeout: 10 * time.Second, // nolint: mnd
+					IdleTimeout:  15 * time.Second, // nolint: mnd
+				}
+
+				if err := server.Serve(ln); err != nil {
 					fmt.Printf("Error starting pprof server: %v\n", err)
 					os.Exit(1)
 				}
