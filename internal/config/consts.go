@@ -3,6 +3,7 @@ package config
 const (
 	conversationDir = "conversations"
 	promptDir       = "prompts"
+	knownledgeDir   = "knowledge"
 
 	// configDir is the directory where the configuration file is stored.
 	configDir = ".nomi"
@@ -23,4 +24,8 @@ func GetPromptDirectory() string {
 
 func GetConversationDirectory() string {
 	return GetModuleDirectory(conversationDir)
+}
+
+func GetKnowledgeDirectory() string {
+	return GetModuleDirectory(knownledgeDir)
 }
