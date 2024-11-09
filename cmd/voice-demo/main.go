@@ -162,7 +162,7 @@ func main() {
 	defer vad.Stop()
 
 	// Create input stream
-	inputStream, err := audio.NewInputStream(
+	inputStream, err := audio.NewDefaultInputStream(
 		logger,
 		audioOpts,
 		func(buffer []float32) {
