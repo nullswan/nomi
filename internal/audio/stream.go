@@ -28,13 +28,13 @@ type StreamParameters struct {
 	BitsPerSample   int
 }
 
-func ComputeDefaultAdudioOptions() (*StreamParameters, error) {
+func ComputeDefaultAudioOptions() (*StreamParameters, error) {
 	device, err := portaudio.DefaultInputDevice()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default input device: %w", err)
 	}
 
-	opts, err := ComputeAudioOptions(device, nil)
+	opts, err := ComputeAudioOptions(device, &StreamParameters{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to compute audio options: %w", err)
 	}
@@ -71,19 +71,32 @@ func ComputeAudioOptions(
 	return opts, nil
 }
 
-func NewInputStream(
+func NewDefaultInputStream(
 	logger *slog.Logger,
 	opts *StreamParameters,
 	callback func([]float32),
 ) (*StreamHandler, error) {
-	// Get the default input device
 	inputDevice, err := portaudio.DefaultInputDevice()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default input device: %w", err)
 	}
 
+	stream, err := NewInputStream(logger, inputDevice, opts, callback)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create input stream: %w", err)
+	}
+
+	return stream, nil
+}
+
+func NewInputStream(
+	logger *slog.Logger,
+	device *portaudio.DeviceInfo,
+	opts *StreamParameters,
+	callback func([]float32),
+) (*StreamHandler, error) {
 	// Compute and validate options
-	opts, err = ComputeAudioOptions(inputDevice, opts)
+	opts, err := ComputeAudioOptions(device, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +108,7 @@ func NewInputStream(
 	}
 
 	logger = logger.With("component", "audio_stream").
-		With("device_name", inputDevice.Name)
+		With("device_name", device.Name)
 
 	logger.
 		With("sample_rate", opts.SampleRate).
@@ -105,7 +118,7 @@ func NewInputStream(
 
 	streamParams := portaudio.StreamParameters{
 		Input: portaudio.StreamDeviceParameters{
-			Device:   inputDevice,
+			Device:   device,
 			Channels: opts.Channels,
 			Latency:  opts.Latency,
 		},
