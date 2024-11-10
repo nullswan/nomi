@@ -152,7 +152,7 @@ func OnStart(
 						return nil
 					}
 
-					req, err := inputHandler.Read(ctx, consoleResp.Question)
+					req, err := inputHandler.Read(ctx, ">>> ")
 					if err != nil {
 						return fmt.Errorf("failed to read input: %w", err)
 					}
