@@ -99,6 +99,7 @@ func OnStart(
 
 			switch consoleResp.Action {
 			case consoleActionCode:
+				logger.Debug("Received code block " + consoleResp.Code)
 				// Sanitize code, add code block if necessary
 				if consoleResp.Language != "" && consoleResp.Code != "" &&
 					!strings.HasPrefix(consoleResp.Code, "```") {
