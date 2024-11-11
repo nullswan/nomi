@@ -17,7 +17,8 @@ type FileKnowledgeBase struct {
 
 func NewFileKnowledgeBase(repositoryPath string) *FileKnowledgeBase {
 	return &FileKnowledgeBase{
-		repositoryPath: repositoryPath,
+		// TODO(nullswan): Select your knowledge basepath
+		repositoryPath: repositoryPath + "/nomi",
 	}
 }
 
