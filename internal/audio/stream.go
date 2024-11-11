@@ -17,6 +17,7 @@ const (
 type StreamHandler struct {
 	stream *portaudio.Stream
 	logger *slog.Logger
+	params *StreamParameters
 }
 
 type StreamParameters struct {
@@ -111,6 +112,7 @@ func NewInputStream(
 		With("device_name", device.Name)
 
 	logger.
+		With("channels", opts.Channels).
 		With("sample_rate", opts.SampleRate).
 		With("frames_per_buffer", opts.FramesPerBuffer).
 		With("latency", opts.Latency).
@@ -139,6 +141,7 @@ func NewInputStream(
 	return &StreamHandler{
 		stream: stream,
 		logger: logger,
+		params: opts,
 	}, nil
 }
 
@@ -173,6 +176,14 @@ func (a *StreamHandler) Close() error {
 		return fmt.Errorf("failed to terminate PortAudio: %w", err)
 	}
 	return nil
+}
+
+func (a *StreamHandler) GetSampleRate() float64 {
+	return a.params.SampleRate
+}
+
+func (a *StreamHandler) GetChannels() int {
+	return a.params.Channels
 }
 
 func GetDevices() ([]*portaudio.DeviceInfo, error) {
