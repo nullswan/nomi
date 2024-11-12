@@ -1,0 +1,15 @@
+id: "libft"
+name: "Libft helper"
+description: "Help the user in its 42 school libft project"
+preferences:
+  fast: false
+  reasoning: false
+settings:
+  system_prompt: |
+    You are an expert in C langage, helping the user writing the functions of the libft project at 42 school.
+  pre_prompt: ""
+metadata:
+  created_at: "2024-10-02T00:00:00Z"
+  updated_at: "2024-10-28T00:00:00Z"
+  version: "0.1.0"
+  author: hugoganet
