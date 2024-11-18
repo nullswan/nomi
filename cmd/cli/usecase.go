@@ -9,6 +9,7 @@ import (
 
 	"github.com/nullswan/nomi/internal/chat"
 	"github.com/nullswan/nomi/internal/cli"
+	"github.com/nullswan/nomi/internal/config"
 	"github.com/nullswan/nomi/internal/logger"
 	"github.com/nullswan/nomi/internal/providers"
 	"github.com/nullswan/nomi/internal/tools"
@@ -16,6 +17,7 @@ import (
 	"github.com/nullswan/nomi/usecases/commit"
 	"github.com/nullswan/nomi/usecases/copywriter"
 	"github.com/nullswan/nomi/usecases/interpreter"
+	"github.com/nullswan/nomi/usecases/knowledgebase"
 	"github.com/spf13/cobra"
 )
 
@@ -87,7 +89,7 @@ var usecaseCmd = &cobra.Command{
 			)
 		}
 
-		textToJSONBackend, err := cli.InitJSONProviders(
+		ttjProvider, err := cli.InitJSONProviders(
 			logger,
 			targetModel,
 		)
@@ -95,10 +97,10 @@ var usecaseCmd = &cobra.Command{
 			fmt.Printf("Error initializing providers: %v\n", err)
 			return
 		}
-		defer textToJSONBackend.Close()
+		defer ttjProvider.Close()
 
 		ttjBackend := tools.NewTextToJSONBackend(
-			textToJSONBackend,
+			ttjProvider,
 			logger,
 		)
 
@@ -118,6 +120,10 @@ var usecaseCmd = &cobra.Command{
 			}
 			defer ttsProvider.Close()
 		}
+
+		knownledgeBase := tools.NewFileKnowledgeBase(
+			config.GetKnowledgeDirectory(),
+		)
 
 		switch usecaseID {
 		case "commit":
@@ -158,6 +164,14 @@ var usecaseCmd = &cobra.Command{
 				inputHandler,
 				conversation,
 			)
+		case "knowledgebase":
+			err = knowledgebase.OnStart(
+				ctx,
+				selector,
+				toolsLogger,
+				logger,
+				knownledgeBase,
+			)
 		default:
 			fmt.Println("usecase " + usecaseID + " not found")
 			return
@@ -178,5 +192,6 @@ var usecaseListCmd = &cobra.Command{
 		fmt.Println("copywriter - Generate copywriting documents")
 		fmt.Println("browser - Browse the web with LLM")
 		fmt.Println("console - Interact with the console")
+		fmt.Println("knowledgebase - Use the knowledgebase")
 	},
 }

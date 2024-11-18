@@ -11,26 +11,13 @@ import (
 type AudioStream interface {
 	Start() error
 	Close() error
+
+	GetSampleRate() float64
+	GetChannels() int
 }
 
 type audioStream struct {
 	stream *audio.StreamHandler
-}
-
-func (a *audioStream) Close() error {
-	err := a.stream.Stop()
-	if err != nil {
-		return fmt.Errorf("failed to stop audio stream: %w", err)
-	}
-	return nil
-}
-
-func (a *audioStream) Start() error {
-	err := a.stream.Start()
-	if err != nil {
-		return fmt.Errorf("failed to start audio stream: %w", err)
-	}
-	return nil
 }
 
 func NewAudioStream(
@@ -51,4 +38,28 @@ func NewAudioStream(
 	return &audioStream{
 		stream: stream,
 	}, nil
+}
+
+func (a *audioStream) Close() error {
+	err := a.stream.Stop()
+	if err != nil {
+		return fmt.Errorf("failed to stop audio stream: %w", err)
+	}
+	return nil
+}
+
+func (a *audioStream) Start() error {
+	err := a.stream.Start()
+	if err != nil {
+		return fmt.Errorf("failed to start audio stream: %w", err)
+	}
+	return nil
+}
+
+func (a *audioStream) GetSampleRate() float64 {
+	return a.stream.GetSampleRate()
+}
+
+func (a *audioStream) GetChannels() int {
+	return a.stream.GetChannels()
 }
