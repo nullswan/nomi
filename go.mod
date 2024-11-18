@@ -21,7 +21,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.15.3-0.20240618155329-98d742f6907a
 	github.com/ollama/ollama v0.4.1
-	github.com/playwright-community/playwright-go v0.4702.0
+	github.com/playwright-community/playwright-go v0.4802.0
 	github.com/robotn/gohook v0.41.0
 	github.com/sashabaranov/go-openai v1.35.6
 	github.com/spf13/cobra v1.8.1
@@ -73,8 +73,6 @@ require (
 	github.com/yuin/goldmark v1.7.4 // indirect
 	github.com/yuin/goldmark-emoji v1.0.3 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
