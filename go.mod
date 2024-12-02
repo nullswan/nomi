@@ -20,7 +20,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.15.3-0.20240618155329-98d742f6907a
-	github.com/ollama/ollama v0.4.1
+	github.com/ollama/ollama v0.4.7
 	github.com/playwright-community/playwright-go v0.4802.0
 	github.com/robotn/gohook v0.41.0
 	github.com/sashabaranov/go-openai v1.35.6
