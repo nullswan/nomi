@@ -1,9 +1,6 @@
 module github.com/nullswan/nomi
 
 go 1.23.1
-
-toolchain go1.23.2
-
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -20,7 +17,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.15.3-0.20240618155329-98d742f6907a
-	github.com/ollama/ollama v0.4.1
+	github.com/ollama/ollama v0.5.4
 	github.com/playwright-community/playwright-go v0.4802.0
 	github.com/robotn/gohook v0.41.0
 	github.com/sashabaranov/go-openai v1.36.0
